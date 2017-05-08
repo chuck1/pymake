@@ -58,30 +58,54 @@ class Makefile(object):
                 return rule
         return None
 
-    def make(self, t, test=False, force=False):
+    def make(self, target, test=False, force=False, regex=False):
+        """
+        :param test:  follow the file dependencies and print out which files would be built
+                      and a short description of why check returned True. But do not
+                      call the build function.
+        :param regex: treat targets as regex expressions and make all targets that match
+        """
+        if regex:
+            for t in self.search_gen(target):
+                self.make(t, test, force)
+            return
 
-        if isinstance(t, list):
-            for t1 in t: self.make(t1, test, force)
+        if isinstance(target, list):
+            for t in target: self.make(t, test, force)
             return
         
-        if t is None:
+        if target is None:
             raise Exception('target is None'+str(t))
 
-        if isinstance(t, Rule):
-            t.make(MakeCall(self, test, force))
+        if isinstance(target, Rule):
+            target.make(MakeCall(self, test, force))
             return
-
-        rule = self.find_rule(t)
+        
+        rule = self.find_rule(target)
         if rule is None:
-            if os.path.exists(t):
+            if os.path.exists(target):
                 pass
             else:
                 #for r in self.rules:
                 #    print(r,list(r.f_out()))
-                raise Exception("no rules to make {}".format(t))
+                raise Exception("no rules to make {}".format(target))
         else:
             rule.make(MakeCall(self, test, force))
 
+    def search_gen(self, targets):
+        if isinstance(target, list):
+            for t in target:
+                yield from self.search(t)
+        
+        pat = re.compile(target)
+        
+        for rule in self.rules:
+            f_out = list(rule.f_out())
+            for f in f_out:
+                m = pat.match(f)
+                if m:
+                    yield f
+        
     def search(self, t):
         if isinstance(t, list):
             for t1 in t: self.search(t1)
