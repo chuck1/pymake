@@ -100,10 +100,11 @@ class Makefile(object):
         else:
             rule.make(MakeCall(self, test, force))
 
-    def search_gen(self, targets):
+    def search_gen(self, target):
         if isinstance(target, list):
             for t in target:
-                yield from self.search(t)
+                yield from self.search_gen(t)
+            return
         
         pat = re.compile(target)
         
@@ -139,7 +140,7 @@ a rule does not have to build an actual file as output
 """
 class Rule(object):
 
-    def __init__(self, f_out, f_in, func, f_out_regex):
+    def __init__(self, f_out, f_in, func, f_out_regex=False):
         """
         :param f_out_regex: The output of f_out should be regex patterns.
                             These patterns will be used to match targets in the find_rule
@@ -148,6 +149,7 @@ class Rule(object):
         self.func_f_out = f_out
         self.func_f_in = f_in
         self.func = func
+        self.f_out_regex = f_out_regex
 
         self.up_to_date = False
     
@@ -235,6 +237,9 @@ class Rule(object):
                 f.write(b)
         else:
             print('binary data unchanged. do not write.')
+
+    def rules(self):
+        yield self
 
 """
 a rule to which we can pass a static list of files for f_out and f_in
