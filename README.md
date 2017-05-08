@@ -8,7 +8,7 @@ PyMake is a Python replacement for the linux make system.
 To use PyMake, create a subclass of pymake.Rule.
 The init function of pymake.Rule takes three callable objects.
 The first two callables should return generators which produce the output and input files.
-The third callable should generate the outputs from the inputs.
+The third callable should create the outputs from the inputs.
 
     class MyRule(pymake.Rule):
         def __init__(self):
