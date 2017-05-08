@@ -54,9 +54,16 @@ class Makefile(object):
 
     def find_rule(self, target):
         for rule in self.rules:
-            for f_out in rule.f_out():
-                if target == f_out:
-                    return rule
+            if rule.f_out_regex:
+                for f_out in rule.f_out():
+                    pat = re.compile(f_out)
+                    m = pat.match(target)
+                    if m:
+                        return rule
+            else:
+                for f_out in rule.f_out():
+                    if target == f_out:
+                        return rule
         return None
 
     def make(self, target, test=False, force=False, regex=False):
@@ -132,7 +139,12 @@ a rule does not have to build an actual file as output
 """
 class Rule(object):
 
-    def __init__(self, f_out, f_in, func):
+    def __init__(self, f_out, f_in, func, f_out_regex):
+        """
+        :param f_out_regex: The output of f_out should be regex patterns.
+                            These patterns will be used to match targets in the find_rule
+                            function of Makefile.
+        """
         self.func_f_out = f_out
         self.func_f_in = f_in
         self.func = func
