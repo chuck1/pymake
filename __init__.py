@@ -45,17 +45,18 @@ class MakeCall(object):
     def make(self,t):
         self.makefile.make(t, self.test, self.force)
 
-"""
-manages the building of targets
-"""
 class Makefile(object):
+    """
+    manages the building of targets
+    """
     def __init__(self):
         self.rules = []
+
     def find_rule(self, target):
         for rule in self.rules:
-            f_out = list(rule.f_out())
-            if target in f_out:
-                return rule
+            for f_out in rule.f_out():
+                if target == f_out:
+                    return rule
         return None
 
     def make(self, target, test=False, force=False, regex=False):
