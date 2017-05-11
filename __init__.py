@@ -66,6 +66,16 @@ class Makefile(object):
                         return rule
         return None
 
+    def print_dep(self, target, indent=0):
+        
+        if isinstance(target, list):
+            target = target[0]
+
+        print(" " * indent + str(target))
+        rule = self.find_rule(target)
+        if rule is not None:
+            rule.print_dep(MakeCall(self), indent + 2)
+
     def make(self, target, test=False, force=False, regex=False):
         """
         :param test:  follow the file dependencies and print out which files would be built
@@ -158,6 +168,10 @@ class Rule(object):
             if not isinstance(f,str):
                 raise TypeError('f_out generator must return str')
             yield f
+
+    def print_dep(self, makecall, indent):
+        for f in self.f_in(makecall):
+            makecall.makefile.print_dep(f, indent)
 
     def check(self, makecall, f_out, f_in):
 
