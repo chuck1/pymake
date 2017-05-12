@@ -220,7 +220,7 @@ class Rule(object):
             if makecall.test:
                 print('build',f_out,'because',f)
             else:
-                ret = self.func(f_out, f_in)
+                ret = self.func(makecall, f_out, f_in)
                 if ret is None:
                     pass
                 elif ret != 0:
