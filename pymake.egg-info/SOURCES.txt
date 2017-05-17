@@ -1,0 +1,6 @@
+pymake/__init__.py
+pymake.egg-info/PKG-INFO
+pymake.egg-info/SOURCES.txt
+pymake.egg-info/dependency_links.txt
+pymake.egg-info/not-zip-safe
+pymake.egg-info/top_level.txt
