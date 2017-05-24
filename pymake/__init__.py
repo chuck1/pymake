@@ -140,6 +140,7 @@ class Makefile(object):
                 m = pat.match(f)
                 if m:
                     print(f)
+                    #print(f, repr(rule))
 
 """
 a rule
@@ -160,9 +161,22 @@ class Rule(object):
         self.func_f_in = f_in
         self.func = func
         self.f_out_regex = f_out_regex
-
+        self.__rules = None
         self.up_to_date = False
-    
+
+    def _gen_rules(self, makecall):
+        return
+        yield
+
+    def _rules(self, makecall=None):
+        if self.__rules is None:
+            self.__rules = list()
+            for r in self._gen_rules(makecall):
+                yield r
+                self.__rules.append(r)
+        else:
+            yield from self.__rules
+ 
     def rule_f_out(self):
         for f in self.func_f_out():
             if not isinstance(f,str):
@@ -170,8 +184,12 @@ class Rule(object):
             yield f
 
     def print_dep(self, makecall, indent):
-        for f in self.f_in(makecall):
-            makecall.makefile.print_dep(f, indent)
+        try:
+            for f in self.f_in(makecall):
+                makecall.makefile.print_dep(f, indent)
+        except Exception as e:
+            print("error in print_dep of {}".format(repr(self)))
+            print(e)
 
     def check(self, makecall, f_out, f_in):
 
@@ -252,8 +270,10 @@ class Rule(object):
         else:
             print('binary data unchanged. do not write.')
 
-    def rules(self):
+    def rules(self, makecall):
         yield self
+        for r in self._rules(makecall):
+            yield from r.rules(makecall)
 
 """
 a rule to which we can pass a static list of files for f_out and f_in
