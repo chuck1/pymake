@@ -35,12 +35,17 @@ class BuildError(Exception):
     def __init__(self, message):
         super(BuildError, self).__init__(message)
 
+class NoTargetError(Exception):
+    def __init__(self, message):
+        super(NoTargetError, self).__init__(message)
+
 
 class MakeCall(object):
-    def __init__(self, makefile, test=False, force=False):
+    def __init__(self, makefile, test=False, force=False, show_plot=False):
         self.makefile = makefile
         self.test = test
         self.force = force
+        self.show_plot = show_plot
     
     def make(self,t):
         self.makefile.make(t, self.test, self.force)
@@ -66,6 +71,14 @@ class Makefile(object):
                         return rule
         return None
 
+    def add_rules(self, generator):
+        """
+        code inside the generator may try to make files, so they expect the previously
+        yielded rules to be available in self.rules
+        """
+        for r in generator:
+            self.rules.append(r)
+
     def print_dep(self, target, indent=0):
         
         if isinstance(target, list):
@@ -76,7 +89,7 @@ class Makefile(object):
         if rule is not None:
             rule.print_dep(MakeCall(self), indent + 2)
 
-    def make(self, target, test=False, force=False, regex=False):
+    def make(self, target, test=False, force=False, regex=False, show_plot=False):
         """
         :param test:  follow the file dependencies and print out which files would be built
                       and a short description of why check returned True. But do not
@@ -96,7 +109,7 @@ class Makefile(object):
             raise Exception('target is None'+str(t))
 
         if isinstance(target, Rule):
-            target.make(MakeCall(self, test, force))
+            target.make(MakeCall(self, test, force, show_plot=show_plot))
             return
         
         rule = self.find_rule(target)
@@ -106,9 +119,15 @@ class Makefile(object):
             else:
                 #for r in self.rules:
                 #    print(r,list(r.f_out()))
-                raise Exception("no rules to make {}".format(target))
+                raise NoTargetError("no rules to make {}".format(target))
         else:
-            rule.make(MakeCall(self, test, force))
+            try:
+                rule.make(MakeCall(self, test, force))
+            except NoTargetError as e:
+                print('while building ', target)
+                print(' ',e)
+                raise
+
 
     def search_gen(self, target):
         if isinstance(target, list):
@@ -139,7 +158,7 @@ class Makefile(object):
             for f in f_out:
                 m = pat.match(f)
                 if m:
-                    print(f)
+                    print(rule, f)
                     #print(f, repr(rule))
 
 """
