@@ -59,16 +59,8 @@ class Makefile(object):
 
     def find_rule(self, target):
         for rule in self.rules:
-            if rule.f_out_regex:
-                for f_out in rule.f_out():
-                    pat = re.compile(f_out)
-                    m = pat.match(target)
-                    if m:
-                        return rule
-            else:
-                for f_out in rule.f_out():
-                    if target == f_out:
-                        return rule
+            if rule._test(target):
+                return rule
         return None
 
     def add_rules(self, generator):
@@ -113,6 +105,7 @@ class Makefile(object):
             return
         
         rule = self.find_rule(target)
+
         if rule is None:
             if os.path.exists(target):
                 pass
@@ -170,18 +163,23 @@ a rule does not have to build an actual file as output
 """
 class Rule(object):
 
-    def __init__(self, f_out, f_in, func, f_out_regex=False):
+    def __init__(self, f_out, f_in, func):
         """
-        :param f_out_regex: The output of f_out should be regex patterns.
-                            These patterns will be used to match targets in the find_rule
-                            function of Makefile.
         """
         self.func_f_out = f_out
         self.func_f_in = f_in
         self.func = func
-        self.f_out_regex = f_out_regex
         self.__rules = None
         self.up_to_date = False
+
+    def _test(self, f_out):
+        """
+        determine if this rule builds f_out
+        """
+        for f in self.f_out():
+            if f == f_out:
+                return rule
+        return False
 
     def _gen_rules(self, makecall):
         return
@@ -210,16 +208,23 @@ class Rule(object):
             print("error in print_dep of {}".format(repr(self)))
             print(e)
 
-    def check(self, makecall, f_out, f_in):
-
-        if None in f_in:
-            return True, "None in f_in {}".format(self)
-            raise Exception("None in f_in {}".format(self))
+    def check(self, makecall, f_out):
         
-        for f in f_in:
-            makecall.make(f)
-
         if makecall.force: return True, None
+
+        f_in = []
+        
+        for f in self.f_in(makecall):
+            f_in.append(f)
+
+            if f is None:
+                return True, "None in f_in {}".format(self)
+                raise Exception("None in f_in {}".format(self))
+
+            if callable(f):
+                makecall.make(f())
+            else:
+                makecall.make(f)
         
         for f in f_out:
             if not os.path.exists(f): return True, "{} does not exist".format(f)
@@ -242,6 +247,12 @@ class Rule(object):
 
         if self.up_to_date: return
         
+
+        f_out = list(self.rule_f_out())
+        
+        should_build, f = self.check(makecall, f_out)
+
+        
         try:
             f_in = list(self.f_in(makecall))
         except Exception as e:
@@ -249,9 +260,6 @@ class Rule(object):
             traceback.print_exc()
             raise e
 
-        f_out = list(self.rule_f_out())
-        
-        should_build, f = self.check(makecall, f_out, f_in)
 
         if should_build:
             if makecall.test:
@@ -303,6 +311,28 @@ class RuleStatic(Rule):
                 lambda: static_f_out,
                 lambda makefile: static_f_in,
                 func)
+
+class RuleRegex(Rule):
+    def __init__(self, f_out, f_in, func):
+        """
+        """
+        super(RuleRegex, self).__init__(f_out, f_in, func)
+    
+    def _test(self, target):
+        for f in self.f_out():
+            pat = re.compile(f)
+            m = pat.match(target)
+            if m:
+                return True
+        return False
+
+
+
+
+
+
+
+
 
 
 
