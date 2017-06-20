@@ -1,22 +1,21 @@
-
+import os
+import re
 import tempfile
 import unittest
 
 import pymake
 
-class RuleRegex1(pymake.RuleRegex2):
-    def __init__(self, d):
-        super(RuleRegex1, self).__init__(self.f_out, self.f_in, self.build)
-        self.d = d
+d = "build/tests"
 
-    def f_out(self):
-        yield self.d + "/(\w+)\.b"
+try:
+    os.makedirs(d)
+except: pass
+
+class RuleRegex(pymake.RuleRegex):
+    pat_out = re.compile(d + "/(\w+)\.b")
 
     def f_in(self, makecall):
-        def path(w):
-            return self.d + "/" + w + ".a"
-
-        yield path
+        yield d + "/" + self.groups[0] + ".a"
 
     def build(self, makecall, f_out, f_in):
         print(f_out)
@@ -25,15 +24,13 @@ class RuleRegex1(pymake.RuleRegex2):
 class TestRuleRegex(unittest.TestCase):
     def test(self):
         
-        with tempfile.TemporaryDirectory() as d:
-
-            m = pymake.Makefile()
+        m = pymake.Makefile()
             
-            m.rules.append(RuleRegex1(d))
+        m.rules.append(RuleRegex)
             
-            with open(d + '/hello.a', 'w') as f:
-                f.write('hello')
+        with open(d + '/hello.a', 'w') as f:
+            f.write('hello')
 
-            m.make(d + '/hello.b')
+        m.make(d + '/hello.b')
 
 

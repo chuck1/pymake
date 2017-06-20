@@ -1,0 +1,20 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "54620a4a1539e16202b175c8ad7a6286c4d942fbc044538d8a6ebcd89511885f"
+        },
+        "requires": {},
+        "sources": [
+            {
+                "url": "https://pypi.python.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {},
+    "develop": {
+        "pymongo": {
+            "version": "==3.4.0"
+        }
+    }
+}

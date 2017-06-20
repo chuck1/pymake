@@ -337,11 +337,14 @@ class RuleStatic(_Rule):
                 lambda makefile: static_f_in,
                 func)
 
-class RuleRegex2(_Rule):
+class RuleRegex(_Rule):
+    """
+    define class attributes:
+    - pat_out
+    """
+
     @classmethod
     def test(cls, target):
-        print('cls_test', cls, target)
-
         m = cls.pat_out.match(target)
         if m is None: return None
         return cls(target, m.groups())
@@ -353,36 +356,33 @@ class RuleRegex2(_Rule):
         _Rule.__init__(self)
 
 class ReqDocAttr(object):
-    def __init__(self, docpath, attrs):
-        self.docpath = docpath
+    def __init__(self, _id, attrs):
+        self._id = _id
         self.attrs = attrs
 
 class RuleDocAttr(_Rule):
     """
     requires class attributes:
-    - pat_docpath
+    - pat_id
     - attrs
     """
 
-    def __init__(self, docpath, attrs, groups):
+    def __init__(self, _id, attrs, groups):
         super(RuleDocAttr, self).__init__()
-        
-        self.docpath = docpath
+        self._id = _id
         self.attrs = attrs
-
-        print('{}.__init__({})'.format(self.__class__.__name__, groups))
 
     @classmethod
     def test(cls, req):
         if not isinstance(req, ReqDocAttr): return None
 
-        m = re.match(cls.pat_docpath, req.docpath)
+        m = cls.pat_id.match(req._id)
 
         if m is None: return None
         
         if not cls.attrs.issuperset(req.attrs): return None
 
-        return cls(req.docpath, req.attrs, m.groups())
+        return cls(req._id, req.attrs, m.groups())
         
 
 
