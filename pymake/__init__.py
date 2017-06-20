@@ -1,3 +1,6 @@
+__version__ = '0.1'
+
+import inspect
 import re
 import os
 import traceback
@@ -39,7 +42,6 @@ class NoTargetError(Exception):
     def __init__(self, message):
         super(NoTargetError, self).__init__(message)
 
-
 class MakeCall(object):
     def __init__(self, makefile, test=False, force=False, show_plot=False):
         self.makefile = makefile
@@ -59,8 +61,22 @@ class Makefile(object):
 
     def find_rule(self, target):
         for rule in self.rules:
-            if rule._test(target):
-                return rule
+            
+            try:
+                if inspect.isclass(rule):
+                    r = rule.test(target)
+                else:
+                    r = rule.test(target)
+
+            except:
+                print(type(rule))
+                print(rule)
+                print(rule.test)
+                print(target)
+                raise
+            
+            if r is not None:
+                return r
         return None
 
     def add_rules(self, generator):
@@ -110,8 +126,6 @@ class Makefile(object):
             if os.path.exists(target):
                 pass
             else:
-                #for r in self.rules:
-                #    print(r,list(r.f_out()))
                 raise NoTargetError("no rules to make {}".format(target))
         else:
             try:
@@ -131,11 +145,10 @@ class Makefile(object):
         pat = re.compile(target)
         
         for rule in self.rules:
-            f_out = list(rule.f_out())
-            for f in f_out:
-                m = pat.match(f)
-                if m:
-                    yield f
+            f_out = rule.f_out
+            m = pat.match(f_out)
+            if m:
+                yield f_out
         
     def search(self, t):
         if isinstance(t, list):
@@ -147,12 +160,15 @@ class Makefile(object):
         pat = re.compile(t)
         
         for rule in self.rules:
-            f_out = list(rule.f_out())
-            for f in f_out:
-                m = pat.match(f)
-                if m:
-                    print(rule, f)
-                    #print(f, repr(rule))
+            try:
+                f_out = rule.f_out
+            except:
+                continue
+            
+            m = pat.match(f_out)
+            if m:
+                print(rule, f_out)
+                #print(f, repr(rule))
 
 """
 a rule
@@ -161,25 +177,12 @@ func is a function that builds the output
 
 a rule does not have to build an actual file as output
 """
-class Rule(object):
-
-    def __init__(self, f_out, f_in, func):
+class _Rule(object):
+    def __init__(self):
         """
         """
-        self.func_f_out = f_out
-        self.func_f_in = f_in
-        self.func = func
         self.__rules = None
         self.up_to_date = False
-
-    def _test(self, f_out):
-        """
-        determine if this rule builds f_out
-        """
-        for f in self.f_out():
-            if f == f_out:
-                return rule
-        return False
 
     def _gen_rules(self, makecall):
         return
@@ -194,12 +197,6 @@ class Rule(object):
         else:
             yield from self.__rules
  
-    def rule_f_out(self):
-        for f in self.func_f_out():
-            if not isinstance(f,str):
-                raise TypeError('f_out generator must return str')
-            yield f
-
     def print_dep(self, makecall, indent):
         try:
             for f in self.f_in(makecall):
@@ -208,7 +205,13 @@ class Rule(object):
             print("error in print_dep of {}".format(repr(self)))
             print(e)
 
-    def check(self, makecall, f_out):
+    def output_exists(self):
+        return False
+
+    def output_mtime(self):
+        return None
+
+    def check(self, makecall):
         
         if makecall.force: return True, None
 
@@ -226,32 +229,32 @@ class Rule(object):
             else:
                 makecall.make(f)
         
-        for f in f_out:
-            if not os.path.exists(f): return True, "{} does not exist".format(f)
-        
-        mtime = [os.path.getmtime(f) for f in f_out]
+        if not self.output_exists():
+            return True, "output does not exist"
+
+        mtime = self.output_mtime()
         
         for f in f_in:
             if isinstance(f, Rule):
                 #return True, "Rule object in f_in {}".format(f)
                 continue
-
-            for t in mtime:
+            
+            if mtime is None:
+                return True, '{} does not define mtime'.format(self.__class__.__name__)
+            else:
                 if os.path.exists(f):
-                    if os.path.getmtime(f) > t:
+                    if os.path.getmtime(f) > mtime:
                         return True, f
-
+        
         return False, None
 
     def make(self, makecall):
 
         if self.up_to_date: return
         
-
-        f_out = list(self.rule_f_out())
+        #f_out = list(self.rule_f_out())
         
-        should_build, f = self.check(makecall, f_out)
-
+        should_build, f = self.check(makecall)
         
         try:
             f_in = list(self.f_in(makecall))
@@ -260,16 +263,18 @@ class Rule(object):
             traceback.print_exc()
             raise e
 
-
         if should_build:
             if makecall.test:
-                print('build',f_out,'because',f)
+                print('build',repr(self),'because',f)
             else:
-                ret = self.func(makecall, f_out, f_in)
+                ret = self.build(makecall, None, f_in)
                 if ret is None:
                     pass
                 elif ret != 0:
                     raise BuildError(str(self) + ' return code ' + str(ret))
+        else:
+            if makecall.test:
+                print('DONT build',repr(self))
 
         self.up_to_date = True
     
@@ -302,35 +307,83 @@ class Rule(object):
         for r in self._rules(makecall):
             yield from r.rules(makecall)
 
+class Rule(_Rule):
+    def __init__(self, f_out):
+        _Rule.__init__(self)
+        self.f_out = f_out
+ 
+    def output_exists(self):
+        return os.path.exists(self.f_out)
+   
+    def output_mtime(self):
+        return os.path.getmtime(self.f_out)
+
+    def test(self, target):
+        """
+        determine if this rule builds f_out
+        """
+        if self.f_out == target:
+            return self
+        
+        return None
+
 """
 a rule to which we can pass a static list of files for f_out and f_in
 """
-class RuleStatic(Rule):
+class RuleStatic(_Rule):
     def __init__(self, static_f_out, static_f_in, func):
         super(RuleStatic, self).__init__(
                 lambda: static_f_out,
                 lambda makefile: static_f_in,
                 func)
 
-class RuleRegex(Rule):
-    def __init__(self, f_out, f_in, func):
-        """
-        """
-        super(RuleRegex, self).__init__(f_out, f_in, func)
-    
-    def _test(self, target):
-        for f in self.f_out():
-            pat = re.compile(f)
-            m = pat.match(target)
-            if m:
-                return True
-        return False
+class RuleRegex2(_Rule):
+    @classmethod
+    def test(cls, target):
+        print('cls_test', cls, target)
 
+        m = cls.pat_out.match(target)
+        if m is None: return None
+        return cls(target, m.groups())
 
+    def __init__(self, target, groups):
+        self.target = target
+        self.groups = groups
 
+        _Rule.__init__(self)
 
+class ReqDocAttr(object):
+    def __init__(self, docpath, attrs):
+        self.docpath = docpath
+        self.attrs = attrs
 
+class RuleDocAttr(_Rule):
+    """
+    requires class attributes:
+    - pat_docpath
+    - attrs
+    """
 
+    def __init__(self, docpath, attrs, groups):
+        super(RuleDocAttr, self).__init__()
+        
+        self.docpath = docpath
+        self.attrs = attrs
+
+        print('{}.__init__({})'.format(self.__class__.__name__, groups))
+
+    @classmethod
+    def test(cls, req):
+        if not isinstance(req, ReqDocAttr): return None
+
+        m = re.match(cls.pat_docpath, req.docpath)
+
+        if m is None: return None
+        
+        if not cls.attrs.issuperset(req.attrs): return None
+
+        return cls(req.docpath, req.attrs, m.groups())
+        
 
 
 

@@ -1,8 +1,11 @@
-
+import re
 from setuptools import setup
 
+with open('pymake/__init__.py') as f:
+    version = re.findall("^__version__ = '(.*)'", f.read())[0]
+
 setup(name='pymake',
-        version='0.1',
+        version=version,
         description='python makefile system',
         url='http://github.com/chuck1/pymake',
         author='Charles Rymal',

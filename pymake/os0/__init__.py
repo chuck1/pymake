@@ -6,4 +6,8 @@ def makedirs(d):
         os.makedirs(d)
     except OSError:
         pass
+    except Exception as e:
+        print(e)
+        print(d)
+        raise
 

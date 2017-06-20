@@ -4,7 +4,7 @@ import unittest
 
 import pymake
 
-class RuleRegex1(pymake.RuleRegex):
+class RuleRegex1(pymake.RuleRegex2):
     def __init__(self, d):
         super(RuleRegex1, self).__init__(self.f_out, self.f_in, self.build)
         self.d = d
