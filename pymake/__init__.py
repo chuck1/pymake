@@ -124,13 +124,16 @@ class Makefile(object):
             target.make(MakeCall(self, test, force, show_plot=show_plot))
             return
         
+        # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
+        target = ReqFile(target)
+
         rule = self.find_rule(target)
 
         if rule is None:
-            if os.path.exists(target):
+            if os.path.exists(target.fn):
                 pass
             else:
-                raise NoTargetError("no rules to make {}".format(target))
+                raise NoTargetError("no rules to make {}".format(target.fn))
         else:
             try:
                 rule.make(MakeCall(self, test, force))
@@ -174,19 +177,38 @@ class Makefile(object):
                 print(rule, f_out)
                 #print(f, repr(rule))
 
-"""
-a rule
-f_out and f_in are generator functions that return a list of files
-func is a function that builds the output
-
-a rule does not have to build an actual file as output
-"""
 class _Rule(object):
+    """
+    Base class for rules.
+    You must derive from this class and overwrite the following member functions:
+
+    - ``f_in``
+    - ``build``
+    """
     def __init__(self):
         """
         """
         self.__rules = None
         self.up_to_date = False
+
+    def f_in(self, makecall):
+        """
+        This function must be defined by a derived class.
+        It must return a generator of 
+
+        :param MakeCall makecall: makecall object
+        """
+        raise NotImplementedError()
+
+    def build(self, makecall, _, f_in):
+        """
+        This function must be defined by a derived class.
+
+        :param MakeCall makecall: makecall object
+        :param _: DO NOT USE
+        :param f_in: a list of ...
+        """
+        raise NotImplementedError()
 
     def _gen_rules(self, makecall):
         return
@@ -312,6 +334,11 @@ class _Rule(object):
             yield from r.rules(makecall)
 
 class Rule(_Rule):
+    """
+    a simple file-based rule
+
+    :param str f_out: the filename that this rule builds
+    """
     def __init__(self, f_out):
         _Rule.__init__(self)
         self.f_out = f_out
@@ -322,13 +349,15 @@ class Rule(_Rule):
     def output_mtime(self):
         return os.path.getmtime(self.f_out)
 
-    def test(self, target):
+    def test(self, req):
         """
-        determine if this rule builds f_out
+        :param req: a requirement object
+
+        determine if this rule builds ``req``
         """
-        if self.f_out == target:
+        if not isinstance(req, ReqFile): return None
+        if self.f_out == req.fn:
             return self
-        
         return None
 
 """
@@ -343,21 +372,28 @@ class RuleStatic(_Rule):
 
 class RuleRegex(_Rule):
     """
-    define class attributes:
-    - pat_out
+    A rule whose output filename is defined by a regex.
+    You must derive from this class and define the follwing class attributes:
+    
+    - ``pat_out``
     """
 
     @classmethod
-    def test(cls, target):
-        m = cls.pat_out.match(target)
+    def test(cls, req):
+        if not isinstance(req, ReqFile): return None
+        m = cls.pat_out.match(req.fn)
         if m is None: return None
-        return cls(target, m.groups())
+        return cls(req.fn, m.groups())
 
     def __init__(self, target, groups):
         self.target = target
         self.groups = groups
 
         _Rule.__init__(self)
+
+class ReqFile(object):
+    def __init__(self, fn):
+        self.fn = fn
 
 class ReqDocAttr(object):
     def __init__(self, _id, attrs):
@@ -367,8 +403,9 @@ class ReqDocAttr(object):
 class RuleDocAttr(_Rule):
     """
     requires class attributes:
-    - pat_id
-    - attrs
+
+    - ``pat_id``
+    - ``attrs``
     """
 
     def __init__(self, _id, attrs, groups):
