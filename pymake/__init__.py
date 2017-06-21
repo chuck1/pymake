@@ -3,9 +3,12 @@ __version__ = '0.2a0'
 import inspect
 import re
 import os
+import logging
 import traceback
 
 import pymake.os0
+
+logger = logging.getLogger(__name__)
 
 """
 The pymake module
@@ -125,7 +128,11 @@ class Makefile(object):
             return
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
-        target = ReqFile(target)
+        
+        if isinstance(target, str):
+            target = ReqFile(target)
+        
+        assert isinstance(target, _Req)
 
         rule = self.find_rule(target)
 
@@ -138,7 +145,7 @@ class Makefile(object):
             try:
                 rule.make(MakeCall(self, test, force))
             except NoTargetError as e:
-                print('while building ', target)
+                print('while building', repr(target))
                 print(' ',e)
                 raise
 
@@ -152,7 +159,10 @@ class Makefile(object):
         pat = re.compile(target)
         
         for rule in self.rules:
+            if not isinstance(rule, pymake.Rule): continue
+
             f_out = rule.f_out
+            logger.debug('target={} f_out={}'.format(repr(target), repr(f_out)))
             m = pat.match(f_out)
             if m:
                 yield f_out
@@ -265,11 +275,19 @@ class _Rule(object):
                 #return True, "Rule object in f_in {}".format(f)
                 continue
             
+            if not isinstance(f, _Req):
+                raise Exception('{} f_in should return generator of Req objects, not {}'.format(repr(self), type(f)))
+
             if mtime is None:
                 return True, '{} does not define mtime'.format(self.__class__.__name__)
             else:
-                if os.path.exists(f):
-                    if os.path.getmtime(f) > mtime:
+                if f.output_exists():
+                    mtime_in = f.output_getmtime()
+
+                    if mtime_in is None:
+                        return True, '{} does not define mtime'.format(repr(self))
+                    
+                    if mtime_in > mtime:
                         return True, f
         
         return False, None
@@ -376,14 +394,26 @@ class RuleRegex(_Rule):
     You must derive from this class and define the follwing class attributes:
     
     - ``pat_out``
+
+    :param str target: target
+    :param list groups: regular expression groups
     """
 
     @classmethod
     def test(cls, req):
         if not isinstance(req, ReqFile): return None
+        
+        logger.debug('{} {}'.format(cls.pat_out, req.fn))
+
         m = cls.pat_out.match(req.fn)
         if m is None: return None
         return cls(req.fn, m.groups())
+
+    def output_exists(self):
+        return os.path.exists(self.target)
+
+    def output_mtime(self):
+        return os.path.getmtime(self.target)
 
     def __init__(self, target, groups):
         self.target = target
@@ -391,9 +421,23 @@ class RuleRegex(_Rule):
 
         _Rule.__init__(self)
 
-class ReqFile(object):
+    def __repr__(self):
+        return 'pymake.RuleRegex{}'.format((self.target, self.groups))
+
+class _Req(object): pass
+
+class ReqFile(_Req):
     def __init__(self, fn):
         self.fn = fn
+
+    def output_exists(self):
+        return os.path.exists(self.fn)
+
+    def output_getmtime(self):
+        return os.path.getmtime(self.fn)
+
+    def __repr__(self):
+        return 'pymake.ReqFile({})'.format(repr(self.fn))
 
 class ReqDocAttr(object):
     def __init__(self, _id, attrs):
