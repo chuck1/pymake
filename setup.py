@@ -11,7 +11,11 @@ setup(name='pymake',
         author='Charles Rymal',
         author_email='charlesrymal@gmail.com',
         license='MIT',
-        packages=['pymake'],
+        packages=[
+            'pymake',
+            'pymake.os0',
+            'pymake.tests',
+            ],
         zip_safe=False,
         )
 

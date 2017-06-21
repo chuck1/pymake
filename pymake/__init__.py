@@ -7,6 +7,10 @@ import traceback
 
 import pymake.os0
 
+"""
+The pymake module
+"""
+
 def bin_compare(b0,b1):
     for c0,c1 in zip(b,b1):
         try:
