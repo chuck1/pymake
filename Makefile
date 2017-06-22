@@ -6,6 +6,7 @@ test:
 
 doc:
 	make -C docs html
+	make -C docs coverage
 ifndef LOCAL_DOCS_DIR
 	$(error LOCAL_DOCS_DIR is undefined)
 endif

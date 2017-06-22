@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 The pymake module
 """
 
+MONGO_COLLECTION = None
+
 def bin_compare(b0,b1):
     for c0,c1 in zip(b,b1):
         try:
@@ -132,15 +134,16 @@ class Makefile(object):
         if isinstance(target, str):
             target = ReqFile(target)
         
-        assert isinstance(target, _Req)
+        if not isinstance(target, _Req):
+            raise Exception('{}'.format(repr(target)))
 
         rule = self.find_rule(target)
 
         if rule is None:
-            if os.path.exists(target.fn):
+            if target.output_exists():
                 pass
             else:
-                raise NoTargetError("no rules to make {}".format(target.fn))
+                raise NoTargetError("no rules to make {}".format(repr(target)))
         else:
             try:
                 rule.make(MakeCall(self, test, force))
@@ -424,7 +427,12 @@ class RuleRegex(_Rule):
     def __repr__(self):
         return 'pymake.RuleRegex{}'.format((self.target, self.groups))
 
-class _Req(object): pass
+class _Req(object):
+    def output_exists(self):
+        return None
+
+    def output_getmtime(self):
+        return None
 
 class ReqFile(_Req):
     def __init__(self, fn):
@@ -439,9 +447,14 @@ class ReqFile(_Req):
     def __repr__(self):
         return 'pymake.ReqFile({})'.format(repr(self.fn))
 
-class ReqDocAttr(object):
-    def __init__(self, _id, attrs):
-        self._id = _id
+class ReqDocAttr(_Req):
+    """
+    :param str _id: document id
+    :param set attrs: set of attributes
+    """
+
+    def __init__(self, id_, attrs):
+        self.id_ = id_
         self.attrs = attrs
 
 class RuleDocAttr(_Rule):
@@ -450,8 +463,30 @@ class RuleDocAttr(_Rule):
 
     - ``pat_id``
     - ``attrs``
-    """
 
+    Example:
+    
+    .. testcode::
+        
+        from pymake import Makefile, RuleDocAttr, ReqDocAttr
+        from pymake.mongo import Collection, DocumentContext
+
+        class RuleMongo(RuleDocAttr):
+            pat_id = re.compile('doc1')
+            attrs = set(('a', 'b', 'c'))
+        
+            def build(self, makecall, f_out, f_in):
+                with DocumentContext(makecall.makefile.coll.collection, (self._id,)) as (doc,):
+                    doc['a'] = 1
+                    doc['b'] = 2
+                    doc['c'] = 3
+                        
+            def f_in(self, makecall):
+                yield ReqDocAttr('doc1', {})
+    
+        m = Makefile()
+        m.coll = Collection(('localhost', 27017), 'db_name', 'collection_name')
+    """
     def __init__(self, _id, attrs, groups):
         super(RuleDocAttr, self).__init__()
         self._id = _id
@@ -461,13 +496,15 @@ class RuleDocAttr(_Rule):
     def test(cls, req):
         if not isinstance(req, ReqDocAttr): return None
 
-        m = cls.pat_id.match(req._id)
+        m = cls.pat_id.match(req.id_)
+
+        print(cls.pat_id, req.id_)
 
         if m is None: return None
         
         if not cls.attrs.issuperset(req.attrs): return None
 
-        return cls(req._id, req.attrs, m.groups())
+        return cls(req.id_, req.attrs, m.groups())
         
 
 

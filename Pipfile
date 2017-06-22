@@ -4,3 +4,6 @@ url = "https://pypi.python.org/simple"
 
 [dev-packages]
 pymongo = "*"
+
+[packages]
+pkgtool = "*"

@@ -1,0 +1,17 @@
+name = 'pymake'
+description = 'python makefile system'
+url = 'http://github.com/chuck1/pymake'
+author = 'Charles Rymal'
+author_email = 'charlesrymal@gmail.com'
+license = 'MIT'
+
+packages = [
+	'pymake',
+	'pymake.os0',
+	'pymake.tests',
+]
+
+scripts = []
+
+[packages_data]
+
