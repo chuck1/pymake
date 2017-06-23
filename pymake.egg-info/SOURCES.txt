@@ -1,0 +1,14 @@
+README.rst
+setup.py
+pymake/__init__.py
+pymake/mongo.py
+pymake.egg-info/PKG-INFO
+pymake.egg-info/SOURCES.txt
+pymake.egg-info/dependency_links.txt
+pymake.egg-info/not-zip-safe
+pymake.egg-info/top_level.txt
+pymake/os0/__init__.py
+pymake/tests/__init__.py
+pymake/tests/rule_doc_attr.py
+pymake/tests/rule_mongo.py
+pymake/tests/rule_regex.py

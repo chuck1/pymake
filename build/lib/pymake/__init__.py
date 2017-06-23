@@ -70,8 +70,13 @@ class Makefile(object):
 
     def find_rule(self, target):
         for rule in self.rules:
+            
             try:
-                r = rule.test(target)
+                if inspect.isclass(rule):
+                    r = rule.test(target)
+                else:
+                    r = rule.test(target)
+
             except:
                 print(type(rule))
                 print(rule)
@@ -80,7 +85,8 @@ class Makefile(object):
                 raise
             
             if r is not None:
-                yield r
+                return r
+        return None
 
     def add_rules(self, generator):
         """
@@ -96,8 +102,8 @@ class Makefile(object):
             target = target[0]
 
         print(" " * indent + str(target))
-        
-        for rule in self.find_rule(target):
+        rule = self.find_rule(target)
+        if rule is not None:
             rule.print_dep(MakeCall(self), indent + 2)
 
     def make(self, target, test=False, force=False, regex=False, show_plot=False):
@@ -131,7 +137,14 @@ class Makefile(object):
         if not isinstance(target, _Req):
             raise Exception('{}'.format(repr(target)))
 
-        for rule in self.find_rule(target):
+        rule = self.find_rule(target)
+
+        if rule is None:
+            if target.output_exists():
+                pass
+            else:
+                raise NoTargetError("no rules to make {}".format(repr(target)))
+        else:
             try:
                 rule.make(MakeCall(self, test, force))
             except NoTargetError as e:
@@ -139,13 +152,6 @@ class Makefile(object):
                 print(' ',e)
                 raise
 
-            if rule.complete():
-                break
-        else:
-            if target.output_exists():
-                pass
-            else:
-                raise NoTargetError("no rules to make {}".format(repr(target)))
 
     def search_gen(self, target):
         if isinstance(target, list):
@@ -216,8 +222,7 @@ class _Rule(object):
         :param f_in: a list of ...
         """
         raise NotImplementedError()
-    def complete(self):
-        return True
+
     def _gen_rules(self, makecall):
         return
         yield
@@ -450,8 +455,7 @@ class ReqDocAttr(_Req):
 
     def __init__(self, id_, attrs):
         self.id_ = id_
-        self.attrs = set(attrs)
-        self.attrs_remain = set(attrs)
+        self.attrs = attrs
 
 class RuleDocAttr(_Rule):
     """
@@ -483,12 +487,11 @@ class RuleDocAttr(_Rule):
         m = Makefile()
         m.coll = Collection(('localhost', 27017), 'db_name', 'collection_name')
     """
-    def __init__(self, req, groups):
+    def __init__(self, _id, attrs, groups):
         super(RuleDocAttr, self).__init__()
-        self.id_ = req.id_
-        self.req = req
-    def complete(self):
-        return not bool(self.req.attrs_remain)
+        self._id = _id
+        self.attrs = attrs
+
     @classmethod
     def test(cls, req):
         if not isinstance(req, ReqDocAttr): return None
@@ -499,14 +502,11 @@ class RuleDocAttr(_Rule):
 
         if m is None: return None
         
-        if not (cls.attrs & req.attrs_remain): return None
-        
-        print('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
-        print('rule provides {}'.format(cls.attrs))
-        req.attrs_remain = req.attrs_remain - cls.attrs
-        print('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
+        if not cls.attrs.issuperset(req.attrs): return None
 
-        return cls(req, m.groups())
+        return cls(req.id_, req.attrs, m.groups())
+        
+
 
 
 
