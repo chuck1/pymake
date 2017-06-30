@@ -495,16 +495,16 @@ class RuleDocAttr(_Rule):
 
         m = cls.pat_id.match(req.id_)
 
-        print(cls.pat_id, req.id_)
+        #print(cls.pat_id, req.id_)
 
         if m is None: return None
         
         if not (cls.attrs & req.attrs_remain): return None
         
-        print('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
-        print('rule provides {}'.format(cls.attrs))
+        #print('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
+        #print('rule provides {}'.format(cls.attrs))
         req.attrs_remain = req.attrs_remain - cls.attrs
-        print('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
+        #print('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
 
         return cls(req, m.groups())
 
