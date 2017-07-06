@@ -9,6 +9,12 @@ class Collection(object):
         self.client = pymongo.MongoClient(*address)
         self.collection = self.client[db][coll]
 
+    def insert_one(self, doc):
+        self.collection.insert_one(doc)
+
+    def find_one(self, doc):
+        self.collection.find_one(doc)
+
     def insert_one_if_not_exists(self, _id):
         try:
             self.collection.insert_one({'_id': _id})
