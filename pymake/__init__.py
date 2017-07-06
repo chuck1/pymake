@@ -430,13 +430,24 @@ class _Req(object):
         return None
 
 class ReqFile(_Req):
+    """
+    simple file requirement
+
+    :param fn: relative path to file
+    """
     def __init__(self, fn):
         self.fn = fn
 
     def output_exists(self):
+        """
+        check if the file exists
+        """
         return os.path.exists(self.fn)
 
     def output_getmtime(self):
+        """
+        return the mtime of the file
+        """
         return os.path.getmtime(self.fn)
 
     def __repr__(self):
