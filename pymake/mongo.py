@@ -11,6 +11,9 @@ class Collection(object):
             self.collection.insert_one({'_id': _id})
         except pymongo.errors.DuplicateKeyError: pass
 
+    def doc_context(self, ids):
+        return DocumentContext(self.collection, ids)
+
 class DocumentContext(object):
 
     class Doc(object):

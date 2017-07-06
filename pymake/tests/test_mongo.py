@@ -13,7 +13,8 @@ class R0(pymake.RuleDocAttr):
     def build(self, makecall, f_out, f_in):
         makecall.makefile.coll.insert_one_if_not_exists(self.id_)
         
-        with pymake.mongo.DocumentContext(makecall.makefile.coll.collection, (self.id_,)) as (doc,):
+        #with pymake.mongo.DocumentContext(makecall.makefile.coll.collection, (self.id_,)) as (doc,):
+        with makecall.makefile.coll.doc_context((self.id_,)) as (doc,):
             doc['a'] = 1
 
     def f_in(self, makecall):
