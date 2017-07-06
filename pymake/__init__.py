@@ -455,7 +455,7 @@ class ReqFile(_Req):
 
 class ReqDocAttr(_Req):
     """
-    :param str _id: document id
+    :param str id_: document id
     :param set attrs: set of attributes
     """
 
@@ -463,6 +463,9 @@ class ReqDocAttr(_Req):
         self.id_ = id_
         self.attrs = set(attrs)
         self.attrs_remain = set(attrs)
+
+    def __repr__(self):
+        return '<{}.{} id_={} attrs={}>'.format(self.__class__.__module__, self.__class__.__name__, self.id_, self.attrs)
 
 class RuleDocAttr(_Rule):
     """
