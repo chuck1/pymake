@@ -15,7 +15,7 @@ class RuleCSource(pymake.Rule):
             os.makedirs(os.path.dirname(self.f_out))
         except: pass
 
-        subprocess.call(['gcc'] + [f_in[0].fn] + ['-o', f_out])
+        subprocess.call(['gcc', f_in[0].fn, '-o', self.f_out])
 
 def test():
     
