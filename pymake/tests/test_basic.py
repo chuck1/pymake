@@ -19,6 +19,10 @@ class RuleB(pymake.Rule):
     def __init__(self):
         super(RuleB, self).__init__('build/b')
 
+    def f_in(self, makecall):
+        return
+        yield
+
     def build(self, makecall, _, f_in):
         touch(self.f_out)
 
