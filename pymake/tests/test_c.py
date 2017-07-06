@@ -8,14 +8,14 @@ class RuleCSource(pymake.Rule):
         super(RuleCSource, self).__init__(f_out)
 
     def f_in(self, makecall):
-        yield pymake.ReqFile('build/main.cpp')
+        yield pymake.ReqFile('build/main.c')
 
     def build(self, makecall, _, f_in):
         try:
             os.makedirs(os.path.dirname(self.f_out))
         except: pass
 
-        subprocess.call(['g++'] + f_in[0].fn + ['-o', f_out])
+        subprocess.call(['gcc'] + f_in[0].fn + ['-o', f_out])
 
 def test():
     
