@@ -4,7 +4,7 @@ url = "https://pypi.python.org/simple"
 [packages]
 pkgtool = "*"
 [dev-packages]
+pymongo = "*"
 pytest-cov = "*"
 termcolor = "*"
 "-e ." = "*"
-pymongo = "*"
