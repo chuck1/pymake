@@ -7,7 +7,7 @@ class A(pymake.Rule):
         super(A,self).__init__('build/A.txt')
         self.b = b
 
-    def f_in(self, makefile, test, force):
+    def f_in(self, makecall):
         yield self.b
 
     def build(self, makecall, _, f_in):
@@ -21,7 +21,7 @@ class B(pymake.Rule):
     def f_in(self, makecall):
         yield pymake.ReqFile('build/C.txt')
 
-    def build(self, f_out, f_in):
+    def build(self, makecall, _, f_in):
         print(termcolor.colored('build B','yellow'))
 
 def test():
