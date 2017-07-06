@@ -7,7 +7,7 @@ docs = {'doc1': {}}
 
 class R0(pymake.RuleDocAttr):
     pat_id = re.compile('doc1')
-    attrs = set()
+    attrs = set(('a',))
 
     def f_in(self, makecall):
         return 
@@ -20,10 +20,10 @@ class R0(pymake.RuleDocAttr):
 
 class R1(pymake.RuleDocAttr):
     pat_id = re.compile('doc1')
-    attrs = set(('a', 'b', 'c'))
+    attrs = set(('b', 'c'))
 
     def f_in(self, makecall):
-        yield pymake.ReqDocAttr('doc1', {})
+        yield pymake.ReqDocAttr('doc1', set(('a',)))
 
     def build(self, makecall, f_out, f_in):
         print('R1 build')
@@ -42,7 +42,7 @@ class TestDocAttr(unittest.TestCase):
         m.rules.append(R0)
         m.rules.append(R1)
        
-        m.make(pymake.ReqDocAttr('doc1', {'a'}))
+        m.make(pymake.ReqDocAttr('doc1', set(('a',))))
 
         print(docs)
 
