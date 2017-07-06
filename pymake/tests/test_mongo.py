@@ -45,10 +45,9 @@ class TestMongo(unittest.TestCase):
        
         m.make(pymake.ReqDocAttr('doc1', set(('a','b','c'))))
 
-        doc = m.coll.collection.find_one({'_id':'doc1'})
-
-        assert doc['a'] == 1
-        assert doc['b'] == 2
-        assert doc['c'] == 3
+        with m.coll.doc_context(('doc1',)) as (doc,):
+            assert doc['a'] == 1
+            assert doc['b'] == 2
+            assert doc['c'] == 3
 
 
