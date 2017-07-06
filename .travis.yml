@@ -17,4 +17,5 @@ script:
 after_success:
 - codecov
 
-
+services:
+- mongodb
