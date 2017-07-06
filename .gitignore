@@ -1,5 +1,6 @@
 *.pyc
 _build/
+build/
 dist/
 .coverage*
 .cache*

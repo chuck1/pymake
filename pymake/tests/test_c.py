@@ -23,7 +23,7 @@ def test():
         os.makedirs('build')
     except: pass
 
-    with open('build/main.c') as f:
+    with open('build/main.c', 'w') as f:
         f.write('int main() { return 0; }')
     
     m = pymake.Makefile()
