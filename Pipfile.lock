@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "77729ef286e70f75db78bb0aa609c48877d613ea1172837535a1da41ebb23e23"
+            "sha256": "17b43c6803428740efd35a66ddb3945dc0f37d944c6d221c20e2d0f3a6defb77"
         },
         "requires": {},
         "sources": [
@@ -17,6 +17,9 @@
         },
         "py": {
             "version": "==1.4.34"
+        },
+        "pymongo": {
+            "version": "==3.4.0"
         },
         "pytest": {
             "version": "==3.1.2"
