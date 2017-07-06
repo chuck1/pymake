@@ -16,7 +16,7 @@ class R0(pymake.RuleDocAttr):
     def build(self, makecall, f_out, f_in):
         print('R0 build')
 
-        docs[self._id] = {}
+        docs[self.id_] = {'a': 1}
 
 class R1(pymake.RuleDocAttr):
     pat_id = re.compile('doc1')
@@ -28,9 +28,8 @@ class R1(pymake.RuleDocAttr):
     def build(self, makecall, f_out, f_in):
         print('R1 build')
 
-        doc = docs[self._id]
+        doc = docs[self.id_]
 
-        doc['a'] = 1
         doc['b'] = 2
         doc['c'] = 3
 
