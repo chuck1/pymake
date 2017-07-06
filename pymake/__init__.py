@@ -498,8 +498,13 @@ class RuleDocAttr(_Rule):
         super(RuleDocAttr, self).__init__()
         self.id_ = req.id_
         self.req = req
+
     def complete(self):
         return not bool(self.req.attrs_remain)
+
+    def __repr__(self):
+        return '<{}.{} pat_id={} attrs={}>'.format(self.__class__.__module__, self.__class__.__name__, self.pat_id, self.attrs)
+
     @classmethod
     def test(cls, req):
         if not isinstance(req, ReqDocAttr): return None
