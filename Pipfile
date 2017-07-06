@@ -2,12 +2,12 @@
 verify_ssl = true
 url = "https://pypi.python.org/simple"
 
-[packages]
-pkgtool = "*"
-pymongo = "*"
-
 [dev-packages]
 pymongo = "*"
 pytest-cov = "*"
 termcolor = "*"
 "-e ." = "*"
+
+[packages]
+pkgtool = "*"
+pymongo = "*"
