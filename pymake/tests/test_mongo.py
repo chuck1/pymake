@@ -8,11 +8,13 @@ import pymake.mongo
 
 class R0(pymake.RuleDocAttr):
     pat_id = re.compile('doc1')
-    attrs = set()
+    attrs = set(('a',))
 
     def build(self, makecall, f_out, f_in):
-
-        makecall.makefile.coll.insert_one_if_not_exists(self._id)
+        makecall.makefile.coll.insert_one_if_not_exists(self.id_)
+        
+        with pymake.mongo.DocumentContext(makecall.makefile.coll.collection, (self.id_,)) as (doc,):
+            doc['a'] = 1
 
     def f_in(self, makecall):
         return 
@@ -23,13 +25,12 @@ class R1(pymake.RuleDocAttr):
     attrs = set(('a', 'b', 'c'))
 
     def build(self, makecall, f_out, f_in):
-        with pymake.mongo.DocumentContext(makecall.makefile.coll.collection, (self._id,)) as (doc,):
-            doc['a'] = 1
+        with pymake.mongo.DocumentContext(makecall.makefile.coll.collection, (self.id_,)) as (doc,):
             doc['b'] = 2
             doc['c'] = 3
                 
     def f_in(self, makecall):
-        yield pymake.ReqDocAttr('doc1', {})
+        yield pymake.ReqDocAttr('doc1', set(('a',)))
 
 class TestMongo(unittest.TestCase):
     def test(self):
@@ -41,12 +42,12 @@ class TestMongo(unittest.TestCase):
         m.rules.append(R0)
         m.rules.append(R1)
        
-        m.make(pymake.ReqDocAttr('doc1', set(('a',))))
+        m.make(pymake.ReqDocAttr('doc1', set(('a','b','c'))))
 
         doc = m.coll.collection.find_one({'_id':'doc1'})
 
-        self.assertEqual(doc['a'], 1)
-        self.assertEqual(doc['b'], 2)
-        self.assertEqual(doc['c'], 3)
+        assert doc['a'] == 1
+        assert doc['b'] == 2
+        assert doc['c'] == 3
 
 

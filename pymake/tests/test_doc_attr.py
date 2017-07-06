@@ -33,17 +33,16 @@ class R1(pymake.RuleDocAttr):
         doc['b'] = 2
         doc['c'] = 3
 
-class TestDocAttr(unittest.TestCase):
-    def test(self):
-        
-        m = pymake.Makefile()
+def test():
+    
+    m = pymake.Makefile()
 
-        m.rules.append(R0)
-        m.rules.append(R1)
-       
-        m.make(pymake.ReqDocAttr('doc1', set(('a',))))
+    m.rules.append(R0)
+    m.rules.append(R1)
+   
+    m.make(pymake.ReqDocAttr('doc1', set(('a',))))
 
-        print(docs)
+    print(docs)
 
 
 

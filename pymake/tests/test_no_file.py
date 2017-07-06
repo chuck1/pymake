@@ -25,7 +25,10 @@ class B(pymake.Rule):
         print(termcolor.colored('build B','yellow'))
 
 def test():
-    
+
+    with open('build/C.txt', 'w') as f:
+        f.write('')
+
     b = B()
     a = A(b)
 
