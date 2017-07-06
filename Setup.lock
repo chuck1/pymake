@@ -1,0 +1,15 @@
+{
+    "author": "Charles Rymal",
+    "url": "http://github.com/chuck1/pymake",
+    "author_email": "charlesrymal@gmail.com",
+    "name": "pymake",
+    "packages": [
+        "pymake",
+        "pymake.os0",
+        "pymake.tests"
+    ],
+    "description": "python makefile system",
+    "license": "MIT",
+    "packages_data": {},
+    "scripts": []
+}
