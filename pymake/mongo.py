@@ -23,29 +23,31 @@ class Collection(object):
     def doc_context(self, ids):
         return DocumentContext(self.collection, ids)
 
-class DocumentContext(object):
+class Doc(object):
+    def __init__(self, context, doc):
+        self.context = context
+        self.doc = doc
 
-    class Doc(object):
-        def __init__(self, context, doc):
-            self.context = context
-            self.doc = doc
-
-        def __getitem__(self, k):
-            return self.doc[k]['_value']
-        
-        def __setitem__(self, k, v):
-            if k in self.doc:
-                s = self.doc[k]
-                s['_value'] = v
-            else:
-                s = {'_value': v, '_meta': {}}
-                self.doc[k] = s
-
-            s['_meta']['modified'] = time.time()
-            
-            self.context.update(self.doc['_id'], {'$set': {k: s}})
-
+    def __getitem__(self, k):
+        return self.doc[k]['_value']
+    
+    def __setitem__(self, k, v):
+        if k in self.doc:
+            s = self.doc[k]
+            s['_value'] = v
+        else:
+            s = {'_value': v, '_meta': {}}
             self.doc[k] = s
+
+        s['_meta']['modified'] = time.time()
+        
+        u = {'$set': {k: s}}
+        print('update {} {}'.format(repr(self.doc['_id']), repr(u)))
+        self.context.update(self.doc['_id'], u)
+
+        self.doc[k] = s
+
+class DocumentContext(object):
 
     def __init__(self, collection, _ids):
         self.collection = collection
@@ -59,13 +61,20 @@ class DocumentContext(object):
         self.empty = False
 
     def __enter__(self):
-        docs = tuple(DocumentContext.Doc(self, self.collection.find_one({'_id':_id})) for _id in self._ids)
+        docs = tuple(Doc(self, self.collection.find_one({'_id':_id})) for _id in self._ids)
         return docs
 
     def __exit__(self, exc_type, exc_value, tb):
         if exc_type is None:
             if not self.empty:
                 self.bulk.execute()
+
+class RuleMongo(pymake.RuleDocAttr):
+    def doc_context(self):
+        return self._makefile.mongo_collection.doc_context((self.id_,))
+
+
+
 
 
 
