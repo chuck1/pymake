@@ -8,6 +8,7 @@ import logging
 import traceback
 
 from .colors import *
+from .exceptions import *
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,12 @@ class ReqDocAttr(Req):
         self.id_ = id_
         self.attrs = set(attrs)
         self.attrs_remain = set(attrs)
+        self._attrs_remain = set(attrs)
 
     def __repr__(self):
         return '<{}.{} id_={} attrs={}>'.format(self.__class__.__module__, self.__class__.__name__, self.id_, self.attrs)
+
+class NoMeta(Exception): pass
 
 def _get_meta1(o, l, name):
     """
@@ -64,6 +68,12 @@ def _get_meta1(o, l, name):
     """
     if l:
         return _get_meta1(getattr(o, l.pop(0)), l, name)
+
+    if not hasattr(o, '_meta_attr'):
+        red('_get_meta1: {} has no _meta_attr'.format(o))
+    
+    if name not in o._meta_attr:
+        raise NoMeta("no meta for {} in {}".format(repr(name), repr(o)))
 
     return o._meta_attr[name]
 
@@ -78,14 +88,14 @@ def _set_meta1(o, l, name, m):
 
     o._meta_attr[name] = m
 
-def _get_meta(o, a):
+def get_meta(o, a):
     l = a.split('.')
-    red('attr split {}'.format(l))
+    #red('attr split {}'.format(l))
     return _get_meta1(o, l, l.pop())
 
-def _set_meta(o, a, m):
+def set_meta(o, a, m):
     l = a.split('.')
-    red('attr split {}'.format(l))
+    #red('attr split {}'.format(l))
     return _set_meta1(o, l, l.pop(), m)
 
 class ReqFileAttr(Req):
@@ -98,10 +108,14 @@ class ReqFileAttr(Req):
         self.id_ = id_
         self.attrs = set(attrs)
         self.attrs_remain = set(attrs)
+        self._attrs_remain = set(attrs)
 
     def __repr__(self):
         return '<{}.{} id_={} attrs={}>'.format(self.__class__.__module__, self.__class__.__name__, self.id_, self.attrs)
-    
+
+    def reset_remain(self):
+        self.attrs_remain = set(self._attrs_remain)
+
     @property
     def obj(self):
         if not hasattr(self, '_obj'):
@@ -114,18 +128,17 @@ class ReqFileAttr(Req):
         check if the file exists
         """
         if not os.path.exists(self.id_):
-            red('does not exist: {}'.format(self.id_))
+            #red('does not exist: {}'.format(self.id_))
             return False
 
         for a in self.attrs:
             try:
-                m = _get_meta(self.obj, a)
+                m = get_meta(self.obj, a)
                 if not isinstance(m, dict):
-                    _set_meta(self.obj, a, {'mtime':0})
-                    red('meta for {} = {}'.format(a, m))
-            except Exception as e:
-                red(str(e))
-                return False
+                    set_meta(self.obj, a, {'mtime':0})
+                    #red('meta for {} = {}'.format(a, m))
+            except NoMeta:
+                raise OutputNotExists("No meta data for {} in {}".format(repr(a), repr(self.obj)))
         
         return True
 
@@ -136,13 +149,19 @@ class ReqFileAttr(Req):
         mtimes = []
 
         for a in self.attrs:
-            m = _get_meta(self.obj, a)
-            red('meta for {} = {}'.format(a, m))
+            try:
+                m = get_meta(self.obj, a)
+            except Exception as e:
+                red("error in output_mtime of {}".format(repr(self)))
+                red(repr(e))
+                raise
+
+            #red('meta for {} = {}'.format(a, m))
             mtimes.append(m['mtime'])
 
         ret = max(mtimes)
 
-        red('{} mtimes is {}...{}'.format(self, mtimes, ret))
+        #red('{} mtimes is {}...{}'.format(self, mtimes, ret))
 
         return ret
 

@@ -8,9 +8,11 @@ import logging
 import pickle
 import time
 import traceback
+from cached_property import cached_property
 
 import pymake
 from .req import *
+from .exceptions import *
 from .colors import *
 
 logger = logging.getLogger(__name__)
@@ -77,6 +79,7 @@ class _Rule(object):
         return None
 
     def check(self, makecall):
+        #magenta("check {}".format(self))
         
         if makecall.force: return True, None
 
@@ -94,8 +97,13 @@ class _Rule(object):
             else:
                 makecall.make(f)
         
-        if not self.output_exists():
-            return True, "output does not exist"
+        try:
+            b = self.output_exists()
+        except OutputNotExists as e:
+            return True, str(e)
+        else:
+            if not b:
+                return True, "output does not exist"
 
         mtime = self.output_mtime()
         
@@ -110,18 +118,26 @@ class _Rule(object):
             if mtime is None:
                 return True, '{} does not define mtime'.format(self.__class__.__name__)
             else:
-                if f.output_exists():
-                    mtime_in = f.output_mtime()
+                try:
+                    b = f.output_exists()
+                except OutputNotExists: pass
+                else:
+                    if b:
+                        mtime_in = f.output_mtime()
 
-                    if mtime_in is None:
-                        return True, 'input file {} does not define mtime'.format(repr(self))
+                        if mtime_in is None:
+                            return True, 'input file {} does not define mtime'.format(repr(self))
                     
-                    if mtime_in > mtime:
-                        return True, 'mtime of {} is greater'.format(f)
+                        if mtime_in > mtime:
+                            return True, 'mtime of {} is greater'.format(f)
+                        else:
+                            #green('up-to-date compared to {}'.format(f))
+                            pass
         
         return False, None
 
     def make(self, makecall):
+        #magenta("make {}".format(self))
 
         if self.up_to_date: return
         
@@ -138,7 +154,7 @@ class _Rule(object):
 
         if should_build:
             if makecall.test:
-                print('build',repr(self),'because',f)
+                blue('build {} because {}'.format(repr(self), f))
             else:
                 ret = self.build(makecall, None, f_in)
                 if ret is None:
@@ -304,16 +320,16 @@ class RuleDocAttr(_Rule):
 
         if m is None: return None
         
-        green('id mathces')
+        #green('id mathces')
 
         if not (cls.attrs & req.attrs_remain): return None
         
-        green('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
-        green('rule provides {}'.format(cls.attrs))
+        #green('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
+        #green('rule provides {}'.format(cls.attrs))
         
         req.attrs_remain = req.attrs_remain - cls.attrs
 
-        green('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
+        #green('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
 
         return cls(req, m.groups())
 
@@ -347,14 +363,61 @@ class RuleFileAttr(_Rule):
         self.req = req
         self.groups = groups
  
+    #def output_exists(self):
+    #    return self.req.output_exists()
+
     def output_exists(self):
-        return self.req.output_exists()
+        """
+        check if the file exists
+        """
+        if not os.path.exists(self.req.id_):
+            #red('does not exist: {}'.format(self.id_))
+            return False
+
+        for a in self.attrs:
+            try:
+                m = get_meta(self.obj, a)
+                if not isinstance(m, dict):
+                    set_meta(self.obj, a, {'mtime':0})
+                    #red('meta for {} = {}'.format(a, m))
+            except NoMeta:
+                raise OutputNotExists("No meta data for {} in {}".format(repr(a), repr(self.obj)))
+        
+        return True
+
+    @cached_property
+    def obj(self):
+        with open(self.req.id_, 'rb') as f:
+            return pickle.load(f)
+
+    #def output_mtime(self):
+    #    #red('req={}'.format(self.req))
+    #    t = self.req.output_mtime()
+    #    #red('return {}'.format(t))
+    #    return t
 
     def output_mtime(self):
-        red('req={}'.format(self.req))
-        t = self.req.output_mtime()
-        red('return {}'.format(t))
-        return t
+        """
+        return the mtime of the file
+        """
+        mtimes = []
+
+        for a in self.attrs:
+            try:
+                m = get_meta(self.obj, a)
+            except Exception as e:
+                red("error in output_mtime of {}".format(repr(self)))
+                red(repr(e))
+                raise
+
+            #red('meta for {} = {}'.format(a, m))
+            mtimes.append(m['mtime'])
+
+        ret = max(mtimes)
+
+        #red('{} mtimes is {}...{}'.format(self, mtimes, ret))
+
+        return ret
    
     def complete(self):
         return not bool(self.req.attrs_remain)
@@ -372,16 +435,16 @@ class RuleFileAttr(_Rule):
             yellow('{} and {} did not match'.format(req.id_, cls.pat_out))
             return None
         
-        green('id mathces')
+        #green('id mathces')
 
         if not (cls.attrs & req.attrs_remain): return None
         
-        green('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
-        green('rule provides {}'.format(cls.attrs))
+        #green('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
+        #green('rule provides {}'.format(cls.attrs))
         
         req.attrs_remain = req.attrs_remain - cls.attrs
 
-        green('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
+        #green('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
 
         return cls(req, m.groups())
     
@@ -411,16 +474,19 @@ class Proxy(object):
         o = object.__getattribute__(self, '_o')
         setattr(o, name, value)
         
-        if not hasattr(o, '_meta_attr'): o._meta_attr = {}
-
-        if not isinstance(o._meta_attr[name], dict):
-            o._meta_attr[name] = {}
+        if not hasattr(o, '_meta_attr'):
+            o._meta_attr = {name:{}}
+        else:
+            if name not in o._meta_attr:
+                o._meta_attr[name] = {}
+            elif not isinstance(o._meta_attr[name], dict):
+                o._meta_attr[name] = {}
 
         m = o._meta_attr[name]
         
         m['mtime'] = time.time()
 
-        blue("setting {} {}".format(repr(o), repr(name)))
+        #blue("setting {} {}".format(repr(o), repr(name)))
 
 class FileContext:
     def __init__(self, rule, factory=None):
@@ -441,7 +507,7 @@ class FileContext:
     def __exit__(self, exc_type, exc, tb):
         
         if exc_type:
-            red("error in FileContext {}".format(exc))
+            red("error in FileContext {} {}".format(exc_type, exc))
             return False
 
         b = pickle.dumps(self.o)

@@ -5,10 +5,14 @@ import os
 import logging
 import traceback
 from pprint import pprint
+import sys
+
+import numpy
 
 from .req import *
 from .rules import *
 from .util import *
+from .colors import *
 
 logger = logging.getLogger(__name__)
 
@@ -101,8 +105,39 @@ class Makefile(object):
         
         if not isinstance(target, Req):
             raise Exception('{}'.format(repr(target)))
+        
+        rules = list(self.find_rule(target))
 
-        for rule in self.find_rule(target):
+        if not rules:
+            if target.output_exists():
+                return
+            else:
+                raise NoTargetError("no rules to make {}".format(repr(target)))
+       
+        if len(rules) > 1:
+            #green("multiple matches")
+            for r in rules:
+                try:
+                    #green("  {}".format(r.groups))
+                    pass
+                except: pass
+            
+            if all([isinstance(r, RuleRegex) for r in rules]):
+                l = [sum(len(g) for g in r.groups) for r in rules]
+                #green(l)
+                i = numpy.argsort(l)
+                #green(i)
+                rules = numpy.array(rules)[i]
+                #green(rules)
+
+        else:
+            #green('exactly one matching rule found')
+            pass
+       
+        if isinstance(target, ReqFileAttr):
+            target.reset_remain()
+
+        for rule in rules:
             try:
                 rule.make(MakeCall(self, test, force))
             except NoTargetError as e:
@@ -112,11 +147,7 @@ class Makefile(object):
 
             if rule.complete():
                 break
-        else:
-            if target.output_exists():
-                pass
-            else:
-                raise NoTargetError("no rules to make {}".format(repr(target)))
+        
 
     def search_gen(self, target):
         if isinstance(target, list):
