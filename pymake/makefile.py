@@ -17,6 +17,9 @@ from .colors import *
 logger = logging.getLogger(__name__)
 
 class Makefile(object):
+
+    _cache_req = []
+
     """
     manages the building of targets
     """
@@ -61,6 +64,12 @@ class Makefile(object):
         for rule in self.find_rule(target):
             rule.print_dep(MakeCall(self), indent + 2)
 
+    def print_history(self, history):
+        p = ""
+        for h in history:
+            magenta(p + repr(h))
+            p = p + "  "
+
     def make(self, **kwargs):
         """
         :param test:  follow the file dependencies and print out which files would be built
@@ -73,6 +82,8 @@ class Makefile(object):
         force=kwargs.get('force', False)
         regex=kwargs.get('regex', False)
         show_plot=kwargs.get('show_plot', False)
+        history = kwargs.get('history', [])
+
 
         if regex:
             print('regex')
@@ -90,8 +101,14 @@ class Makefile(object):
         if target is None:
             raise Exception('target is None'+str(t))
 
+        magenta(target)
+        
+        #history.append(target)
+
+        #self.print_history(history)
+
         if isinstance(target, Rule):
-            target.make(MakeCall(self, test, force, show_plot=show_plot))
+            target.make(MakeCall(self, test, force, show_plot=show_plot, history=list(history)))
             return
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
@@ -105,7 +122,13 @@ class Makefile(object):
         
         if not isinstance(target, Req):
             raise Exception('{}'.format(repr(target)))
-        
+
+        if target in self._cache_req:
+            print('{} is in cache'.format(target))
+            return
+       
+        self._cache_req.append(target)
+
         rules = list(self.find_rule(target))
 
         if not rules:
@@ -139,7 +162,7 @@ class Makefile(object):
 
         for rule in rules:
             try:
-                rule.make(MakeCall(self, test, force))
+                rule.make(MakeCall(self, test, force, history=list(history)))
             except NoTargetError as e:
                 print('while building', repr(target))
                 print(' ',e)

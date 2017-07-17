@@ -28,6 +28,12 @@ class ReqFile(Req):
     def __init__(self, fn):
         self.fn = fn
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.fn == other.fn
+
     def output_exists(self):
         """
         check if the file exists

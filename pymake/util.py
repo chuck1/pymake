@@ -58,15 +58,15 @@ class NoTargetError(Exception):
         super(NoTargetError, self).__init__(message)
 
 class MakeCall(object):
-    def __init__(self, makefile, test=False, force=False, show_plot=False):
+    def __init__(self, makefile, test=False, force=False, show_plot=False, history=[]):
         self.makefile = makefile
         self.test = test
         self.force = force
         self.show_plot = show_plot
-    
-    def make(self,t):
-        self.makefile.make(target=t, test=self.test, force=self.force)
+        self.history = history
 
+    def make(self, t):
+        self.makefile.make(target=t, test=self.test, force=self.force, history=list(self.history))
 
 def makedirs(d):
     #d = os.path.dirname(f)
