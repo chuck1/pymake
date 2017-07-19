@@ -87,8 +87,11 @@ class Makefile(object):
 
         if regex:
             print('regex')
+            args = dict(kwargs)
+            args.update({'regex':False})
             for t in self.search_gen(target):
-                self.make(t, test, force)
+                args.update({'target':t})
+                self.make(**args)
             return
 
         if isinstance(target, list):

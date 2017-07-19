@@ -7,6 +7,8 @@ import os
 import logging
 import traceback
 
+from cached_property import cached_property
+
 from .colors import *
 from .exceptions import *
 
@@ -77,6 +79,7 @@ def _get_meta1(o, l, name):
 
     if not hasattr(o, '_meta_attr'):
         red('_get_meta1: {} has no _meta_attr'.format(o))
+        raise NoMeta("no meta in {}".format(repr(o)))
     
     if name not in o._meta_attr:
         raise NoMeta("no meta for {} in {}".format(repr(name), repr(o)))
@@ -122,12 +125,15 @@ class ReqFileAttr(Req):
     def reset_remain(self):
         self.attrs_remain = set(self._attrs_remain)
 
-    @property
+    @cached_property
     def obj(self):
-        if not hasattr(self, '_obj'):
-            with open(self.id_, 'rb') as f:
-                self._obj = pickle.load(f)
-        return self._obj
+        with open(self.id_, 'rb') as f:
+            try:
+                o = pickle.load(f)
+            except Exception as e:
+                red('error reading {}'.format(self.id_))
+                raise
+        return o
 
     def output_exists(self):
         """
