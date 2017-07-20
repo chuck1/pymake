@@ -249,8 +249,16 @@ class RuleRegex(_Rule):
         if not isinstance(req, ReqFile): return None
         
         logger.debug('{} {}'.format(cls.pat_out, req.fn))
+        
+        try:
+            m = cls.pat_out.match(req.fn)
+        except Exception as e:
+            red(e)
+            red(repr(req))
+            red(repr(req.fn))
+            red(repr(cls.pat_out))
+            raise
 
-        m = cls.pat_out.match(req.fn)
         if m is None: return None
         return cls(req.fn, m.groups())
 
@@ -432,7 +440,6 @@ class RuleFileAttr(_Rule):
         m = cls.pat_out.match(req.id_)
 
         if m is None:
-            yellow('{} and {} did not match'.format(req.id_, cls.pat_out))
             return None
         
         #green('id mathces')
