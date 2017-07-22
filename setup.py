@@ -13,7 +13,6 @@ setup(name='pymake',
         license='MIT',
         packages=[
             'pymake',
-            'pymake.os0',
             'pymake.tests',
             ],
         zip_safe=False,
