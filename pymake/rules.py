@@ -14,6 +14,7 @@ import pymake
 from .req import *
 from .exceptions import *
 from .colors import *
+from .util import *
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +157,12 @@ class _Rule(object):
             if makecall.test:
                 blue('build {} because {}'.format(repr(self), f))
             else:
-                ret = self.build(makecall, None, f_in)
+                try:
+                    ret = self.build(makecall, None, f_in)
+                except Exception as e:
+                    print(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
+                    raise
+
                 if ret is None:
                     pass
                 elif ret != 0:
@@ -205,7 +211,12 @@ class Rule(_Rule):
     def __init__(self, f_out):
         _Rule.__init__(self)
         self.f_out = f_out
- 
+    
+    def __repr__(self):
+        return "<{}.{}>".format(
+                self.__class__.__module__,
+                self.__class__.__name__)
+
     def output_exists(self):
         return os.path.exists(self.f_out)
    
@@ -228,10 +239,16 @@ a rule to which we can pass a static list of files for f_out and f_in
 """
 class RuleStatic(_Rule):
     def __init__(self, static_f_out, static_f_in, func):
-        super(RuleStatic, self).__init__(
-                lambda: static_f_out,
-                lambda makefile: static_f_in,
-                func)
+        
+        self.static_f_in = static_f_in
+        self.static_f_out = static_f_out
+
+        self.build = func
+        
+    def f_out(self):
+        return self.static_f_out
+    def f_in(self, mc):
+        yield self.static_f_in
 
 class RuleRegex(_Rule):
     """

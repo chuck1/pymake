@@ -135,10 +135,15 @@ class Makefile(object):
         rules = list(self.find_rule(target))
 
         if not rules:
-            if target.output_exists():
-                return
-            else:
+            try:
+                b = target.output_exists()
+            except OutputNotExists:
                 raise NoTargetError("no rules to make {}".format(repr(target)))
+            else:
+                if b:
+                    return
+                else:
+                    raise NoTargetError("no rules to make {}".format(repr(target)))
        
         if len(rules) > 1:
             #green("multiple matches")
