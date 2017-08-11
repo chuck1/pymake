@@ -2,12 +2,15 @@ __version__ = '0.2'
 
 import functools
 import inspect
-import re
 import os
+import re
+import sys
 import logging
 import pickle
 import time
 import traceback
+import subprocess
+
 from cached_property import cached_property
 
 import pymake
@@ -17,6 +20,11 @@ from .colors import *
 from .util import *
 
 logger = logging.getLogger(__name__)
+
+def dict_get(d, k, de):
+    if not k in d:
+        d[k] = de
+    return d[k]
 
 class _Rule(object):
     """
@@ -86,17 +94,29 @@ class _Rule(object):
 
         f_in = []
         
+        i = 0
         for f in self.f_in(makecall):
             f_in.append(f)
 
             if f is None:
-                return True, "None in f_in {}".format(self)
+                #return True, "None in f_in {}".format(self)
                 raise Exception("None in f_in {}".format(self))
 
             if callable(f):
+                raise RuntimeError('deprecated')
                 makecall.make(f())
             else:
-                makecall.make(f)
+                r = makecall.make(f)
+                
+                if r is not None:
+                    cn1 = self.__class__.__module__ + '.' + self.__class__.__name__
+                    cn2 = r.__class__.__module__ + '.' + r.__class__.__name__
+                    
+                    rule1_node = dict_get(makecall.graph, cn1, {})
+                    file_node = dict_get(rule1_node, '{}_file{}'.format(cn1, i), {})
+                    rule2_node = dict_get(file_node, cn2, {})
+            
+            i += 1
         
         try:
             b = self.output_exists()
@@ -541,6 +561,17 @@ class FileContext:
         with open(self.rule.req.id_, 'wb') as f:
             f.write(b)
         
+class RuleRegexSimple(RuleRegex):
+    def build(self, makecall, _, f_in):
+        print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+
+        pymake.makedirs(os.path.dirname(self.f_out))
+        
+        cmd = [sys.executable, f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
+
+        print(crayons.yellow("cmd = {}".format(' '.join(cmd)),'yellow',bold=True))
+
+        subprocess.run(cmd, check=True)
 
 
 

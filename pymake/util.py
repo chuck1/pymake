@@ -7,6 +7,7 @@ import logging
 import traceback
 
 import crayons
+import pygraphviz as gv
 
 
 red = functools.partial(crayons.red, bold=True)
@@ -58,15 +59,39 @@ class NoTargetError(Exception):
         super(NoTargetError, self).__init__(message)
 
 class MakeCall(object):
-    def __init__(self, makefile, test=False, force=False, show_plot=False, history=[]):
+    def __init__(self, makefile, test=False, force=False, show_plot=False, history=[], graph={}):
         self.makefile = makefile
         self.test = test
         self.force = force
         self.show_plot = show_plot
         self.history = history
+        self.graph = graph
 
     def make(self, t):
-        self.makefile.make(target=t, test=self.test, force=self.force, history=list(self.history))
+        return self.makefile._make(self, target=t, test=self.test, force=self.force, history=list(self.history))
+
+    def render_graph(self):
+
+        g = gv.AGraph(directed=True)
+
+        def f1(n, d, f):
+            for k, v in d.items():
+                g.add_node(k)
+                if n:
+                    g.add_edge(n, k)
+                f(k, v, f1)
+        
+        def f2(n, d, f):
+            for k, v in d.items():
+                g.add_node(k, shape='box')
+                if n:
+                    g.add_edge(n, k)
+                f(k, v, f2)
+        
+        f1(None, self.graph, f2)
+        
+        with open('layout.dot', 'w') as f:
+            f.write(g.string())
 
 def makedirs(d):
     #d = os.path.dirname(f)

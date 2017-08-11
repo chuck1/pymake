@@ -77,30 +77,42 @@ class Makefile(object):
                       call the build function.
         :param regex: treat targets as regex expressions and make all targets that match
         """
-        target=kwargs.get('target', None)
-        test=kwargs.get('test', False)
-        force=kwargs.get('force', False)
-        regex=kwargs.get('regex', False)
-        show_plot=kwargs.get('show_plot', False)
+        target = kwargs.get('target', None)
+        test = kwargs.get('test', False)
+        force = kwargs.get('force', False)
+        regex = kwargs.get('regex', False)
+        show_plot = kwargs.get('show_plot', False)
         history = kwargs.get('history', [])
-
-
+        graph = kwargs.get('graph', {})
+        
+        mc = MakeCall(self, test, force, show_plot=show_plot, history=list(history), graph=graph)
+        
         if regex:
             print('regex')
             args = dict(kwargs)
             args.update({'regex':False})
             for t in self.search_gen(target):
                 args.update({'target':t})
-                self.make(**args)
-            return
-
-        if isinstance(target, list):
+                self._make(mc, **args)
+        elif isinstance(target, list):
             args = dict(kwargs)
             for t in target:
                 args.update({'target':t})
-                self.make(**args)
-            return
-        
+                self._make(mc, **args)
+        else:
+            self._make(mc, **kwargs)
+
+        pprint(mc.graph)
+        mc.render_graph()
+
+    def _make(self, mc, **kwargs):
+        target=kwargs.get('target', None)
+        test=kwargs.get('test', False)
+        force=kwargs.get('force', False)
+        show_plot=kwargs.get('show_plot', False)
+        history = kwargs.get('history', [])
+        graph = kwargs.get('graph', {})
+
         if target is None:
             raise Exception('target is None'+str(t))
 
@@ -111,7 +123,7 @@ class Makefile(object):
         #self.print_history(history)
 
         if isinstance(target, Rule):
-            target.make(MakeCall(self, test, force, show_plot=show_plot, history=list(history)))
+            target.make(mc)
             return
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
@@ -170,14 +182,14 @@ class Makefile(object):
 
         for rule in rules:
             try:
-                rule.make(MakeCall(self, test, force, history=list(history)))
+                rule.make(mc)
             except NoTargetError as e:
                 print('while building', repr(target))
                 print(' ',e)
                 raise
 
             if rule.complete():
-                break
+                return rule
         
 
     def search_gen(self, target):
