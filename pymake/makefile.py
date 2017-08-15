@@ -139,7 +139,7 @@ class Makefile(object):
             raise Exception('{}'.format(repr(target)))
 
         if target in self._cache_req:
-            print('{} is in cache'.format(target))
+            #print('{} is in cache'.format(target))
             return
        
         self._cache_req.append(target)
