@@ -287,13 +287,18 @@ class RuleRegex(_Rule):
         
         logger.debug('{} {}'.format(cls.pat_out, req.fn))
         
+        if callable(cls.pat_out):
+            pat = cls.pat_out()
+        else:
+            pat = cls.pat_out
+
         try:
-            m = cls.pat_out.match(req.fn)
+            m = pat.match(req.fn)
         except Exception as e:
             red(e)
             red(repr(req))
             red(repr(req.fn))
-            red(repr(cls.pat_out))
+            red(repr(pat))
             raise
 
         if m is None: return None

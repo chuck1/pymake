@@ -116,7 +116,7 @@ class Makefile(object):
         if target is None:
             raise Exception('target is None'+str(t))
 
-        print(crayons.magenta(str(target), bold=True))
+        #print(crayons.magenta(str(target), bold=True))
         
         #history.append(target)
 
