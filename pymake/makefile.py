@@ -102,7 +102,6 @@ class Makefile(object):
         else:
             self._make(mc, **kwargs)
 
-        pprint(mc.graph)
         mc.render_graph()
 
     def _make(self, mc, **kwargs):
