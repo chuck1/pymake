@@ -77,7 +77,7 @@ class MakeCall(object):
 
     def make(self, t):
         with context_list_push(self.stack, t):
-            print(crayons.blue("stack = {}".format(self.stack), bold = True))
+            #print(crayons.blue("stack = {}".format(self.stack), bold = True))
             return self.makefile._make(self, target=t, test=self.test, force=self.force, history=list(self.history))
 
     def render_graph(self):
