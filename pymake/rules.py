@@ -177,6 +177,7 @@ class _Rule(object):
             if makecall.test:
                 blue('build {} because {}'.format(repr(self), f))
             else:
+                blue('build {} because {}'.format(repr(self), f))
                 try:
                     ret = self.build(makecall, None, f_in)
                 except Exception as e:
@@ -571,8 +572,13 @@ class RuleRegexSimple(RuleRegex):
         print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
 
         pymake.makedirs(os.path.dirname(self.f_out))
-        
-        cmd = [sys.executable, f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
+
+        if f_in[0].fn[-3:] == ".py":
+            cmd = [sys.executable, f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
+        else:
+            prog = f_in[0].fn
+            out = os.path.abspath(self.f_out)
+            cmd = [prog, out] + [os.path.abspath(a.fn) for a in f_in[1:]]
 
         print(crayons.yellow("cmd = {}".format(' '.join(cmd)),'yellow',bold=True))
 

@@ -1,4 +1,4 @@
-
+import contextlib
 import functools
 import inspect
 import re
@@ -58,6 +58,12 @@ class NoTargetError(Exception):
     def __init__(self, message):
         super(NoTargetError, self).__init__(message)
 
+@contextlib.contextmanager
+def context_list_push(l, x):
+    l.append(x)
+    yield
+    l.pop()
+
 class MakeCall(object):
     def __init__(self, makefile, test=False, force=False, show_plot=False, history=[], graph={}):
         self.makefile = makefile
@@ -66,9 +72,13 @@ class MakeCall(object):
         self.show_plot = show_plot
         self.history = history
         self.graph = graph
+        
+        self.stack = []
 
     def make(self, t):
-        return self.makefile._make(self, target=t, test=self.test, force=self.force, history=list(self.history))
+        with context_list_push(self.stack, t):
+            print(crayons.blue("stack = {}".format(self.stack), bold = True))
+            return self.makefile._make(self, target=t, test=self.test, force=self.force, history=list(self.history))
 
     def render_graph(self):
 
