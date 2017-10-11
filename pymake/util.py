@@ -76,6 +76,7 @@ class MakeCall(object):
         self.stack = []
 
     def make(self, t):
+        assert(t is not None)
         with context_list_push(self.stack, t):
             #print(crayons.blue("stack = {}".format(self.stack), bold = True))
             return self.makefile._make(self, target=t, test=self.test, force=self.force, history=list(self.history))

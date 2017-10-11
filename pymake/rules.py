@@ -288,10 +288,15 @@ class RuleRegex(_Rule):
         
         logger.debug('{} {}'.format(cls.pat_out, req.fn))
         
+
         if callable(cls.pat_out):
             pat = cls.pat_out()
         else:
             pat = cls.pat_out
+        
+        if pat is None: return
+
+        #print(pat, req.fn)
 
         try:
             m = pat.match(req.fn)

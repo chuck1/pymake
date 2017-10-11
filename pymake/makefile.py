@@ -113,7 +113,7 @@ class Makefile(object):
         graph = kwargs.get('graph', {})
 
         if target is None:
-            raise Exception('target is None'+str(t))
+            raise Exception('target is None'+str(target))
 
         #print(crayons.magenta(str(target), bold=True))
         
