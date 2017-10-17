@@ -94,7 +94,6 @@ class _Rule(object):
 
         f_in = []
         
-        i = 0
         for f in self.f_in(makecall):
             f_in.append(f)
 
@@ -106,18 +105,8 @@ class _Rule(object):
                 raise RuntimeError('deprecated')
                 makecall.make(f())
             else:
-                r = makecall.make(f)
-                
-                if r is not None:
-                    cn1 = self.__class__.__module__ + '.' + self.__class__.__name__
-                    cn2 = r.__class__.__module__ + '.' + r.__class__.__name__
-                    
-                    rule1_node = dict_get(makecall.graph, cn1, {})
-                    file_node = dict_get(rule1_node, '{}_file{}'.format(cn1, i), {})
-                    rule2_node = dict_get(file_node, cn2, {})
+                r = makecall.make(f, self)
             
-            i += 1
-        
         try:
             b = self.output_exists()
         except OutputNotExists as e:
@@ -589,7 +578,23 @@ class RuleRegexSimple(RuleRegex):
 
         subprocess.run(cmd, check=True)
 
+class RuleRegexSimple2(RuleRegex):
+    def build(self, makecall, _, f_in):
+        print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
 
+        pymake.makedirs(os.path.dirname(self.f_out))
 
+        assert f_in[0].fn[-3:] == ".py"
+        
+        av = [f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
+        
+        s = f_in[0].fn[:-3].replace('/','.')
+        m = __import__(s, fromlist=['main'])
+        
+        print(s)
+        print(m)
+        print(m.main)
+
+        m.main(makecall, av)
 
 

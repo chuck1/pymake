@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import inspect
 import re
@@ -15,6 +16,13 @@ from .util import *
 from .colors import *
 
 logger = logging.getLogger(__name__)
+
+@contextlib.contextmanager
+def render_graph_on_exit(mc):
+    try:
+        yield
+    finally:
+        mc.render_graph()
 
 class Makefile(object):
 
@@ -87,22 +95,21 @@ class Makefile(object):
         
         mc = MakeCall(self, test, force, show_plot=show_plot, history=list(history), graph=graph)
         
-        if regex:
-            print('regex')
-            args = dict(kwargs)
-            args.update({'regex':False})
-            for t in self.search_gen(target):
-                args.update({'target':t})
-                self._make(mc, **args)
-        elif isinstance(target, list):
-            args = dict(kwargs)
-            for t in target:
-                args.update({'target':t})
-                self._make(mc, **args)
-        else:
-            self._make(mc, **kwargs)
-
-        mc.render_graph()
+        with render_graph_on_exit(mc):
+            if regex:
+                print('regex')
+                args = dict(kwargs)
+                args.update({'regex':False})
+                for t in self.search_gen(target):
+                    args.update({'target':t})
+                    self._make(mc, **args)
+            elif isinstance(target, list):
+                args = dict(kwargs)
+                for t in target:
+                    args.update({'target':t})
+                    self._make(mc, **args)
+            else:
+                self._make(mc, **kwargs)
 
     def _make(self, mc, **kwargs):
         target=kwargs.get('target', None)
@@ -111,6 +118,7 @@ class Makefile(object):
         show_plot=kwargs.get('show_plot', False)
         history = kwargs.get('history', [])
         graph = kwargs.get('graph', {})
+        ancestor = kwargs.get('ancestor', None)
 
         if target is None:
             raise Exception('target is None'+str(target))
@@ -145,6 +153,7 @@ class Makefile(object):
 
         rules = list(self.find_rule(target))
 
+
         if not rules:
             try:
                 b = target.output_exists()
@@ -157,13 +166,6 @@ class Makefile(object):
                     raise NoTargetError("no rules to make {}".format(repr(target)))
        
         if len(rules) > 1:
-            #green("multiple matches")
-            for r in rules:
-                try:
-                    #green("  {}".format(r.groups))
-                    pass
-                except: pass
-            
             if all([isinstance(r, RuleRegex) for r in rules]):
                 l = [sum(len(g) for g in r.groups) for r in rules]
                 #green(l)
@@ -171,26 +173,29 @@ class Makefile(object):
                 #green(i)
                 rules = numpy.array(rules)[i]
                 #green(rules)
-
         else:
             #green('exactly one matching rule found')
             pass
-       
+        
         if isinstance(target, ReqFileAttr):
             target.reset_remain()
-
-        for rule in rules:
-            try:
-                rule.make(mc)
-            except NoTargetError as e:
-                print('while building', repr(target))
-                print(' ',e)
-                raise
-
-            if rule.complete():
-                return rule
         
+        rule = rules[0]
 
+        mc.add_edge(ancestor, rule)
+
+        #for rule in rules:
+
+        try:
+            rule.make(mc)
+        except NoTargetError as e:
+            print('while building', repr(target))
+            print(' ',e)
+            raise
+        
+        if rule.complete():
+            return rule
+        
     def search_gen(self, target):
         if isinstance(target, list):
             for t in target:

@@ -22,6 +22,12 @@ The pymake module
 
 MONGO_COLLECTION = None
 
+def dict_get(d, k, de):
+    if not k in d:
+        d[k] = de
+    return d[k]
+
+
 def bin_compare(b0,b1):
     for c0,c1 in zip(b,b1):
         try:
@@ -75,15 +81,24 @@ class MakeCall(object):
         
         self.stack = []
 
-    def make(self, t):
+    def make(self, t, ancestor=None):
         assert(t is not None)
         with context_list_push(self.stack, t):
             #print(crayons.blue("stack = {}".format(self.stack), bold = True))
-            return self.makefile._make(self, target=t, test=self.test, force=self.force, history=list(self.history))
+            return self.makefile._make(self, target=t, test=self.test, force=self.force, history=list(self.history), ancestor=ancestor)
+
+    def add_edge(self, r1, r2):
+        if r1 is None: return
+
+        try:
+            v1 = dict_get(self.graph, r1.f_out, {})
+            v2 = dict_get(v1, r2.f_out, {})
+        except Exception as e:
+            print(e, repr(e))
 
     def render_graph(self):
-
-        g = gv.AGraph(directed=True)
+        print(crayons.magenta('render graph', bold=True))
+        g = gv.AGraph(directed=True, rankdir='LR')
 
         def f1(n, d, f):
             for k, v in d.items():
@@ -92,14 +107,7 @@ class MakeCall(object):
                     g.add_edge(n, k)
                 f(k, v, f1)
         
-        def f2(n, d, f):
-            for k, v in d.items():
-                g.add_node(k, shape='box')
-                if n:
-                    g.add_edge(n, k)
-                f(k, v, f2)
-        
-        f1(None, self.graph, f2)
+        f1(None, self.graph, f1)
         
         with open('layout.dot', 'w') as f:
             f.write(g.string())
