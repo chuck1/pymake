@@ -166,7 +166,7 @@ class _Rule(object):
             if makecall.test:
                 blue('build {} because {}'.format(repr(self), f))
             else:
-                blue('build {} because {}'.format(repr(self), f))
+                #blue('build {} because {}'.format(repr(self), f))
                 try:
                     ret = self.build(makecall, None, f_in)
                 except Exception as e:
