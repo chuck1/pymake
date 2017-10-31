@@ -9,11 +9,6 @@ import traceback
 import crayons
 import pygraphviz as gv
 
-
-red = functools.partial(crayons.red, bold=True)
-yellow = functools.partial(crayons.yellow, bold=True)
-green = functools.partial(crayons.green, bold=True)
-
 logger = logging.getLogger(__name__)
 
 """

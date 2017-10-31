@@ -144,6 +144,9 @@ class Makefile(object):
         
         if not isinstance(target, Req):
             raise Exception('{}'.format(repr(target)))
+        
+        if isinstance(target, ReqFake):
+            return
 
         if target in self._cache_req:
             #print('{} is in cache'.format(target))
@@ -152,7 +155,6 @@ class Makefile(object):
         self._cache_req.append(target)
 
         rules = list(self.find_rule(target))
-
 
         if not rules:
             try:

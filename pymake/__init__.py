@@ -9,10 +9,6 @@ import traceback
 
 import crayons
 
-red = functools.partial(crayons.red, bold=True)
-yellow = functools.partial(crayons.yellow, bold=True)
-green = functools.partial(crayons.green, bold=True)
-
 logger = logging.getLogger(__name__)
 
 from .makefile import *

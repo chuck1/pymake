@@ -21,6 +21,10 @@ class Req(object):
     def output_mtime(self):
         return None
 
+class ReqFake(Req):
+    def __init__(self, fn):
+        self.fn = fn
+
 class ReqFile(Req):
     """
     simple file requirement
