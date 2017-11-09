@@ -89,11 +89,11 @@ class Makefile(object):
         test = kwargs.get('test', False)
         force = kwargs.get('force', False)
         regex = kwargs.get('regex', False)
-        show_plot = kwargs.get('show_plot', False)
+        self.show_plot = kwargs.get('show_plot', False)
         history = kwargs.get('history', [])
         graph = kwargs.get('graph', {})
         
-        mc = MakeCall(self, test, force, show_plot=show_plot, history=list(history), graph=graph)
+        mc = MakeCall(self, test, force, show_plot=self.show_plot, history=list(history), graph=graph)
         
         with render_graph_on_exit(mc):
             if regex:
@@ -115,7 +115,7 @@ class Makefile(object):
         target=kwargs.get('target', None)
         test=kwargs.get('test', False)
         force=kwargs.get('force', False)
-        show_plot=kwargs.get('show_plot', False)
+        self.show_plot = kwargs.get('show_plot', False)
         history = kwargs.get('history', [])
         graph = kwargs.get('graph', {})
         ancestor = kwargs.get('ancestor', None)
