@@ -102,7 +102,7 @@ class _Rule(object):
                 raise Exception("None in f_in {}".format(self))
 
             if callable(f):
-                raise RuntimeError('deprecated')
+                raise RuntimeError('deprecated ' + str(f))
                 makecall.make(f())
             else:
                 r = makecall.make(f, self)
