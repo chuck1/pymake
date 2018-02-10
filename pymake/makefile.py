@@ -38,7 +38,7 @@ class Makefile(object):
         for r in self.find_rule(target):
             return r
 
-        raise Exception('no rule to make target {}'.format(repr(target)))
+        #raise Exception('no rule to make target {}'.format(repr(target)))
 
     def find_rule(self, target):
         for rule in self.rules:
