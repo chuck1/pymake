@@ -13,7 +13,6 @@ import numpy
 from .req import *
 from .rules import *
 from .util import *
-from .colors import *
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +110,31 @@ class Makefile(object):
             else:
                 self._make(mc, **kwargs)
 
+    def ensure_is_req(self, target):
+        if isinstance(target, str):
+            target = ReqFile(target)
+        if not isinstance(target, Req):
+            raise Exception('{}'.format(repr(target)))
+        return target
+
+    def rules_sorted(self, target):
+            
+        rules = list(self.find_rule(target))
+
+        if len(rules) > 1:
+            if all([isinstance(r, RuleRegex) for r in rules]):
+                l = [sum(len(g) for g in r.groups) for r in rules]
+                #green(l)
+                i = numpy.argsort(l)
+                #green(i)
+                rules = numpy.array(rules)[i]
+                #green(rules)
+        else:
+            #green('exactly one matching rule found')
+            pass
+    
+        return rules
+
     def _make(self, mc, **kwargs):
         target=kwargs.get('target', None)
         test=kwargs.get('test', False)
@@ -134,16 +158,11 @@ class Makefile(object):
             return
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
-        
-        if isinstance(target, str):
-            attr = kwargs.get('attr', None)
-            if attr:
-                target = ReqFileAttr(target, attr)
-            else:
-                target = ReqFile(target)
-        
-        if not isinstance(target, Req):
-            raise Exception('{}'.format(repr(target)))
+
+        target = self.ensure_is_req(target)
+
+        ######### testing ##########
+        return target.make(self, mc, ancestor)
         
         if isinstance(target, ReqFake):
             return

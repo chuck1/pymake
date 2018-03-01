@@ -16,7 +16,6 @@ from cached_property import cached_property
 import pymake
 from .req import *
 from .exceptions import *
-from .colors import *
 from .util import *
 
 logger = logging.getLogger(__name__)

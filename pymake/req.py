@@ -9,8 +9,8 @@ import traceback
 
 from cached_property import cached_property
 
-from .colors import *
 from .exceptions import *
+from .util import *
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,49 @@ class Req(object):
 
     def output_mtime(self):
         return None
+
+    def make(self, makefile, mc, ancestor):
+        if isinstance(self, ReqFake):
+            return
+
+        if self in makefile._cache_req:
+            #print('{} is in cache'.format(target))
+            return
+       
+        makefile._cache_req.append(self)
+
+        rules = makefile.rules_sorted(self)
+
+        if len(rules) == 0:
+            try:
+                b = self.output_exists()
+            except OutputNotExists:
+                raise NoTargetError("no rules to make {}".format(repr(self)))
+            else:
+                if b:
+                    return
+                else:
+                    raise NoTargetError("no rules to make {}".format(repr(self)))
+       
+        if isinstance(self, ReqFileAttr):
+            #target.reset_remain()
+            raise DeprecationWarning()
+        
+        rule = rules[0]
+
+        mc.add_edge(ancestor, rule)
+
+        #for rule in rules:
+
+        try:
+            rule.make(mc)
+        except NoTargetError as e:
+            print('while building', repr(self))
+            print(' ',e)
+            raise
+        
+        if rule.complete():
+            return rule
 
 class ReqFake(Req):
     def __init__(self, fn):
