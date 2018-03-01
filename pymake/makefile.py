@@ -84,6 +84,7 @@ class Makefile(object):
                       call the build function.
         :param regex: treat targets as regex expressions and make all targets that match
         """
+        self.args = kwargs
         target = kwargs.get('target', None)
         test = kwargs.get('test', False)
         force = kwargs.get('force', False)
@@ -161,61 +162,7 @@ class Makefile(object):
 
         target = self.ensure_is_req(target)
 
-        ######### testing ##########
         return target.make(self, mc, ancestor)
-        
-        if isinstance(target, ReqFake):
-            return
-
-        if target in self._cache_req:
-            #print('{} is in cache'.format(target))
-            return
-       
-        self._cache_req.append(target)
-
-        rules = list(self.find_rule(target))
-
-        if not rules:
-            try:
-                b = target.output_exists()
-            except OutputNotExists:
-                raise NoTargetError("no rules to make {}".format(repr(target)))
-            else:
-                if b:
-                    return
-                else:
-                    raise NoTargetError("no rules to make {}".format(repr(target)))
-       
-        if len(rules) > 1:
-            if all([isinstance(r, RuleRegex) for r in rules]):
-                l = [sum(len(g) for g in r.groups) for r in rules]
-                #green(l)
-                i = numpy.argsort(l)
-                #green(i)
-                rules = numpy.array(rules)[i]
-                #green(rules)
-        else:
-            #green('exactly one matching rule found')
-            pass
-        
-        if isinstance(target, ReqFileAttr):
-            target.reset_remain()
-        
-        rule = rules[0]
-
-        mc.add_edge(ancestor, rule)
-
-        #for rule in rules:
-
-        try:
-            rule.make(mc)
-        except NoTargetError as e:
-            print('while building', repr(target))
-            print(' ',e)
-            raise
-        
-        if rule.complete():
-            return rule
         
     def search_gen(self, target):
         if isinstance(target, list):
