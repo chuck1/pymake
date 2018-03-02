@@ -161,6 +161,11 @@ class Makefile(object):
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
 
         target = self.ensure_is_req(target)
+        
+        touch_str = self.args.get('touch', '')
+        if touch_str:
+            print(crayons.yellow(f'touch: {touch_str}'))
+            pat = re.compile(touch_str)
 
         return target.make(self, mc, ancestor)
         
