@@ -16,6 +16,10 @@ from .util import *
 
 logger = logging.getLogger(__name__)
 
+def touch(fname, times=None):
+    with open(fname, 'a'):
+        os.utime(fname, times)
+
 @contextlib.contextmanager
 def render_graph_on_exit(mc):
     try:
@@ -162,10 +166,6 @@ class Makefile(object):
 
         target = self.ensure_is_req(target)
         
-        touch_str = self.args.get('touch', '')
-        if touch_str:
-            print(crayons.yellow(f'touch: {touch_str}'))
-            pat = re.compile(touch_str)
 
         return target.make(self, mc, ancestor)
         

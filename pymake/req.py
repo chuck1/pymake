@@ -1,4 +1,3 @@
-
 import functools
 import inspect
 import pickle
@@ -14,6 +13,10 @@ from .util import *
 
 logger = logging.getLogger(__name__)
 
+def touch(fname, times=None):
+    with open(fname, 'a'):
+        os.utime(fname, times)
+
 class Req(object):
     def output_exists(self):
         return None
@@ -22,8 +25,7 @@ class Req(object):
         return None
 
     def make(self, makefile, mc, ancestor):
-        if isinstance(self, ReqFake):
-            return
+
 
         if self in makefile._cache_req:
             #print('{} is in cache'.format(target))
@@ -50,6 +52,20 @@ class Req(object):
         
         rule = rules[0]
 
+
+
+        touch_str = makefile.args.get('touch', '')
+        if touch_str:
+            #print(crayons.yellow(f'touch: {touch_str}'))
+            pat = re.compile(touch_str)
+            m = pat.match(self.fn)
+            if m:
+                print(crayons.yellow(f'touch match: {self.fn}'))
+                touch(self.fn)
+                return
+
+
+
         mc.add_edge(ancestor, rule)
 
         #for rule in rules:
@@ -67,6 +83,8 @@ class Req(object):
 class ReqFake(Req):
     def __init__(self, fn):
         self.fn = fn
+    def make(self, makefile, mc, ancestor):
+        pass
 
 class ReqFile(Req):
     """
