@@ -163,7 +163,8 @@ class _Rule(object):
 
         if should_build:
             if makecall.test:
-                blue('build {} because {}'.format(repr(self), f))
+                #print(crayons.blue('build {} because {}'.format(repr(self), f)))
+                print('build {} because {}'.format(repr(self), f))
             else:
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
@@ -178,7 +179,8 @@ class _Rule(object):
                     raise BuildError(str(self) + ' return code ' + str(ret))
         else:
             if makecall.test:
-                print('DONT build',repr(self))
+                #print('DONT build',repr(self))
+                pass
 
         self.up_to_date = True
     
@@ -499,7 +501,6 @@ class Proxy(object):
         object.__setattr__(self, '_o', o)
 
     def __getattribute__(self, name):
-        #blue("proxy getattribute {}".format(name))
         o = object.__getattribute__(self, '_o')
         v = getattr(o, name)
         
@@ -513,7 +514,6 @@ class Proxy(object):
         return v
     
     def __setattr__(self, name, value):
-        #blue("proxy setattr {}".format(name))
         o = object.__getattribute__(self, '_o')
         setattr(o, name, value)
         
@@ -529,7 +529,6 @@ class Proxy(object):
         
         m['mtime'] = time.time()
 
-        #blue("setting {} {}".format(repr(o), repr(name)))
 
 class FileContext:
     def __init__(self, rule, factory=None):
