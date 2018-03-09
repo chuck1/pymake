@@ -53,16 +53,15 @@ class Req(object):
         rule = rules[0]
 
 
-
-        touch_str = makefile.args.get('touch', '')
-        if touch_str:
-            #print(crayons.yellow(f'touch: {touch_str}'))
-            pat = re.compile(touch_str)
-            m = pat.match(self.fn)
-            if m:
-                print(crayons.yellow(f'touch match: {self.fn}'))
-                touch(self.fn)
-                return
+        for touch_str in makefile.args.get('touch', []):
+            if touch_str:
+                #print(crayons.yellow(f'touch: {touch_str}'))
+                pat = re.compile(touch_str)
+                m = pat.match(self.fn)
+                if m:
+                    print(crayons.yellow(f'touch match: {self.fn}'))
+                    touch(self.fn)
+                    return
 
 
 
