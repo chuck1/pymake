@@ -20,6 +20,8 @@ from .util import *
 
 logger = logging.getLogger(__name__)
 
+class ResultBuilt: pass
+
 def dict_get(d, k, de):
     if not k in d:
         d[k] = de
@@ -57,8 +59,7 @@ class _Rule(object):
         :param f_in: a list of ...
         """
         raise NotImplementedError()
-    def complete(self):
-        return True
+
     def _gen_rules(self, makecall):
         return
         yield
@@ -89,7 +90,7 @@ class _Rule(object):
     def check(self, makecall):
         #magenta("check {}".format(self))
         
-        if makecall.force: return True, None
+        if makecall.args.get('force', False): return True, None
 
         f_in = []
         
@@ -162,7 +163,7 @@ class _Rule(object):
             raise e
 
         if should_build:
-            if makecall.test:
+            if makecall.args.get('test', False):
                 #print(crayons.blue('build {} because {}'.format(repr(self), f)))
                 print('build {} because {}'.format(repr(self), f))
             else:
@@ -174,11 +175,11 @@ class _Rule(object):
                     raise
 
                 if ret is None:
-                    pass
+                    return ResultBuilt()
                 elif ret != 0:
                     raise BuildError(str(self) + ' return code ' + str(ret))
         else:
-            if makecall.test:
+            if makecall.args.get('test', False):
                 #print('DONT build',repr(self))
                 pass
 

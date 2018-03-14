@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import inspect
 import pickle
@@ -26,7 +27,6 @@ class Req(object):
 
     def make(self, makefile, mc, ancestor):
 
-
         if self in makefile._cache_req:
             #print('{} is in cache'.format(target))
             return
@@ -52,7 +52,6 @@ class Req(object):
         
         rule = rules[0]
 
-
         for touch_str in makefile.args.get('touch', []):
             if touch_str:
                 #print(crayons.yellow(f'touch: {touch_str}'))
@@ -63,21 +62,18 @@ class Req(object):
                     touch(self.fn)
                     return
 
-
-
         mc.add_edge(ancestor, rule)
 
         #for rule in rules:
 
         try:
-            rule.make(mc)
+            ret = rule.make(mc)
         except NoTargetError as e:
             print('while building', repr(self))
             print(' ',e)
             raise
         
-        if rule.complete():
-            return rule
+        return ret
 
 class ReqFake(Req):
     def __init__(self, fn):

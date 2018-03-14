@@ -13,6 +13,7 @@ import numpy
 from .req import *
 from .rules import *
 from .util import *
+from .makecall import *
 
 logger = logging.getLogger(__name__)
 
@@ -75,45 +76,37 @@ class Makefile(object):
         for rule in self.find_rule(target):
             rule.print_dep(MakeCall(self), indent + 2)
 
-    def print_history(self, history):
-        p = ""
-        for h in history:
-            magenta(p + repr(h))
-            p = p + "  "
-
-    def make(self, **kwargs):
+    def make(self, target, **args):
         """
         :param test:  follow the file dependencies and print out which files would be built
                       and a short description of why check returned True. But do not
                       call the build function.
         :param regex: treat targets as regex expressions and make all targets that match
         """
-        self.args = kwargs
-        target = kwargs.get('target', None)
-        test = kwargs.get('test', False)
-        force = kwargs.get('force', False)
-        regex = kwargs.get('regex', False)
-        self.show_plot = kwargs.get('show_plot', False)
-        history = kwargs.get('history', [])
-        graph = kwargs.get('graph', {})
         
-        mc = MakeCall(self, test, force, show_plot=self.show_plot, history=list(history), graph=graph)
+        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search'})
+        if d:
+            raise Exception(f'unexpected keyword arguments: {d}')
+
+
+        self.args = args
+        
+        mc = MakeCall(self, args)
         
         with render_graph_on_exit(mc):
-            if regex:
+            if args.get('regex', False):
                 print('regex')
                 args = dict(kwargs)
                 args.update({'regex':False})
                 for t in self.search_gen(target):
-                    args.update({'target':t})
-                    self._make(mc, **args)
+                    self._make(mc, t, None)
+
             elif isinstance(target, list):
-                args = dict(kwargs)
                 for t in target:
-                    args.update({'target':t})
-                    self._make(mc, **args)
+                    self._make(mc, t, None)
+
             else:
-                self._make(mc, **kwargs)
+                self._make(mc, target, None)
 
     def ensure_is_req(self, target):
         if isinstance(target, str):
@@ -140,24 +133,13 @@ class Makefile(object):
     
         return rules
 
-    def _make(self, mc, **kwargs):
-        target=kwargs.get('target', None)
-        test=kwargs.get('test', False)
-        force=kwargs.get('force', False)
-        self.show_plot = kwargs.get('show_plot', False)
-        history = kwargs.get('history', [])
-        graph = kwargs.get('graph', {})
-        ancestor = kwargs.get('ancestor', None)
+    def _make(self, mc, target, ancestor):
 
         if target is None:
             raise Exception('target is None'+str(target))
 
         #print(crayons.magenta(str(target), bold=True))
         
-        #history.append(target)
-
-        #self.print_history(history)
-
         if isinstance(target, Rule):
             target.make(mc)
             return
@@ -165,7 +147,6 @@ class Makefile(object):
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
 
         target = self.ensure_is_req(target)
-        
 
         return target.make(self, mc, ancestor)
         

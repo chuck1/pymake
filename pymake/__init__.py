@@ -15,4 +15,5 @@ from .makefile import *
 from .rules import *
 from .req import *
 from .util import *
+from .makecall import *
 
