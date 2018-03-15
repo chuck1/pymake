@@ -28,7 +28,7 @@ def render_graph_on_exit(mc):
     finally:
         mc.render_graph()
 
-class Makefile(object):
+class Makefile:
 
     _cache_req = []
 
@@ -141,8 +141,7 @@ class Makefile(object):
         #print(crayons.magenta(str(target), bold=True))
         
         if isinstance(target, Rule):
-            target.make(mc)
-            return
+            return target.make(mc)
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
 

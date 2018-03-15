@@ -11,6 +11,7 @@ from cached_property import cached_property
 
 from .exceptions import *
 from .util import *
+from .result import *
 
 logger = logging.getLogger(__name__)
 
@@ -29,22 +30,18 @@ class Req(object):
 
         if self in makefile._cache_req:
             #print('{} is in cache'.format(target))
-            return
+            return ResultNoBuild()
        
         makefile._cache_req.append(self)
 
         rules = makefile.rules_sorted(self)
 
         if len(rules) == 0:
-            try:
-                b = self.output_exists()
-            except OutputNotExists:
-                raise NoTargetError("no rules to make {}".format(repr(self)))
+            b = self.output_exists()
+            if b:
+                return ResultNoRuleFileExists()
             else:
-                if b:
-                    return
-                else:
-                    raise NoTargetError("no rules to make {}".format(repr(self)))
+                raise NoTargetError("no rules to make {}".format(repr(self)))
        
         if isinstance(self, ReqFileAttr):
             #target.reset_remain()
@@ -52,22 +49,14 @@ class Req(object):
         
         rule = rules[0]
 
-        for touch_str in makefile.args.get('touch', []):
-            if touch_str:
-                #print(crayons.yellow(f'touch: {touch_str}'))
-                pat = re.compile(touch_str)
-                m = pat.match(self.fn)
-                if m:
-                    print(crayons.yellow(f'touch match: {self.fn}'))
-                    touch(self.fn)
-                    return
+        #if self.touch_maybe(mc): return
 
         mc.add_edge(ancestor, rule)
 
         #for rule in rules:
 
         try:
-            ret = rule.make(mc)
+            ret = rule.make(mc, self)
         except NoTargetError as e:
             print('while building', repr(self))
             print(' ',e)
@@ -75,11 +64,32 @@ class Req(object):
         
         return ret
 
+    def would_touch(self, mc):
+        if not os.path.exists(self.fn):
+            return False
+
+        for touch_str in mc.args.get('touch', []):
+            if touch_str:
+                #print(crayons.yellow(f'touch: {touch_str}'))
+                pat = re.compile(touch_str)
+                m = pat.match(self.fn)
+                if m:
+                    return True
+        return False
+
+    def touch_maybe(self, mc):
+        if self.would_touch(mc):
+            print(crayons.yellow(f'touch: {self.fn}'))
+            touch(self.fn)
+            return True
+        return False
+
 class ReqFake(Req):
     def __init__(self, fn):
         self.fn = fn
+
     def make(self, makefile, mc, ancestor):
-        pass
+        return ResultNoBuild()
 
 class ReqFile(Req):
     """

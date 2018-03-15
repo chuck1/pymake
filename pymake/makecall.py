@@ -13,14 +13,17 @@ from .util import *
 
 logger = logging.getLogger(__name__)
 
-class MakeCall(object):
-    def __init__(self, makefile, args):
+class MakeCall:
+    def __init__(self, makefile, args, graph={}, stack=[]):
         self.makefile = makefile
         self.args = args
 
-        self.graph = {}
+        self.graph = graph
 
-        self.stack = []
+        self.stack = stack
+
+    def copy(self):
+        return MakeCall(self.makefile, dict(self.args), self.graph, self.stack)
 
     def make(self, target, ancestor=None):
         assert(target is not None)

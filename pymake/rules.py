@@ -17,10 +17,9 @@ import pymake
 from .req import *
 from .exceptions import *
 from .util import *
+from .result import *
 
 logger = logging.getLogger(__name__)
-
-class ResultBuilt: pass
 
 def dict_get(d, k, de):
     if not k in d:
@@ -87,39 +86,39 @@ class _Rule(object):
     def output_mtime(self):
         return None
 
-    def check(self, makecall):
-        #magenta("check {}".format(self))
+    def make_ancestors(self, makecall, test):
+
+        makecall2 = makecall.copy()
+        makecall2.args['test'] = test
+
+        for f in self.f_in(makecall):
+
+            if f is None:
+                raise Exception("None in f_in {}".format(self))
+
+            r = makecall2.make(f, self)
+
+            if not isinstance(r, Result):
+                print(f)
+                print(r)
+                raise Exception()
+
+            yield f
+
+    def check(self, makecall, test=False):
         
         if makecall.args.get('force', False): return True, None
 
-        f_in = []
+        f_in = list(self.make_ancestors(makecall, test))
         
-        for f in self.f_in(makecall):
-            f_in.append(f)
-
-            if f is None:
-                #return True, "None in f_in {}".format(self)
-                raise Exception("None in f_in {}".format(self))
-
-            #if callable(f):
-            #    raise RuntimeError('deprecated ' + str(f))
-            #    makecall.make(f())
-            #else:
-            r = makecall.make(f, self)
-            
-        try:
-            b = self.output_exists()
-        except OutputNotExists as e:
-            return True, str(e)
-        else:
-            if not b:
-                return True, "output does not exist"
+        b = self.output_exists()
+        if not b:
+            return True, "output does not exist"
 
         mtime = self.output_mtime()
         
         for f in f_in:
             if isinstance(f, Rule):
-                #return True, "Rule object in f_in {}".format(f)
                 continue
             
             if not isinstance(f, Req):
@@ -128,30 +127,34 @@ class _Rule(object):
             if mtime is None:
                 return True, '{} does not define mtime'.format(self.__class__.__name__)
             else:
-                try:
-                    b = f.output_exists()
-                except OutputNotExists: pass
-                else:
-                    if b:
-                        mtime_in = f.output_mtime()
+                b = f.output_exists()
+                if b:
+                    mtime_in = f.output_mtime()
 
-                        if mtime_in is None:
-                            return True, 'input file {} does not define mtime'.format(repr(self))
-                    
-                        if mtime_in > mtime:
-                            return True, 'mtime of {} is greater'.format(f)
-                        else:
-                            #green('up-to-date compared to {}'.format(f))
-                            pass
+                    if mtime_in is None:
+                        return True, 'input file {} does not define mtime'.format(repr(self))
+                
+                    if mtime_in > mtime:
+                        return True, 'mtime of {} is greater'.format(f)
         
         return False, None
 
-    def make(self, makecall):
+    def make(self, makecall, req):
         #magenta("make {}".format(self))
 
-        if self.up_to_date: return
+        if self.up_to_date: 
+            raise Exception()
+            return
         
         #f_out = list(self.rule_f_out())
+       
+        if req.would_touch(makecall):
+            should_build, f = self.check(makecall, test=True)
+            if should_build:
+                req.touch_maybe(makecall)
+                return ResultBuild()
+            else:
+                return ResultNoBuild()
         
         should_build, f = self.check(makecall)
         
@@ -166,6 +169,7 @@ class _Rule(object):
             if makecall.args.get('test', False):
                 #print(crayons.blue('build {} because {}'.format(repr(self), f)))
                 print('build {} because {}'.format(repr(self), f))
+                return ResultTestBuild()
             else:
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
@@ -175,13 +179,15 @@ class _Rule(object):
                     raise
 
                 if ret is None:
-                    return ResultBuilt()
+                    return ResultBuild()
                 elif ret != 0:
                     raise BuildError(str(self) + ' return code ' + str(ret))
         else:
             if makecall.args.get('test', False):
                 #print('DONT build',repr(self))
-                pass
+                return ResultTestNoBuild()
+            else:
+                return ResultNoBuild()
 
         self.up_to_date = True
     
@@ -316,249 +322,6 @@ class RuleRegex(_Rule):
     def __repr__(self):
         return 'pymake.RuleRegex{}'.format((self.f_out, self.groups))
 
-class RuleDocAttr(_Rule):
-    """
-    requires class attributes:
-
-    - ``pat_id``
-    - ``attrs``
-
-    Example:
-    
-    .. testcode::
-        
-        from pymake import Makefile, RuleDocAttr, ReqDocAttr
-        from pymake.mongo import Collection, DocumentContext
-
-        class RuleMongo(RuleDocAttr):
-            pat_id = re.compile('doc1')
-            attrs = set(('a', 'b', 'c'))
-        
-            def build(self, makecall, f_out, f_in):
-                with DocumentContext(makecall.makefile.coll.collection, (self._id,)) as (doc,):
-                    doc['a'] = 1
-                    doc['b'] = 2
-                    doc['c'] = 3
-                        
-            def f_in(self, makecall):
-                yield ReqDocAttr('doc1', {})
-    
-        m = Makefile()
-        m.coll = Collection(('localhost', 27017), 'db_name', 'collection_name')
-    """
-    def __init__(self, req, groups):
-        super(RuleDocAttr, self).__init__()
-        self.id_ = req.id_
-        self.req = req
-
-    def complete(self):
-        return not bool(self.req.attrs_remain)
-
-    def __repr__(self):
-        return '<{}.{} pat_id={} attrs={}>'.format(self.__class__.__module__, self.__class__.__name__, self.pat_id, self.attrs)
-
-    @classmethod
-    def test(cls, req):
-        if not isinstance(req, ReqDocAttr): return None
-
-        m = cls.pat_id.match(req.id_)
-
-        #print(cls.pat_id, req.id_)
-
-        if m is None: return None
-        
-        #green('id mathces')
-
-        if not (cls.attrs & req.attrs_remain): return None
-        
-        #green('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
-        #green('rule provides {}'.format(cls.attrs))
-        
-        req.attrs_remain = req.attrs_remain - cls.attrs
-
-        #green('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
-
-        return cls(req, m.groups())
-
-class RuleFileAttr(_Rule):
-    """
-    requires class attributes:
-
-    - ``pat_out``
-    - ``attrs``
-
-    Example:
-    
-    .. testcode::
-        
-        class Rule(RuleDocAttr):
-            pat_id = re.compile('doc1')
-            attrs = set(('a', 'b', 'c'))
-        
-            def build(self, makecall, f_out, f_in):
-                with DocumentContext(makecall.makefile.coll.collection, (self._id,)) as (doc,):
-                    doc['a'] = 1
-                    doc['b'] = 2
-                    doc['c'] = 3
-                        
-            def f_in(self, makecall):
-                yield ReqDocAttr('doc1', {})
-    
-    """
-    def __init__(self, req, groups):
-        super(RuleFileAttr, self).__init__()
-        self.req = req
-        self.groups = groups
- 
-    #def output_exists(self):
-    #    return self.req.output_exists()
-
-    def output_exists(self):
-        """
-        check if the file exists
-        """
-        if not os.path.exists(self.req.id_):
-            #red('does not exist: {}'.format(self.id_))
-            return False
-
-        for a in self.attrs:
-            try:
-                m = get_meta(self.obj, a)
-                if not isinstance(m, dict):
-                    set_meta(self.obj, a, {'mtime':0})
-                    #red('meta for {} = {}'.format(a, m))
-            except NoMeta:
-                raise OutputNotExists("No meta data for {} in {}".format(repr(a), repr(self.obj)))
-        
-        return True
-
-    @cached_property
-    def obj(self):
-        with open(self.req.id_, 'rb') as f:
-            return pickle.load(f)
-
-    #def output_mtime(self):
-    #    #red('req={}'.format(self.req))
-    #    t = self.req.output_mtime()
-    #    #red('return {}'.format(t))
-    #    return t
-
-    def output_mtime(self):
-        """
-        return the mtime of the file
-        """
-        mtimes = []
-
-        for a in self.attrs:
-            try:
-                m = get_meta(self.obj, a)
-            except Exception as e:
-                red("error in output_mtime of {}".format(repr(self)))
-                red(repr(e))
-                raise
-
-            #red('meta for {} = {}'.format(a, m))
-            mtimes.append(m['mtime'])
-
-        ret = max(mtimes)
-
-        #red('{} mtimes is {}...{}'.format(self, mtimes, ret))
-
-        return ret
-   
-    def complete(self):
-        return not bool(self.req.attrs_remain)
-
-    def __repr__(self):
-        return '<{}.{} pat_out={} attrs={}>'.format(self.__class__.__module__, self.__class__.__name__, self.pat_out, self.attrs)
-
-    @classmethod
-    def test(cls, req):
-        if not isinstance(req, ReqFileAttr): return None
-
-        m = cls.pat_out.match(req.id_)
-
-        if m is None:
-            return None
-        
-        #green('id mathces')
-
-        if not (cls.attrs & req.attrs_remain): return None
-        
-        #green('RuleDocAttr match was attrs_remain = {}'.format(req.attrs_remain))
-        #green('rule provides {}'.format(cls.attrs))
-        
-        req.attrs_remain = req.attrs_remain - cls.attrs
-
-        #green('RuleDocAttr match now attrs_remain = {}'.format(req.attrs_remain))
-
-        return cls(req, m.groups())
-    
-    def context(self, factory=None):
-        return FileContext(self, factory)
-
-class Proxy(object):
-    def __init__(self, o):
-        object.__setattr__(self, '_o', o)
-
-    def __getattribute__(self, name):
-        o = object.__getattribute__(self, '_o')
-        v = getattr(o, name)
-        
-        try:
-            import esolv.storage
-            if isinstance(v, esolv.storage.Storage):
-                v = Proxy(v)
-        except Exception as e:
-            print(e)
-        
-        return v
-    
-    def __setattr__(self, name, value):
-        o = object.__getattribute__(self, '_o')
-        setattr(o, name, value)
-        
-        if not hasattr(o, '_meta_attr'):
-            o._meta_attr = {name:{}}
-        else:
-            if name not in o._meta_attr:
-                o._meta_attr[name] = {}
-            elif not isinstance(o._meta_attr[name], dict):
-                o._meta_attr[name] = {}
-
-        m = o._meta_attr[name]
-        
-        m['mtime'] = time.time()
-
-
-class FileContext:
-    def __init__(self, rule, factory=None):
-        self.rule = rule
-        self.factory = factory
-
-    def __enter__(self):
-        if os.path.exists(self.rule.req.id_):
-            with open(self.rule.req.id_, 'rb') as f:
-                self.o = pickle.loads(f.read())
-        else:
-            self.o = self.factory()
-        
-        p = Proxy(self.o)
-
-        return p
-
-    def __exit__(self, exc_type, exc, tb):
-        
-        if exc_type:
-            red("error in FileContext {} {}".format(exc_type, exc))
-            return False
-
-        b = pickle.dumps(self.o)
-        
-        pymake.makedirs(os.path.dirname(self.rule.req.id_))
-
-        with open(self.rule.req.id_, 'wb') as f:
-            f.write(b)
         
 class RuleRegexSimple(RuleRegex):
     def build(self, makecall, _, f_in):
