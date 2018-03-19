@@ -22,6 +22,10 @@ class MakeCall:
 
         self.stack = stack
 
+    @property
+    def show_plot(self):
+        return self.args.get('show_plot', False)
+
     def copy(self):
         return MakeCall(self.makefile, dict(self.args), self.graph, self.stack)
 

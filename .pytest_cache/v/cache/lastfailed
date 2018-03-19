@@ -1,0 +1,4 @@
+{
+  "pymake/tests/test_doc_attr.py": true,
+  "pymake/tests/test_mongo.py": true
+}

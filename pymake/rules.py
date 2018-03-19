@@ -148,14 +148,15 @@ class _Rule(object):
         
         #f_out = list(self.rule_f_out())
        
-        if req.would_touch(makecall):
-            should_build, f = self.check(makecall, test=True)
-            if should_build:
-                req.touch_maybe(makecall)
-                return ResultBuild()
-            else:
-                return ResultNoBuild()
-        
+        if req:
+            if req.would_touch(makecall):
+                should_build, f = self.check(makecall, test=True)
+                if should_build:
+                    req.touch_maybe(makecall)
+                    return ResultBuild()
+                else:
+                    return ResultNoBuild()
+            
         should_build, f = self.check(makecall)
         
         try:
@@ -284,7 +285,6 @@ class RuleRegex(_Rule):
         if not isinstance(req, ReqFile): return None
         
         logger.debug('{} {}'.format(cls.pat_out, req.fn))
-        
 
         if callable(cls.pat_out):
             pat = cls.pat_out()
@@ -358,5 +358,54 @@ class RuleRegexSimple2(RuleRegex):
         print(m.main)
 
         m.main(makecall, av)
+
+class Pat:
+    pass
+
+class PatString(Pat):
+    def __init__(self, pattern_string):
+        self.pat = re.compile(pattern_string)
+
+    def match(s):
+        return bool(self.pat.match(s))
+
+class RuleFileDescriptor(Rule):
+    """
+    a rule that defines a file descriptor pattern
+    a file descriptor pattern is a dict in which the attributes are regular values or patterns that can be used to match regular values
+    """
+
+    @classmethod
+    def test(cls, req):
+        if not isinstance(req, ReqFileDescriptor): return None
+        
+        # a - this descriptor
+        # b - req descriptor
+
+        a = cls.descriptor_pattern()
+        b = req.d
+        
+        set_a = set(a.keys())
+        set_b = set(b.keys())
+        
+        # the descriptors must have the exact same keys
+        if not (set_a == set_b):
+            return None
+
+        for k in set_a:
+            if isinstance(a[k], Pat):
+                if not a[k].match(b[k]):
+                    return None
+            else:
+                if not (a[k] == b[k]):
+                    return None
+
+        return cls(req.fn, b)
+
+    def __init__(self, f_out, descriptor):
+        super(RuleFileDescriptor, self).__init__(f_out)
+        self.f_out = f_out
+        self.descriptor = descriptor
+
 
 

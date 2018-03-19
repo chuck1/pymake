@@ -6,3 +6,4 @@ dist/
 .cache*
 .dev/
 *.egg-info/
+env/

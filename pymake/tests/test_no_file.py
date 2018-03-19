@@ -1,5 +1,3 @@
-import termcolor
-
 import pymake
 
 class A(pymake.Rule):
@@ -11,7 +9,7 @@ class A(pymake.Rule):
         yield self.b
 
     def build(self, makecall, _, f_in):
-        print(termcolor.colored('build A','yellow'))
+        print('build A')
         open(self.f_out, 'w').write('hello')
 
 class B(pymake.Rule):
@@ -22,7 +20,7 @@ class B(pymake.Rule):
         yield pymake.ReqFile('build/C.txt')
 
     def build(self, makecall, _, f_in):
-        print(termcolor.colored('build B','yellow'))
+        print('build B')
 
 def test():
 

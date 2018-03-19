@@ -141,7 +141,7 @@ class Makefile:
         #print(crayons.magenta(str(target), bold=True))
         
         if isinstance(target, Rule):
-            return target.make(mc)
+            return target.make(mc, None)
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
 
