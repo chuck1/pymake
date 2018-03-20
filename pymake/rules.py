@@ -298,10 +298,10 @@ class RuleRegex(_Rule):
         try:
             m = pat.match(req.fn)
         except Exception as e:
-            red(e)
-            red(repr(req))
-            red(repr(req.fn))
-            red(repr(pat))
+            print(crayons.red(e))
+            print(crayons.red(repr(req)))
+            print(crayons.red(repr(req.fn)))
+            print(crayons.red(repr(pat)))
             raise
 
         if m is None: return None
