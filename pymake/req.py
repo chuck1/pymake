@@ -20,7 +20,7 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
-class Req(object):
+class Req:
     def output_exists(self):
         return None
 
@@ -95,6 +95,7 @@ class ReqFile(Req):
     :param fn: relative path to file
     """
     def __init__(self, fn):
+        assert isinstance(fn, str)
         self.fn = fn
 
     def __eq__(self, other):
@@ -119,11 +120,13 @@ class ReqFile(Req):
         return 'pymake.ReqFile({})'.format(repr(self.fn))
 
 class ReqFileDescriptor(ReqFile):
-    def __init__(self, d, ext):
+    def __init__(self, d):
         self.d = d
-        self.ext = ext
 
-        self.fn = manager.get_filename(self.d, self.ext)
+        self.fn = manager.get_filename(self.d)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.d})'
 
 
 

@@ -40,8 +40,8 @@ class MakeCall:
         if r1 is None: return
 
         try:
-            v1 = dict_get(self.graph, r1.f_out, {})
-            v2 = dict_get(v1, r2.f_out, {})
+            v1 = dict_get(self.graph, r1.graph_string(), {})
+            v2 = dict_get(v1, r2.graph_string(), {})
         except Exception as e:
             print(e, repr(e))
 

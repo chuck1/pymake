@@ -4,7 +4,7 @@ import base64
 import tempfile
 import os
 import contextlib
-from pprint import pprint
+import pprint
 
 def normalized_list(a):
     return [normalized(i) for i in a]
@@ -48,7 +48,7 @@ class Manager:
  
     def write(self):
         with open(INDEX_FILENAME, "w") as f:
-            json.dump(self.index, f)
+            f.write(json.dumps(self.index, indent=4))
 
     def next_int(self):
         i = self.index["next_int"]
@@ -62,7 +62,7 @@ class Manager:
 
         return self.index["folders"][h]
 
-    def get_filename_1(self, desc, ext):
+    def get_filename_1(self, desc):
         
         h = get_hash(desc)
        
@@ -78,16 +78,23 @@ class Manager:
 
         return h, i
 
-    def get_filename(self, desc, ext):
-        h, i = self.get_filename_1(desc, ext)
+    def get_filename(self, desc):
+        h, i = self.get_filename_1(desc)
 
-        f = f"data/index/{h}/{i}{ext}"
+        f = f"data/index/{h}/{i}"
 
         try:
             os.makedirs(os.path.dirname(f))
         except OSError: pass
 
         return f
+
+    def get_descriptor(self, folder, i):
+        f = self.index['folders'][folder]
+        if i not in f:
+            pprint.pprint(f)
+        d = f[i]
+        return d
 
 manager = Manager()
 

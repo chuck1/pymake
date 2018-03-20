@@ -14,6 +14,7 @@ from .req import *
 from .rules import *
 from .util import *
 from .makecall import *
+from . import file_index
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ class Makefile:
         :param regex: treat targets as regex expressions and make all targets that match
         """
         
-        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search'})
+        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'desc'})
         if d:
             raise Exception(f'unexpected keyword arguments: {d}')
 
@@ -94,12 +95,18 @@ class Makefile:
         mc = MakeCall(self, args)
         
         with render_graph_on_exit(mc):
+
             if args.get('regex', False):
                 print('regex')
                 args = dict(kwargs)
                 args.update({'regex':False})
                 for t in self.search_gen(target):
                     self._make(mc, t, None)
+
+            elif args.get('desc', False):
+                print(repr(target[0]))
+                d = json.loads(target[0])
+                self._make(mc, ReqFileDescriptor(d), None)
 
             elif isinstance(target, list):
                 for t in target:
@@ -111,8 +118,18 @@ class Makefile:
     def ensure_is_req(self, target):
         if isinstance(target, str):
             target = ReqFile(target)
+
         if not isinstance(target, Req):
             raise Exception('{}'.format(repr(target)))
+
+        if isinstance(target, ReqFile):
+            if not isinstance(target, ReqFileDescriptor):
+                pat = re.compile('data/index/([0-9a-f]+)/(\d+)(\.\w+)')
+                m = pat.match(target.fn)
+                if m:
+                    d = file_index.manager.get_descriptor(m.group(1), m.group(2))
+                    return ReqFileDescriptor(d, m.group(3))
+
         return target
 
     def rules_sorted(self, target):

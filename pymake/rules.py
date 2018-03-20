@@ -10,10 +10,11 @@ import pickle
 import time
 import traceback
 import subprocess
-
+from mybuiltins import *
 from cached_property import cached_property
 
 import pymake
+from .pat import *
 from .req import *
 from .exceptions import *
 from .util import *
@@ -47,7 +48,7 @@ class _Rule(object):
 
         :param MakeCall makecall: makecall object
         """
-        raise NotImplementedError()
+        raise NotImplementedError(self.__class__.__name__)
 
     def build(self, makecall, _, f_in):
         """
@@ -221,6 +222,9 @@ class _Rule(object):
         for r in self._rules(makecall):
             yield from r.rules(makecall)
 
+    def graph_string(self):
+        return self.f_out
+
 class Rule(_Rule):
     """
     a simple file-based rule
@@ -359,15 +363,6 @@ class RuleRegexSimple2(RuleRegex):
 
         m.main(makecall, av)
 
-class Pat:
-    pass
-
-class PatString(Pat):
-    def __init__(self, pattern_string):
-        self.pat = re.compile(pattern_string)
-
-    def match(s):
-        return bool(self.pat.match(s))
 
 class RuleFileDescriptor(Rule):
     """
@@ -378,9 +373,11 @@ class RuleFileDescriptor(Rule):
     @classmethod
     def test(cls, req):
         if not isinstance(req, ReqFileDescriptor): return None
-        
+ 
+       
         # a - this descriptor
         # b - req descriptor
+
 
         a = cls.descriptor_pattern()
         b = req.d
@@ -407,5 +404,6 @@ class RuleFileDescriptor(Rule):
         self.f_out = f_out
         self.descriptor = descriptor
 
-
+    def graph_string(self):
+        return json.dumps(self.descriptor, indent=4)
 
