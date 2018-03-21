@@ -363,7 +363,6 @@ class RuleRegexSimple2(RuleRegex):
 
         m.main(makecall, av)
 
-
 class RuleFileDescriptor(Rule):
     """
     a rule that defines a file descriptor pattern
@@ -406,4 +405,25 @@ class RuleFileDescriptor(Rule):
 
     def graph_string(self):
         return json.dumps(self.descriptor, indent=4)
+
+class RuleFileDescriptorSimple(RuleFileDescriptor):
+
+    def build(self, makecall, _, f_in):
+        print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+
+        pymake.makedirs(os.path.dirname(self.f_out))
+
+        assert f_in[0].fn[-3:] == ".py"
+        
+        av = [f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
+        
+        s = f_in[0].fn[:-3].replace('/','.')
+        m = __import__(s, fromlist=['main'])
+        
+        print(s)
+        print(m)
+        print(m.main)
+
+        m.main(makecall, av)
+
 
