@@ -119,6 +119,10 @@ class ReqFile(Req):
     def __repr__(self):
         return 'pymake.ReqFile({})'.format(repr(self.fn))
 
+    def load_object(self):
+        with open(self.fn, 'rb') as f:
+            return pickle.load(f)
+
 class ReqFileDescriptor(ReqFile):
     def __init__(self, d):
         self.d = d

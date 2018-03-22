@@ -40,3 +40,18 @@ class PatFloat(Pat):
         except:
             return False
 
+class PatDict(Pat):
+    def match(self, x):
+        return isinstance(x, dict)
+
+
+class PatNullable(Pat):
+    def __init__(self, pat):
+        self.pat = pat
+
+    def match(self, thing):
+        return self.pat.match(thing)
+
+
+
+

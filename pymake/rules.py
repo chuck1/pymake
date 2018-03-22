@@ -378,23 +378,38 @@ class RuleFileDescriptor(Rule):
         # b - req descriptor
 
 
-        a = cls.descriptor_pattern()
-        b = req.d
+        pat = cls.descriptor_pattern()
+
+        a = pat
+        b = dict(req.d)
         
         set_a = set(a.keys())
         set_b = set(b.keys())
         
-        # the descriptors must have the exact same keys
-        if not (set_a == set_b):
-            return None
+        a_and_b = set_a & set_b
 
-        for k in set_a:
+        just_pat = set_a - set_b
+        just_dsc = set_b - set_a
+
+        for k in a_and_b:
             if isinstance(a[k], Pat):
                 if not a[k].match(b[k]):
                     return None
             else:
                 if not (a[k] == b[k]):
                     return None
+
+        # attributes in the pattern but not in the descriptor must be nullable
+        for k in just_pat:
+            if not isinstance(pat[k], PatNullable):
+                return None
+            else:
+                b[k] = None
+        
+        # attributes in the descriptor but not in the pattern must be null
+        for k in just_dsc:
+            if b[k] is not None:
+                return None
 
         return cls(req.fn, b)
 

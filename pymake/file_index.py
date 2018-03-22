@@ -1,6 +1,7 @@
 import hashlib
 import json
 import base64
+import re
 import tempfile
 import os
 import contextlib
@@ -95,6 +96,10 @@ class Manager:
             pprint.pprint(f)
         d = f[i]
         return d
+
+    def get_descriptor_from_filename(self, s):
+        m = re.match('data/index/([0-9a-f]+)/(\d+)', s)
+        return self.get_descriptor(m.group(1), m.group(2))
 
 manager = Manager()
 
