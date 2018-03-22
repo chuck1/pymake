@@ -1,3 +1,0 @@
-
-class OutputNotExists(Exception): pass
-

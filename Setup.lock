@@ -1,14 +1,12 @@
 {
     "author": "Charles Rymal",
-    "url": "http://github.com/chuck1/pymake",
+    "url": "",
     "author_email": "charlesrymal@gmail.com",
-    "name": "pymake",
+    "name": "mybuiltins",
     "packages": [
-        "pymake",
-        "pymake.os0",
-        "pymake.tests"
+        "mybuiltins",
     ],
-    "description": "python makefile system",
+    "description": "",
     "license": "MIT",
     "packages_data": {},
     "scripts": []
