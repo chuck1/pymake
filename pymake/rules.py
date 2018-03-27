@@ -175,6 +175,7 @@ class _Rule(object):
             else:
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
+                    self._makecall = makecall
                     ret = self.build(makecall, None, f_in)
                 except Exception as e:
                     print(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
@@ -324,7 +325,7 @@ class RuleRegex(_Rule):
         _Rule.__init__(self)
 
     def __repr__(self):
-        return 'pymake.RuleRegex{}'.format((self.f_out, self.groups))
+        return '{}{}'.format(self.__class__.__name__, (self.f_out, self.groups))
 
         
 class RuleRegexSimple(RuleRegex):
@@ -346,7 +347,9 @@ class RuleRegexSimple(RuleRegex):
 
 class RuleRegexSimple2(RuleRegex):
     def build(self, makecall, _, f_in):
-        print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+        logger.info(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+        for f in f_in:
+            logger.info(crayons.yellow(f'  {f!r}'))
 
         pymake.makedirs(os.path.dirname(self.f_out))
 
@@ -424,7 +427,9 @@ class RuleFileDescriptor(Rule):
 class RuleFileDescriptorSimple(RuleFileDescriptor):
 
     def build(self, makecall, _, f_in):
-        print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+        logger.info(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+        for f in f_in:
+            logger.info(crayons.yellow(f'  {f!r}'))
 
         pymake.makedirs(os.path.dirname(self.f_out))
 

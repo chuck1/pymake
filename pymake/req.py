@@ -88,6 +88,9 @@ class ReqFake(Req):
     def make(self, makefile, mc, ancestor):
         return ResultNoBuild()
 
+    def __repr__(self):
+        return f'<{self.__class__.__name__} fn={self.fn!r}>'
+
 class ReqFile(Req):
     """
     simple file requirement
