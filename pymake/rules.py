@@ -2,6 +2,7 @@ __version__ = '0.2'
 
 import functools
 import inspect
+import json
 import os
 import re
 import sys
@@ -10,6 +11,7 @@ import pickle
 import time
 import traceback
 import subprocess
+
 from mybuiltins import *
 from cached_property import cached_property
 
@@ -27,7 +29,23 @@ def dict_get(d, k, de):
         d[k] = de
     return d[k]
 
-class _Rule(object):
+class Rule_utilities:
+
+    def write_object(self, file_out, o):
+        pymake.makedirs(os.path.dirname(file_out))
+
+        with open(file_out, 'wb') as f:
+            pickle.dump(o, f)
+
+    def write_json(self, file_out, d):
+        pymake.makedirs(os.path.dirname(file_out))
+
+        s = json.dumps(d, indent=4, sort_keys=True)
+
+        with open(file_out, 'w') as f:
+            f.write(s)
+
+class _Rule(Rule_utilities):
     """
     Base class for rules.
     You must derive from this class and overwrite the following member functions:
@@ -48,7 +66,12 @@ class _Rule(object):
 
         :param MakeCall makecall: makecall object
         """
-        raise NotImplementedError(self.__class__.__name__)
+        return
+        yield
+
+    def build_requirements(self, makecall, f):
+        return
+        yield
 
     def build(self, makecall, _, f_in):
         """
@@ -92,25 +115,41 @@ class _Rule(object):
         makecall2 = makecall.copy()
         makecall2.args['test'] = test
 
-        for f in self.f_in(makecall):
-
-            if f is None:
+        def func(req):
+            if req is None:
                 raise Exception("None in f_in {}".format(self))
 
-            r = makecall2.make(f, self)
+            r = makecall2.make(req, self.req_out)
 
             if not isinstance(r, Result):
-                print(f)
+                print(req)
                 print(r)
                 raise Exception()
+            
+            return req
 
-            yield f
+        yield from self.build_requirements(makecall, func)
+
+        for f in self.f_in(makecall):
+            yield func(f)
+
+    def get_requirements(self, makecall):
+        
+        def func(req): return req
+
+        yield from self.build_requirements(makecall, func)
+
+        for f in self.f_in(makecall):
+            yield func(f)
 
     def check(self, makecall, test=False):
         
-        if makecall.args.get('force', False): return True, None
-
         f_in = list(self.make_ancestors(makecall, test))
+
+        if makecall.args.get('force', False):
+            return True, 'forced'
+
+        assert bool(f_in)
         
         b = self.output_exists()
         if not b:
@@ -161,7 +200,7 @@ class _Rule(object):
         should_build, f = self.check(makecall)
         
         try:
-            f_in = list(self.f_in(makecall))
+            f_in = list(self.get_requirements(makecall))
         except Exception as e:
             print(self)
             traceback.print_exc()
@@ -223,8 +262,6 @@ class _Rule(object):
         for r in self._rules(makecall):
             yield from r.rules(makecall)
 
-    def graph_string(self):
-        return self.f_out
 
 class Rule(_Rule):
     """
@@ -333,6 +370,9 @@ class RuleRegexSimple(RuleRegex):
         print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
 
         pymake.makedirs(os.path.dirname(self.f_out))
+        
+        if not f_in:
+            raise Exception(f'{self.__class__} f_in is empty')
 
         if f_in[0].fn[-3:] == ".py":
             cmd = [sys.executable, f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
@@ -380,12 +420,19 @@ class RuleFileDescriptor(Rule):
         # a - this descriptor
         # b - req descriptor
 
+        
 
         pat = cls.descriptor_pattern()
 
         a = pat
         b = dict(req.d)
-        
+       
+        if 'type' in pat:
+            logger.debug(crayons.blue(f'pat type={pat["type"]}'))
+
+        logger.debug(f'pat={pat}')
+        logger.debug(f'dsc={req.d}')
+
         set_a = set(a.keys())
         set_b = set(b.keys())
         
@@ -397,14 +444,17 @@ class RuleFileDescriptor(Rule):
         for k in a_and_b:
             if isinstance(a[k], Pat):
                 if not a[k].match(b[k]):
+                    logger.debug(f'{k!r} does not match pattern')
                     return None
             else:
                 if not (a[k] == b[k]):
+                    logger.debug(f'{k!r} differs')
                     return None
 
         # attributes in the pattern but not in the descriptor must be nullable
         for k in just_pat:
             if not isinstance(pat[k], PatNullable):
+                logger.debug(f'{k!r} is in pattern but not descriptor and is not nullable')
                 return None
             else:
                 b[k] = None
@@ -412,6 +462,7 @@ class RuleFileDescriptor(Rule):
         # attributes in the descriptor but not in the pattern must be null
         for k in just_dsc:
             if b[k] is not None:
+                logger.debug(f'{k!r} is in descriptor but not in pattern and is not None')
                 return None
 
         return cls(req.fn, b)

@@ -4,12 +4,24 @@ import re
 class Pat:
     pass
 
+class PatAny(Pat):
+    def match(self, s):
+        return True
+
 class PatString(Pat):
-    def __init__(self, pattern_string):
-        self.pat = re.compile(pattern_string)
+    def __init__(self, pattern_string=None):
+        if pattern_string is not None:
+            self.pat = re.compile(pattern_string)
+        else:
+            self.pat = None
 
     def match(self, s):
-        return bool(self.pat.match(s))
+        if not isinstance(s, str): return False
+        
+        if self.pat is not None:
+            return bool(self.pat.match(s))
+
+        return True
 
 class PatInt(Pat):
     def __init__(self, start=None, stop=None):
@@ -50,6 +62,9 @@ class PatNullable(Pat):
         self.pat = pat
 
     def match(self, thing):
+        if thing is None:
+            return True
+
         return self.pat.match(thing)
 
 

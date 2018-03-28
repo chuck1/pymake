@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import hashlib
 import inspect
 import re
 import os
@@ -9,6 +10,7 @@ import traceback
 import crayons
 import pygraphviz as gv
 
+from mybuiltins import *
 from .util import *
 
 logger = logging.getLogger(__name__)
@@ -49,15 +51,34 @@ class MakeCall:
         print(crayons.magenta('render graph', bold=True))
         g = gv.AGraph(directed=True, rankdir='LR')
 
+        def safe_label(s0):
+            s1 = s0.replace('\n', '\\l')
+            s2 = s1.replace('\\"','\'')
+            #breakpoint()
+            return s2
+
         def f1(n, d, f):
+            if n:
+                h0 = hashlib.md5(n.encode()).hexdigest()
+
             for k, v in d.items():
-                g.add_node(k)
+                
+                h = hashlib.md5(k.encode()).hexdigest()
+
+                g.add_node(h, label=safe_label(k))
+                #print(f'h={h!r}')
+                #print(f'k={k!r}')
+
                 if n:
-                    g.add_edge(n, k)
+                    g.add_edge(h0, h)
+
                 f(k, v, f1)
         
         f1(None, self.graph, f1)
         
+        g.write('layout.dot')
+        return
+
         with open('layout.dot', 'w') as f:
             f.write(g.string())
 

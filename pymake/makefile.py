@@ -57,6 +57,7 @@ class Makefile:
                 raise
             
             if r is not None:
+                r.req_out = target
                 yield r
 
     def add_rules(self, generator):

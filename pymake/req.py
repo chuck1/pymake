@@ -8,7 +8,7 @@ import logging
 import traceback
 
 from cached_property import cached_property
-
+from mybuiltins import *
 from .exceptions import *
 from .util import *
 from .result import *
@@ -34,6 +34,8 @@ class Req:
             return ResultNoBuild()
        
         makefile._cache_req.append(self)
+    
+        mc.add_edge(ancestor, self)
 
         rules = makefile.rules_sorted(self)
 
@@ -48,7 +50,7 @@ class Req:
 
         #if self.touch_maybe(mc): return
 
-        mc.add_edge(ancestor, rule)
+        #mc.add_edge(ancestor, rule)
 
         #for rule in rules:
 
@@ -123,8 +125,25 @@ class ReqFile(Req):
         return 'pymake.ReqFile({})'.format(repr(self.fn))
 
     def load_object(self):
-        with open(self.fn, 'rb') as f:
-            return pickle.load(f)
+        try:
+            with open(self.fn, 'rb') as f:
+                return pickle.load(f)
+        except:
+            logger.error(f'error loading: {self.fn!r}')
+            raise
+
+    def load_json(self):
+        with open(self.fn, 'r') as f:
+            s = f.read()
+        try:
+            return json.loads(s)
+        except:
+            logger.error(f'error loading: {self.fn!r}')
+            breakpoint()
+            raise
+
+    def graph_string(self):
+        return self.fn
 
 class ReqFileDescriptor(ReqFile):
     def __init__(self, d):
@@ -135,5 +154,7 @@ class ReqFileDescriptor(ReqFile):
     def __repr__(self):
         return f'{self.__class__.__name__}({self.d})'
 
+    def graph_string(self):
+        return json.dumps(self.d, indent=2)
 
 
