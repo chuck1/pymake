@@ -131,6 +131,7 @@ class _Rule(Rule_utilities):
         yield from self.build_requirements(makecall, func)
 
         for f in self.f_in(makecall):
+            #raise Exception(str(self.__class__))
             yield func(f)
 
     def get_requirements(self, makecall):
@@ -149,7 +150,9 @@ class _Rule(Rule_utilities):
         if makecall.args.get('force', False):
             return True, 'forced'
 
-        assert bool(f_in)
+        if not bool(f_in):
+            breakpoint()
+            raise Exception()
         
         b = self.output_exists()
         if not b:
@@ -179,8 +182,7 @@ class _Rule(Rule_utilities):
         
         return False, None
 
-    def make(self, makecall, req):
-        #magenta("make {}".format(self))
+    def _make(self, makecall, req):
 
         if self.up_to_date: 
             raise Exception()

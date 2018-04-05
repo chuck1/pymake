@@ -44,6 +44,7 @@ class Req:
             if b:
                 return ResultNoRuleFileExists()
             else:
+                breakpoint()
                 raise NoTargetError("no rules to make {}".format(repr(self)))
        
         rule = rules[0]
@@ -55,7 +56,7 @@ class Req:
         #for rule in rules:
 
         try:
-            ret = rule.make(mc, self)
+            ret = rule._make(mc, self)
         except NoTargetError as e:
             print('while building', repr(self))
             print(' ',e)
