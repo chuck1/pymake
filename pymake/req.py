@@ -29,9 +29,11 @@ class Req:
 
     def make(self, makefile, mc, ancestor):
 
-        if self in makefile._cache_req:
-            #print('{} is in cache'.format(target))
-            return ResultNoBuild()
+        #if not mc.args['test']:
+        if True:
+            if self in makefile._cache_req:
+                #print('{} is in cache'.format(target))
+                return ResultNoBuild()
        
         makefile._cache_req.append(self)
     

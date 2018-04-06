@@ -28,14 +28,22 @@ class MakeCall:
     def show_plot(self):
         return self.args.get('show_plot', False)
 
-    def copy(self):
-        return MakeCall(self.makefile, dict(self.args), self.graph, self.stack)
+    def copy(self, **args):
+        args1 = dict(self.args)
+        args1.update(args)
+        return MakeCall(self.makefile, args1, self.graph, self.stack)
 
-    def make(self, target, ancestor=None):
+    def make(self, target, test=None, ancestor=None):
+        # added this because needed to make a file when test was True
+        if test is None:
+            test = self.args['test']
+
+        makecall = self.copy(test=test)
+
         assert(target is not None)
 
         with MakeContext(self.stack, target):
-            #print(crayons.blue("stack = {}".format(self.stack), bold = True))
+            #return self.makefile._make(makecall, target, ancestor)
             return self.makefile._make(self, target, ancestor)
 
     def add_edge(self, r1, r2):

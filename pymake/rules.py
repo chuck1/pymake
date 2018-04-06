@@ -37,12 +37,12 @@ class Rule_utilities:
         with open(file_out, 'wb') as f:
             pickle.dump(o, f)
 
-    def write_json(self, file_out, d):
-        pymake.makedirs(os.path.dirname(file_out))
+    def write_json(self, d):
+        pymake.makedirs(os.path.dirname(self.f_out))
 
         s = json.dumps(d, indent=4, sort_keys=True)
 
-        with open(file_out, 'w') as f:
+        with open(self.f_out, 'w') as f:
             f.write(s)
 
 class _Rule(Rule_utilities):
@@ -192,7 +192,7 @@ class _Rule(Rule_utilities):
         if should_build:
             if makecall.args.get('test', False):
                 #print(crayons.blue('build {} because {}'.format(repr(self), f)))
-                print('build {} because {}'.format(repr(self), f))
+                logger.debug('build {} because {}'.format(repr(self), f))
                 return ResultTestBuild()
             else:
                 #blue('build {} because {}'.format(repr(self), f))
@@ -200,7 +200,7 @@ class _Rule(Rule_utilities):
                     self._makecall = makecall
                     ret = self._build(makecall, None, f_in)
                 except Exception as e:
-                    print(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
+                    logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                     raise
 
                 if ret is None:
@@ -446,7 +446,7 @@ class RuleFileDescriptor(Rule):
                 logger.debug(f'{k!r} is in pattern but not descriptor and is not nullable')
                 return None
             else:
-                b[k] = None
+                b[k] = pat[k].default
         
         # attributes in the descriptor but not in the pattern must be null
         for k in just_dsc:

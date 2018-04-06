@@ -58,8 +58,9 @@ class PatDict(Pat):
 
 
 class PatNullable(Pat):
-    def __init__(self, pat):
+    def __init__(self, pat, default=None):
         self.pat = pat
+        self.default = default
 
     def match(self, thing):
         if thing is None:
