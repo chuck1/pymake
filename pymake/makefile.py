@@ -86,7 +86,7 @@ class Makefile:
         :param regex: treat targets as regex expressions and make all targets that match
         """
         
-        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'desc'})
+        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'desc', 'stop'})
         if d:
             raise Exception(f'unexpected keyword arguments: {d}')
 

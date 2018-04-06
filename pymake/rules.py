@@ -59,18 +59,8 @@ class _Rule(Rule_utilities):
         self.__rules = None
         self.up_to_date = False
 
-    def f_in(self, makecall):
-        """
-        This function must be defined by a derived class.
-        It must return a generator of 
-
-        :param MakeCall makecall: makecall object
-        """
-        return
-        yield
-
     def build_requirements(self, makecall, f):
-        return
+        raise Exception(repr(self.__class__))
         yield
 
     def build(self, makecall, _, f_in):
@@ -130,18 +120,11 @@ class _Rule(Rule_utilities):
 
         yield from self.build_requirements(makecall, func)
 
-        for f in self.f_in(makecall):
-            #raise Exception(str(self.__class__))
-            yield func(f)
-
     def get_requirements(self, makecall):
         
         def func(req): return req
-
+        
         yield from self.build_requirements(makecall, func)
-
-        for f in self.f_in(makecall):
-            yield func(f)
 
     def check(self, makecall, test=False):
         
@@ -188,8 +171,6 @@ class _Rule(Rule_utilities):
             raise Exception()
             return
         
-        #f_out = list(self.rule_f_out())
-       
         if req:
             if req.would_touch(makecall):
                 should_build, f = self.check(makecall, test=True)
@@ -199,7 +180,7 @@ class _Rule(Rule_utilities):
                 else:
                     return ResultNoBuild()
             
-        should_build, f = self.check(makecall)
+        should_build, f = self.check(makecall, test=makecall.args['test'])
         
         try:
             f_in = list(self.get_requirements(makecall))
@@ -217,7 +198,7 @@ class _Rule(Rule_utilities):
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
                     self._makecall = makecall
-                    ret = self.build(makecall, None, f_in)
+                    ret = self._build(makecall, None, f_in)
                 except Exception as e:
                     print(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                     raise
@@ -247,14 +228,18 @@ class _Rule(Rule_utilities):
         else:
             print('binary data unchanged. do not write.')
 
-    def write_binary(self, filename, b):
+    def write_pickle(self, o):
+        b = pickle.dumps(o)
+        self.write_binary(b)
+
+    def write_binary(self, b):
         # it appears that this functionality is actually not useful as currently
         # implemented. revisit later
 
         #if check_existing_binary_data(filename, b):
         if True:
-            pymake.makedirs(os.path.dirname(filename))
-            with open(filename, 'wb') as f:
+            pymake.makedirs(os.path.dirname(self.f_out))
+            with open(self.f_out, 'wb') as f:
                 f.write(b)
         else:
             print('binary data unchanged. do not write.')
@@ -264,6 +249,9 @@ class _Rule(Rule_utilities):
         for r in self._rules(makecall):
             yield from r.rules(makecall)
 
+    def _build(self, makecall, *args):
+        logger.info(crayons.yellow(f'Build {self!r}', bold=True))
+        self.build(makecall, *args)
 
 class Rule(_Rule):
     """
@@ -310,6 +298,7 @@ class RuleStatic(_Rule):
         
     def f_out(self):
         return self.static_f_out
+
     def f_in(self, mc):
         yield self.static_f_in
 
@@ -421,8 +410,6 @@ class RuleFileDescriptor(Rule):
        
         # a - this descriptor
         # b - req descriptor
-
-        
 
         pat = cls.descriptor_pattern()
 
