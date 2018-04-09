@@ -71,7 +71,7 @@ class Makefile:
         for rule in self.find_rule(target):
             rule.print_dep(MakeCall(self), indent + 2)
 
-    async def make(self, target, **args):
+    async def make(self, loop, target, **args):
         """
         :param test:  follow the file dependencies and print out which files would be built
                       and a short description of why check returned True. But do not
@@ -104,7 +104,7 @@ class Makefile:
                     mc.make(t)
 
             else:
-                self._make(mc, target, None)
+                await self._make(loop, mc, target, None)
 
     def ensure_is_req(self, target):
         if isinstance(target, str):
@@ -141,7 +141,7 @@ class Makefile:
     
         return rules
 
-    def _make(self, mc, target, ancestor):
+    def _make(self, loop, mc, target, ancestor):
 
         if target is None:
             raise Exception('target is None'+str(target))
@@ -155,7 +155,7 @@ class Makefile:
 
         target = self.ensure_is_req(target)
 
-        return target.make(self, mc, ancestor)
+        return target.make(loop, self, mc, ancestor)
         
     def search_gen(self, target):
         if isinstance(target, list):

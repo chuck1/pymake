@@ -27,7 +27,7 @@ class Req:
     def output_mtime(self):
         return None
 
-    def make(self, makefile, mc, ancestor):
+    def make(self, loop, makefile, mc, ancestor):
 
         #if not mc.args['test']:
         if True:
@@ -57,7 +57,7 @@ class Req:
         #for rule in rules:
 
         try:
-            ret = rule._make(mc, self)
+            ret = rule._make(loop, mc, self)
         except NoTargetError as e:
             print('while building', repr(self))
             print(' ',e)

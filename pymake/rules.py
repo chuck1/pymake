@@ -1,5 +1,6 @@
 __version__ = '0.2'
 
+import asyncio
 import functools
 import inspect
 import json
@@ -100,7 +101,7 @@ class _Rule(Rule_utilities):
     def output_mtime(self):
         return None
 
-    def make_ancestors(self, makecall, test):
+    async def make_ancestors(self, loop, makecall, test):
 
         makecall2 = makecall.copy()
         makecall2.args['test'] = test
@@ -109,16 +110,28 @@ class _Rule(Rule_utilities):
             if req is None:
                 raise Exception("None in f_in {}".format(self))
 
-            r = makecall2.make(req, self.req_out)
+            future = loop.run_in_executor(None, makecall2.make, (req, self.req_out))
 
-            if not isinstance(r, Result):
-                print(req)
-                print(r)
-                raise Exception()
+            #r = makecall2.make(req, self.req_out)
+
+            #if not isinstance(r, Result):
+            #    print(req)
+            #    print(r)
+            #    raise Exception()
             
-            return req
+            #return req
 
-        yield from self.build_requirements(makecall, func)
+            return future, req
+
+        l = list(self.build_requirements(makecall, func))
+
+        futures, reqs = zip(*l)
+
+        #done, pending = yield from asyncio.wait(futures)
+        done, pending = await asyncio.wait(futures)
+        
+        for req in reqs:
+            yield reqs
 
     def get_requirements(self, makecall):
         
@@ -126,9 +139,9 @@ class _Rule(Rule_utilities):
         
         yield from self.build_requirements(makecall, func)
 
-    def check(self, makecall, test=False):
+    async def check(self, loop, makecall, test=False):
         
-        f_in = list(self.make_ancestors(makecall, test))
+        f_in = [f async for f in self.make_ancestors(loop, makecall, test)]
 
         if makecall.args.get('force', False):
             return True, 'forced'
@@ -164,7 +177,7 @@ class _Rule(Rule_utilities):
         
         return False, None
 
-    def _make(self, makecall, req):
+    async def _make(self, loop, makecall, req):
 
         if self.up_to_date: 
             raise Exception()
@@ -179,7 +192,7 @@ class _Rule(Rule_utilities):
                 else:
                     return ResultNoBuild()
             
-        should_build, f = self.check(makecall, test=makecall.args.get('test', False))
+        should_build, f = await self.check(loop, makecall, test=makecall.args.get('test', False))
         
         try:
             f_in = list(self.get_requirements(makecall))
