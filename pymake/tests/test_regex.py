@@ -21,13 +21,12 @@ class A(pymake.RuleRegex):
         yield
 
     def build(self, makecall, files_in):
-        log.info(f'open {self.f_out} write')
 
-        with open(self.f_out, 'w') as f:
+        with makecall.makefile.open(self.f_out, 'w') as f:
+            log.info(f'open {self.f_out} write')
             f.write('hello')
             time.sleep(0.5)
-
-        log.info(f'close {self.f_out} write')
+            log.info(f'close {self.f_out} write')
 
 class B(pymake.RuleRegex):
 
@@ -39,11 +38,12 @@ class B(pymake.RuleRegex):
     def build(self, makecall, files_in):
         f0 = files_in[0].fn
 
-        log.info(f'open {f0} read')
-        with open(f0) as f:
+
+        with makecall.makefile.open(f0) as f:
+            log.info(f'open {f0} read')
             a = f.read()
             time.sleep(0.5)
-        log.info(f'close {f0} read')
+            log.info(f'close {f0} read')
 
         os.makedirs(os.path.dirname(self.f_out))
 
@@ -60,8 +60,10 @@ class C(pymake.RuleRegex):
 
     def build(self, makecall, files_in):
         log.info('open C')
-        with open(self.f_out, 'w') as f:
+
+        with makecall.makefile.open(self.f_out, 'w') as f:
             f.write('hello')
+
         log.info('close C')
 
 @pytest.mark.asyncio

@@ -1,3 +1,4 @@
+import threading
 import contextlib
 import functools
 import inspect
@@ -31,6 +32,7 @@ class Makefile:
     """
     def __init__(self):
         self.rules = []
+        self.file_locks = {}
     
     def find_one(self, target):
         for r in self.find_rule(target):
@@ -193,5 +195,34 @@ class Makefile:
             if m:
                 print(rule, f_out)
                 #print(f, repr(rule))
+
+    @contextlib.contextmanager
+    def open(self, filename, mode='r'):
+
+        with FileLock(self, filename) as fl:
+            with open(filename, mode) as f:
+                yield f
+
+
+class FileLock:
+    def __init__(self, makefile, filename):
+        self.makefile = makefile
+        self.filename = filename
+
+        if filename in self.makefile.file_locks:
+            self.lock = self.makefile.file_locks[filename]
+        else:
+            self.lock = threading.Lock()
+            self.makefile.file_locks[filename] = self.lock
+
+    def __enter__(self):
+        self.lock.acquire()
+        logger.info(f'acquired lock for {self.filename}')
+        return self
+
+    def __exit__(self, *args):
+        self.lock.release()
+        
+
 
 
