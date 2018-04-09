@@ -24,6 +24,13 @@ class MakeCall:
 
         self.stack = stack
 
+    @contextlib.contextmanager
+    def render_graph_on_exit(self):
+        try:
+            yield
+        finally:
+            self.render_graph()
+
     @property
     def show_plot(self):
         return self.args.get('show_plot', False)

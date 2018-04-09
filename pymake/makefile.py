@@ -22,13 +22,6 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
-@contextlib.contextmanager
-def render_graph_on_exit(mc):
-    try:
-        yield
-    finally:
-        mc.render_graph()
-
 class Makefile:
 
     _cache_req = []
@@ -90,12 +83,9 @@ class Makefile:
         if d:
             raise Exception(f'unexpected keyword arguments: {d}')
 
-
-        self.args = args
-        
         mc = MakeCall(self, args)
         
-        with render_graph_on_exit(mc):
+        with mc.render_graph_on_exit():
 
             if args.get('regex', False):
                 print('regex')
@@ -111,7 +101,7 @@ class Makefile:
 
             elif isinstance(target, list):
                 for t in target:
-                    self._make(mc, t, None)
+                    mc.make(t)
 
             else:
                 self._make(mc, target, None)
