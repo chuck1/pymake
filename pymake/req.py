@@ -46,7 +46,6 @@ class Req:
             if b:
                 return ResultNoRuleFileExists()
             else:
-                breakpoint()
                 raise NoTargetError("no rules to make {}".format(repr(self)))
        
         rule = rules[0]

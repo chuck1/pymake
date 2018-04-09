@@ -1,4 +1,3 @@
-strict digraph {
+strict digraph  {
 	graph [rankdir=LR];
-	"build/a" -> "build/b";
 }

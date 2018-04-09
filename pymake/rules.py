@@ -133,9 +133,8 @@ class _Rule(Rule_utilities):
         if makecall.args.get('force', False):
             return True, 'forced'
 
-        if not bool(f_in):
-            breakpoint()
-            raise Exception()
+        #if not bool(f_in):
+        #    raise Exception()
         
         b = self.output_exists()
         if not b:
@@ -180,7 +179,7 @@ class _Rule(Rule_utilities):
                 else:
                     return ResultNoBuild()
             
-        should_build, f = self.check(makecall, test=makecall.args['test'])
+        should_build, f = self.check(makecall, test=makecall.args.get('test', False))
         
         try:
             f_in = list(self.get_requirements(makecall))
@@ -198,7 +197,7 @@ class _Rule(Rule_utilities):
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
                     self._makecall = makecall
-                    ret = self._build(makecall, None, f_in)
+                    ret = self._build(makecall, f_in)
                 except Exception as e:
                     logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                     raise

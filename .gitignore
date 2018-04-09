@@ -7,3 +7,7 @@ dist/
 .dev/
 *.egg-info/
 env/
+
+# for tests
+.file_index.json
+
