@@ -64,7 +64,7 @@ class _Rule(Rule_utilities):
         raise Exception(repr(self.__class__))
         yield
 
-    def build(self, makecall, _, f_in):
+    async def build(self, makecall, _, f_in):
         """
         This function must be defined by a derived class.
 
@@ -130,7 +130,7 @@ class _Rule(Rule_utilities):
 
             return future, req
 
-        l = list(self.build_requirements(loop, makecall, func))
+        l = [t  async for t in self.build_requirements(loop, makecall, func)]
 
         if not l: return
 
@@ -147,13 +147,14 @@ class _Rule(Rule_utilities):
         #breakpoint()
 
         for req in reqs:
-            yield reqs
+            yield req
 
-    def get_requirements(self, loop, makecall):
+    async def get_requirements(self, loop, makecall):
         
         def func(req): return req
         
-        yield from self.build_requirements(loop, makecall, func)
+        async for t in self.build_requirements(loop, makecall, func):
+            yield t
 
     async def check(self, loop, makecall, test=False):
         
@@ -176,6 +177,7 @@ class _Rule(Rule_utilities):
                 continue
             
             if not isinstance(f, Req):
+                breakpoint()
                 raise Exception('{} f_in should return generator of Req objects, not {}'.format(repr(self), type(f)))
 
             if mtime is None:
@@ -211,7 +213,7 @@ class _Rule(Rule_utilities):
         should_build, f = await self.check(loop, makecall, test=makecall.args.get('test', False))
         
         try:
-            f_in = list(self.get_requirements(loop, makecall))
+            f_in = [t async for t in self.get_requirements(loop, makecall)]
         except Exception as e:
             print(self)
             traceback.print_exc()
@@ -226,7 +228,7 @@ class _Rule(Rule_utilities):
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
                     self._makecall = makecall
-                    ret = self._build(makecall, f_in)
+                    ret = await self._build(loop, makecall, f_in)
                 except Exception as e:
                     logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                     raise
@@ -277,9 +279,9 @@ class _Rule(Rule_utilities):
         for r in self._rules(makecall):
             yield from r.rules(makecall)
 
-    def _build(self, makecall, *args):
+    async def _build(self, loop, makecall, *args):
         logger.info(crayons.yellow(f'Build {self!r}', bold=True))
-        self.build(makecall, *args)
+        await self.build(loop, makecall, *args)
 
 class Rule(_Rule):
     """
@@ -385,7 +387,7 @@ class RuleRegex(_Rule):
 
         
 class RuleRegexSimple(RuleRegex):
-    def build(self, makecall, _, f_in):
+    async def build(self, makecall, _, f_in):
         print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
 
         pymake.makedirs(os.path.dirname(self.f_out))
@@ -405,10 +407,10 @@ class RuleRegexSimple(RuleRegex):
         subprocess.run(cmd, check=True)
 
 class RuleRegexSimple2(RuleRegex):
-    def build(self, makecall, _, f_in):
-        logger.info(crayons.yellow("Build " + repr(self),'yellow',bold=True))
-        for f in f_in:
-            logger.info(crayons.yellow(f'  {f!r}'))
+    async def build(self, loop, makecall, f_in):
+        #logger.info(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+        #for f in f_in:
+        #    logger.info(crayons.yellow(f'  {f!r}'))
 
         pymake.makedirs(os.path.dirname(self.f_out))
 
@@ -418,12 +420,8 @@ class RuleRegexSimple2(RuleRegex):
         
         s = f_in[0].fn[:-3].replace('/','.')
         m = __import__(s, fromlist=['main'])
-        
-        print(s)
-        print(m)
-        print(m.main)
 
-        m.main(makecall, av)
+        await m.main(loop, makecall, av)
 
 class RuleFileDescriptor(Rule):
     """
@@ -494,7 +492,7 @@ class RuleFileDescriptor(Rule):
 
 class RuleFileDescriptorSimple(RuleFileDescriptor):
 
-    def build(self, makecall, _, f_in):
+    async def build(self, loop, makecall, f_in):
         logger.info(crayons.yellow("Build " + repr(self),'yellow',bold=True))
         for f in f_in:
             logger.info(crayons.yellow(f'  {f!r}'))
@@ -512,6 +510,6 @@ class RuleFileDescriptorSimple(RuleFileDescriptor):
         print(m)
         print(m.main)
 
-        m.main(makecall, av)
+        await m.main(loop, makecall, av)
 
 

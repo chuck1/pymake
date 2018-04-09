@@ -89,7 +89,7 @@ class ReqFake(Req):
     def __init__(self, fn):
         self.fn = fn
 
-    def make(self, makefile, mc, ancestor):
+    async def make(self, loop, makefile, mc, ancestor):
         return ResultNoBuild()
 
     def __repr__(self):

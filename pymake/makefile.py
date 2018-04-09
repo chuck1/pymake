@@ -103,7 +103,7 @@ class Makefile:
 
             elif isinstance(target, list):
                 for t in target:
-                    await mc.make(t)
+                    await mc.make(loop, t)
 
             else:
                 await self._make(loop, mc, target, None)
