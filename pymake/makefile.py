@@ -99,7 +99,7 @@ class Makefile:
             elif args.get('desc', False):
                 print(repr(target[0]))
                 d = json.loads(target[0])
-                await self._make(mc, ReqFileDescriptor(d), None)
+                await self._make(loop, mc, ReqFileDescriptor(d), None)
 
             elif isinstance(target, list):
                 for t in target:

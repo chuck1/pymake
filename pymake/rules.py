@@ -60,7 +60,7 @@ class _Rule(Rule_utilities):
         self.__rules = None
         self.up_to_date = False
 
-    def build_requirements(self, makecall, f):
+    def build_requirements(self, loop, makecall, f):
         raise Exception(repr(self.__class__))
         yield
 
@@ -130,7 +130,7 @@ class _Rule(Rule_utilities):
 
             return future, req
 
-        l = list(self.build_requirements(makecall, func))
+        l = list(self.build_requirements(loop, makecall, func))
 
         if not l: return
 
@@ -149,11 +149,11 @@ class _Rule(Rule_utilities):
         for req in reqs:
             yield reqs
 
-    def get_requirements(self, makecall):
+    def get_requirements(self, loop, makecall):
         
         def func(req): return req
         
-        yield from self.build_requirements(makecall, func)
+        yield from self.build_requirements(loop, makecall, func)
 
     async def check(self, loop, makecall, test=False):
         
@@ -211,7 +211,7 @@ class _Rule(Rule_utilities):
         should_build, f = await self.check(loop, makecall, test=makecall.args.get('test', False))
         
         try:
-            f_in = list(self.get_requirements(makecall))
+            f_in = list(self.get_requirements(loop, makecall))
         except Exception as e:
             print(self)
             traceback.print_exc()

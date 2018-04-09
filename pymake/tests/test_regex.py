@@ -16,7 +16,7 @@ class A(pymake.RuleRegex):
 
     pat_out = re.compile('.*/A.txt')
 
-    def build_requirements(self, makecall, func):
+    def build_requirements(self, loop, makecall, func):
         return
         yield
 
@@ -32,7 +32,7 @@ class B(pymake.RuleRegex):
 
     pat_out = re.compile('(.*)/\d+/B.txt')
 
-    def build_requirements(self, makecall, func):
+    def build_requirements(self, loop, makecall, func):
         yield func(pymake.ReqFile(os.path.join(self.groups[0], 'A.txt')))
 
     def build(self, makecall, files_in):
@@ -54,7 +54,7 @@ class C(pymake.RuleRegex):
 
     pat_out = re.compile('(.*)/C.txt')
 
-    def build_requirements(self, makecall, func):
+    def build_requirements(self, loop, makecall, func):
         for i in range(2):
             yield func(pymake.ReqFile(os.path.join(self.groups[0], str(i), 'B.txt')))
 
