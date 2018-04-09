@@ -2,7 +2,7 @@ import re
 from setuptools import setup
 
 
-setup(name='mybuiltins',
+setup(name='pymake',
         version='0.1',
         description='',
         url='',
@@ -10,7 +10,7 @@ setup(name='mybuiltins',
         author_email='charlesrymal@gmail.com',
         license='MIT',
         packages=[
-            'mybuiltins',
+            'pymake',
             ],
         zip_safe=False,
         )
