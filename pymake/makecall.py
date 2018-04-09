@@ -40,7 +40,7 @@ class MakeCall:
         args1.update(args)
         return MakeCall(self.makefile, args1, self.graph, self.stack)
 
-    def make(self, loop, target, test=None, ancestor=None):
+    async def make(self, loop, target, test=None, ancestor=None):
         # added this because needed to make a file when test was True
         if test is None:
             test = self.args['test']
@@ -50,8 +50,7 @@ class MakeCall:
         assert(target is not None)
 
         with MakeContext(self.stack, target):
-            #return self.makefile._make(makecall, target, ancestor)
-            return self.makefile._make(loop, self, target, ancestor)
+            return await self.makefile._make(loop, self, target, ancestor)
 
     def add_edge(self, r1, r2):
         if r1 is None: return

@@ -106,11 +106,18 @@ class _Rule(Rule_utilities):
         makecall2 = makecall.copy()
         makecall2.args['test'] = test
 
+        def func2(req):
+            loop2 = asyncio.new_event_loop()
+
+            return loop2.run_until_complete(makecall2.make(loop2, req, self.req_out))
+
         def func(req):
             if req is None:
                 raise Exception("None in f_in {}".format(self))
 
-            future = loop.run_in_executor(None, makecall2.make, (req, self.req_out))
+            #f = functools.partial(makecall2.make, loop, req, self.req_out)
+
+            future = loop.run_in_executor(None, func2, req)
 
             #r = makecall2.make(req, self.req_out)
 
@@ -125,11 +132,20 @@ class _Rule(Rule_utilities):
 
         l = list(self.build_requirements(makecall, func))
 
+        if not l: return
+
         futures, reqs = zip(*l)
 
         #done, pending = yield from asyncio.wait(futures)
         done, pending = await asyncio.wait(futures)
-        
+
+        for f in done:
+            e = f.exception()
+            if e:
+                raise e
+
+        #breakpoint()
+
         for req in reqs:
             yield reqs
 

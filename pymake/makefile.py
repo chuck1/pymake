@@ -92,16 +92,16 @@ class Makefile:
                 args = dict(kwargs)
                 args.update({'regex':False})
                 for t in self.search_gen(target):
-                    self._make(mc, t, None)
+                    await self._make(mc, t, None)
 
             elif args.get('desc', False):
                 print(repr(target[0]))
                 d = json.loads(target[0])
-                self._make(mc, ReqFileDescriptor(d), None)
+                await self._make(mc, ReqFileDescriptor(d), None)
 
             elif isinstance(target, list):
                 for t in target:
-                    mc.make(t)
+                    await mc.make(t)
 
             else:
                 await self._make(loop, mc, target, None)
@@ -141,7 +141,7 @@ class Makefile:
     
         return rules
 
-    def _make(self, loop, mc, target, ancestor):
+    async def _make(self, loop, mc, target, ancestor):
 
         if target is None:
             raise Exception('target is None'+str(target))
@@ -149,13 +149,13 @@ class Makefile:
         #print(crayons.magenta(str(target), bold=True))
         
         if isinstance(target, Rule):
-            return target.make(mc, None)
+            return await target.make(mc, None)
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
 
         target = self.ensure_is_req(target)
 
-        return target.make(loop, self, mc, ancestor)
+        return await target.make(loop, self, mc, ancestor)
         
     def search_gen(self, target):
         if isinstance(target, list):
