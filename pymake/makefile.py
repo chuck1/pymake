@@ -71,7 +71,7 @@ class Makefile:
         for rule in self.find_rule(target):
             rule.print_dep(MakeCall(self), indent + 2)
 
-    def make(self, target, **args):
+    async def make(self, target, **args):
         """
         :param test:  follow the file dependencies and print out which files would be built
                       and a short description of why check returned True. But do not

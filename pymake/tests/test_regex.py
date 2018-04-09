@@ -2,9 +2,9 @@ import re
 import tempfile
 import os
 
+import pytest
+
 import pymake
-
-
 
 class A(pymake.RuleRegex):
 
@@ -18,17 +18,17 @@ class A(pymake.RuleRegex):
         with open(self.f_out, 'w') as f:
             f.write('hello')
 
-def test():
+@pytest.mark.asyncio
+async def test():
     with tempfile.TemporaryDirectory() as d:
 
         makefile = pymake.Makefile()
 
         makefile.rules.append(A)
-    
 
         f = os.path.join(d, 'A.txt')
 
-        makefile.make(f)
+        await makefile.make(f)
 
         assert(os.path.exists(f))
 
