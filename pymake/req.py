@@ -135,6 +135,14 @@ class ReqFile(Req):
             logger.error(f'error loading: {self.fn!r}')
             raise
 
+    def load_pickle(self):
+        try:
+            with open(self.fn, 'rb') as f:
+                return pickle.load(f)
+        except:
+            logger.error(f'error loading: {self.fn!r}')
+            raise
+
     def load_json(self):
         with open(self.fn, 'r') as f:
             s = f.read()
