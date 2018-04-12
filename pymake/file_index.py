@@ -35,7 +35,7 @@ def get_hash(desc):
 # the find index is a dict in which the keys are hashes of file descriptors
 # under each key is a dict of file names and descriptors
 
-INDEX_FILENAME = ".file_index.json"
+INDEX_FILENAME = "data/.file_index.json"
 
 class Manager:
     def __init__(self):
