@@ -29,6 +29,8 @@ class Req:
 
     def make(self, makefile, mc, ancestor):
 
+        mc.add_edge(ancestor, self)
+
         #if not mc.args['test']:
         if True:
             if self in makefile._cache_req:
@@ -37,7 +39,6 @@ class Req:
        
         makefile._cache_req.append(self)
     
-        mc.add_edge(ancestor, self)
 
         rules = makefile.rules_sorted(self)
 

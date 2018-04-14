@@ -109,7 +109,7 @@ class _Rule(Rule_utilities):
             if req is None:
                 raise Exception("None in f_in {}".format(self))
 
-            r = makecall2.make(req, self.req_out)
+            r = makecall2.make(req, ancestor=self.req_out)
 
             if not isinstance(r, Result):
                 print(req)
