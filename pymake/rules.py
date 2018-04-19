@@ -464,6 +464,9 @@ class RuleFileDescriptor(Rule):
     def graph_string(self):
         return json.dumps(self.descriptor, indent=4)
 
+    def __repr__(self):
+        return f'<{self.__class__} filename={self.f_out!r}>'
+
 class RuleFileDescriptorSimple(RuleFileDescriptor):
 
     def build(self, makecall, _, f_in):

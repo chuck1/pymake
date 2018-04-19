@@ -56,6 +56,9 @@ class PatDict(Pat):
     def match(self, x):
         return isinstance(x, dict)
 
+class PatBool(Pat):
+    def match(self, x):
+        return isinstance(x, bool)
 
 class PatNullable(Pat):
     def __init__(self, pat, default=None):
