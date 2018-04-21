@@ -35,7 +35,7 @@ class Req:
         if True:
             if self in makefile._cache_req:
                 #print('{} is in cache'.format(target))
-                return ResultNoBuild()
+                return ResultNoBuild('in cache')
        
         makefile._cache_req.append(self)
     
@@ -92,7 +92,7 @@ class ReqFake(Req):
         self.fn = fn
 
     def make(self, makefile, mc, ancestor):
-        return ResultNoBuild()
+        return ResultNoBuild('is fake')
 
     def __repr__(self):
         return f'<{self.__class__.__name__} fn={self.fn!r}>'
