@@ -117,7 +117,10 @@ class _Rule(Rule_utilities):
 
             #f = functools.partial(makecall2.make, loop, req, self.req_out)
 
-            future = loop.run_in_executor(None, func2, req)
+            if False:
+                future = loop.run_in_executor(None, func2, req)
+            else:
+                future = loop.create_task(makecall2.make(loop, req, self.req_out))
 
             #r = makecall2.make(req, self.req_out)
 
@@ -130,11 +133,15 @@ class _Rule(Rule_utilities):
 
             return future, req
 
-        l = [t  async for t in self.build_requirements(loop, makecall, func)]
+        l = [t async for t in self.build_requirements(loop, makecall, func)]
 
         if not l: return
 
-        futures, reqs = zip(*l)
+        try:
+            futures, reqs = zip(*l)
+        except:
+            breakpoint()
+            raise
 
         #done, pending = yield from asyncio.wait(futures)
         done, pending = await asyncio.wait(futures)
