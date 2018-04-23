@@ -29,15 +29,16 @@ class Req:
 
     async def make(self, loop, makefile, mc, ancestor):
 
+        mc.add_edge(ancestor, self)
+
         #if not mc.args['test']:
         if True:
             if self in makefile._cache_req:
                 #print('{} is in cache'.format(target))
-                return ResultNoBuild()
+                return ResultNoBuild('in cache')
        
         makefile._cache_req.append(self)
     
-        mc.add_edge(ancestor, self)
 
         rules = makefile.rules_sorted(self)
 
@@ -90,7 +91,7 @@ class ReqFake(Req):
         self.fn = fn
 
     async def make(self, loop, makefile, mc, ancestor):
-        return ResultNoBuild()
+        return ResultNoBuild('is fake')
 
     def __repr__(self):
         return f'<{self.__class__.__name__} fn={self.fn!r}>'
@@ -127,6 +128,14 @@ class ReqFile(Req):
         return 'pymake.ReqFile({})'.format(repr(self.fn))
 
     def load_object(self):
+        try:
+            with open(self.fn, 'rb') as f:
+                return pickle.load(f)
+        except:
+            logger.error(f'error loading: {self.fn!r}')
+            raise
+
+    def load_pickle(self):
         try:
             with open(self.fn, 'rb') as f:
                 return pickle.load(f)

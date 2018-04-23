@@ -8,6 +8,9 @@ class ResultBuild(Result):
         return True
 
 class ResultNoBuild(Result):
+    def __init__(self, msg=None):
+        self.msg = msg
+
     def is_build_required(self):
         return False
 
