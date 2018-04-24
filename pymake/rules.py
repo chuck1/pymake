@@ -143,8 +143,13 @@ class _Rule(Rule_utilities):
             breakpoint()
             raise
 
-        #done, pending = yield from asyncio.wait(futures)
-        done, pending = await asyncio.wait(futures)
+        if False:
+            # suspect that tasks dont run sequentially
+            done, pending = await asyncio.wait(futures)
+        else:
+            for f in futures:
+                await f
+            done = []
 
         for f in done:
             e = f.exception()
@@ -266,6 +271,8 @@ class _Rule(Rule_utilities):
             print('binary data unchanged. do not write.')
 
     def write_pickle(self, o):
+        pymake.util.can_pickle(o)
+
         b = pickle.dumps(o)
         self.write_binary(b)
 

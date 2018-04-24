@@ -7,6 +7,9 @@ import os
 import contextlib
 import pprint
 import crayons
+import logging
+
+logger = logging.getLogger(__name__)
 
 def breakpoint(): import pdb; pdb.set_trace();
 
@@ -58,7 +61,15 @@ class IndexFile:
                 json.dump({}, f)
 
         with open(os.path.join(INDEX_DIR, self.h)) as f:
-            self.index = json.load(f)
+            s = f.read()
+
+        try:
+            self.index = json.loads(s)
+        except:
+            logger.error(f'could not json decode: {s!r}')
+
+            self.index = {}
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):

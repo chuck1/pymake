@@ -33,6 +33,7 @@ class Makefile:
     def __init__(self):
         self.rules = []
         self.file_locks = {}
+        self._file_queue = {}
     
     def find_one(self, target):
         for r in self.find_rule(target):
@@ -203,6 +204,21 @@ class Makefile:
             with open(filename, mode) as f:
                 yield f
 
+    async def read_file(self, filename, mode):
+
+        if filename in self._file_queue:
+            pass
+
+            q = self._file_queue[filename]
+            
+            # wait for the file to be ready
+            await q.join()
+
+        else:
+            pass
+
+        with open(filename, mode) as f:
+            return f.read()
 
 class FileLock:
     def __init__(self, makefile, filename):
