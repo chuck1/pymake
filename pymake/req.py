@@ -47,7 +47,6 @@ class Req:
             if b:
                 return ResultNoRuleFileExists()
             else:
-                breakpoint()
                 raise NoTargetError("no rules to make {}".format(repr(self)))
        
         rule = rules[0]
@@ -133,7 +132,7 @@ class ReqFile(Req):
             with open(self.fn, 'rb') as f:
                 return pickle.load(f)
         except:
-            logger.error(f'error loading: {self.fn!r}')
+            logger.error(f'error loading: {self!r} {self.fn!r}')
             raise
 
     def load_pickle(self):

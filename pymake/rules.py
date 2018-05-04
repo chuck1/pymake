@@ -435,6 +435,10 @@ class RuleFileDescriptor(Rule):
                 if not a[k].match(b[k]):
                     logger.debug(f'{k!r} does not match pattern')
                     return None
+
+                if isinstance(a[k], PatNullable) and b[k] is None:
+                    b[k] = a[k].default
+                
             else:
                 if not (a[k] == b[k]):
                     logger.debug(f'{k!r} differs')
@@ -465,7 +469,7 @@ class RuleFileDescriptor(Rule):
         return json.dumps(self.descriptor, indent=4)
 
     def __repr__(self):
-        return f'<{self.__class__} filename={self.f_out!r}>'
+        return f'<{self.__class__} desc={self.descriptor!r} filename={self.f_out!r}>'
 
 class RuleFileDescriptorSimple(RuleFileDescriptor):
 

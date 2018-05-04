@@ -56,9 +56,17 @@ class IndexFile:
         if not os.path.exists(os.path.join(INDEX_DIR, self.h)):
             with open(os.path.join(INDEX_DIR, self.h), 'w') as f:
                 json.dump({}, f)
+        
+        filename = os.path.join(INDEX_DIR, self.h)
+        with open(filename) as f:
+            s = f.read()
 
-        with open(os.path.join(INDEX_DIR, self.h)) as f:
-            self.index = json.load(f)
+        try:
+            self.index = json.loads(s)
+        except:
+            print("error json decoding", filename)
+            print(s)
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
