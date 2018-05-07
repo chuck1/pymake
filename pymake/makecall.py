@@ -36,7 +36,7 @@ class MakeCall:
     def make(self, target, test=None, ancestor=None):
         # added this because needed to make a file when test was True
         if test is None:
-            test = self.args['test']
+            test = self.args.get('test', False)
 
         makecall = self.copy(test=test)
 

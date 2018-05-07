@@ -180,7 +180,7 @@ class _Rule(Rule_utilities):
                 else:
                     return ResultNoBuild()
             
-        should_build, f = self.check(makecall, test=makecall.args['test'])
+        should_build, f = self.check(makecall, test=makecall.args.get('test', False))
         
         try:
             f_in = list(self.get_requirements(makecall))
@@ -406,7 +406,6 @@ class RuleFileDescriptor(Rule):
     @classmethod
     def test(cls, req):
         if not isinstance(req, ReqFileDescriptor): return None
- 
        
         # a - this descriptor
         # b - req descriptor
@@ -429,36 +428,38 @@ class RuleFileDescriptor(Rule):
 
         just_pat = set_a - set_b
         just_dsc = set_b - set_a
-
-        for k in a_and_b:
-            if isinstance(a[k], Pat):
-                if not a[k].match(b[k]):
-                    logger.debug(f'{k!r} does not match pattern')
-                    return None
-
-                if isinstance(a[k], PatNullable) and b[k] is None:
-                    b[k] = a[k].default
-                
-            else:
-                if not (a[k] == b[k]):
-                    logger.debug(f'{k!r} differs')
-                    return None
-
-        # attributes in the pattern but not in the descriptor must be nullable
-        for k in just_pat:
-            if not isinstance(pat[k], PatNullable):
-                logger.debug(f'{k!r} is in pattern but not descriptor and is not nullable')
-                return None
-            else:
-                b[k] = pat[k].default
         
-        # attributes in the descriptor but not in the pattern must be null
-        for k in just_dsc:
-            if b[k] is not None:
-                logger.debug(f'{k!r} is in descriptor but not in pattern and is not None')
-                return None
+        with context_if(functools.partial(logger_level_context, logger, logging.DEBUG), "type" in a_and_b and a["type"] == b["type"]):
 
-        return cls(req.fn, b)
+            for k in a_and_b:
+                if isinstance(a[k], Pat):
+                    if not a[k].match(b[k]):
+                        logger.debug(f'{cls} {k!r} does not match pattern {a[k]!r} {b[k]!r}')
+                        return None
+    
+                    if isinstance(a[k], PatNullable) and b[k] is None:
+                        b[k] = a[k].default
+                    
+                else:
+                    if not (a[k] == b[k]):
+                        logger.debug(f'{k!r} differs')
+                        return None
+    
+            # attributes in the pattern but not in the descriptor must be nullable
+            for k in just_pat:
+                if not isinstance(pat[k], PatNullable):
+                    logger.debug(f'{cls} {k!r} is in pattern but not descriptor and is not nullable')
+                    return None
+                else:
+                    b[k] = pat[k].default
+            
+            # attributes in the descriptor but not in the pattern must be null
+            for k in just_dsc:
+                if b[k] is not None:
+                    logger.debug(f'{cls} {k!r} is in descriptor but not in pattern and is not None')
+                    return None
+    
+            return cls(req.fn, b)
 
     def __init__(self, f_out, descriptor):
         super(RuleFileDescriptor, self).__init__(f_out)

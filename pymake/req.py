@@ -127,6 +127,14 @@ class ReqFile(Req):
     def __repr__(self):
         return 'pymake.ReqFile({})'.format(repr(self.fn))
 
+    def load_text(self):
+        try:
+            with open(self.fn, 'r') as f:
+                return f.read()
+        except:
+            logger.error(f'error loading: {self!r} {self.fn!r}')
+            raise
+
     def load_object(self):
         try:
             with open(self.fn, 'rb') as f:
