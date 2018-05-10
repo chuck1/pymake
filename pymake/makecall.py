@@ -16,7 +16,7 @@ from .util import *
 logger = logging.getLogger(__name__)
 
 class MakeCall:
-    def __init__(self, makefile, args, graph={}, stack=[]):
+    def __init__(self, makefile, args={}, graph={}, stack=[]):
         self.makefile = makefile
         self.args = args
 

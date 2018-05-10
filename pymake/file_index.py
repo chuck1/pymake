@@ -66,6 +66,7 @@ class IndexFile:
         except:
             print("error json decoding", filename)
             print(s)
+            self.index = {}
 
         return self
 
