@@ -58,6 +58,7 @@ class _Rule(Rule_utilities):
         """
         self.__rules = None
         self.up_to_date = False
+        self.req_out = None
 
     def build_requirements(self, makecall, f):
         raise Exception(repr(self.__class__))
