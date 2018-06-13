@@ -1,5 +1,5 @@
 __version__ = '0.2'
-
+import asyncio
 import functools
 import inspect
 import json
@@ -38,12 +38,7 @@ class Rule_utilities:
             pickle.dump(o, f)
 
     def write_json(self, d):
-        pymake.makedirs(os.path.dirname(self.f_out))
-
-        s = json.dumps(d, indent=4, sort_keys=True)
-
-        with open(self.f_out, 'w') as f:
-            f.write(s)
+        self.req.write_json(d)
 
 class _Rule(Rule_utilities):
     """
@@ -91,8 +86,8 @@ class _Rule(Rule_utilities):
             for f in self.f_in(makecall):
                 makecall.makefile.print_dep(f, indent)
         except Exception as e:
-            print("error in print_dep of {}".format(repr(self)))
-            print(e)
+            logging.error("error in print_dep of {}".format(repr(self)))
+            logging.error(e)
 
     def output_exists(self):
         return False
@@ -100,35 +95,38 @@ class _Rule(Rule_utilities):
     def output_mtime(self):
         return None
 
-    def make_ancestors(self, makecall, test):
+    async def make_ancestors(self, makecall, test):
 
-        makecall2 = makecall.copy()
-        makecall2.args['test'] = test
+        makecall2 = makecall.copy(test=test, force=False)
 
-        def func(req):
+        async def func(req):
             if req is None:
                 raise Exception("None in f_in {}".format(self))
 
-            r = makecall2.make(req, ancestor=self.req_out)
+            r = await makecall2.make(req, ancestor=self.req_out)
 
             if not isinstance(r, Result):
-                print(req)
-                print(r)
+                logging.error(req)
+                logging.error(r)
                 raise Exception()
             
             return req
 
-        yield from self.build_requirements(makecall, func)
+        #print(crayons.red(self))
+        async for r in self.build_requirements(makecall2, func):
+            #print(crayons.red(self))
+            yield (await r)
 
-    def get_requirements(self, makecall):
+    async def get_requirements(self, makecall):
         
-        def func(req): return req
+        async def func(req): return req
         
-        yield from self.build_requirements(makecall, func)
+        async for r in self.build_requirements(makecall, func):
+            yield (await r)
 
-    def check(self, makecall, test=False):
+    async def check(self, makecall, test=False):
         
-        f_in = list(self.make_ancestors(makecall, test))
+        f_in = [r async for r in self.make_ancestors(makecall, test)]
 
         if makecall.args.get('force', False):
             return True, 'forced'
@@ -148,7 +146,8 @@ class _Rule(Rule_utilities):
                 continue
             
             if not isinstance(f, Req):
-                raise Exception('{} f_in should return generator of Req objects, not {}'.format(repr(self), type(f)))
+                raise Exception(
+                    f'{self!r} f_in should return generator of Req objects, not {f!r}')
 
             if mtime is None:
                 return True, '{} does not define mtime'.format(self.__class__.__name__)
@@ -163,9 +162,27 @@ class _Rule(Rule_utilities):
                     if mtime_in > mtime:
                         return True, 'mtime of {} is greater'.format(f)
         
-        return False, None
 
-    def _make(self, makecall, req):
+        return False, 'up to date'
+
+    def msg(self, s):
+        logger.warning(crayons.green(f'{s}: {self!r}'))
+        return
+        try:
+            logger.info(crayons.green(f'{s}: {self.req.get_id()}'))
+        except Exception as e:
+            try:
+                logger.info(crayons.green(f'{s}: {self.req!r}'))
+            except:
+                logger.info(crayons.green(f'{s}: {self!s}'))
+
+
+    def print_long(self, req):
+        print(type(self))
+        req.print_long()
+
+    async def _make(self, makecall, req):
+        logger.debug(f'makecall. test = {makecall.args.get("test", False)}')
 
         if self.up_to_date: 
             raise Exception()
@@ -180,25 +197,30 @@ class _Rule(Rule_utilities):
                 else:
                     return ResultNoBuild()
             
-        should_build, f = self.check(makecall, test=makecall.args.get('test', False))
-        
+        should_build, f = await self.check(makecall, test=makecall.args.get('test', False))
+        #self.msg(f'should build: {should_build!s:5}. {f}')
+       
         try:
-            f_in = list(self.get_requirements(makecall))
+            f_in = [r async for r in self.get_requirements(makecall)]
         except Exception as e:
-            print(self)
+            logging.error(repr(self))
             traceback.print_exc()
             raise e
 
         if should_build:
             if makecall.args.get('test', False):
-                #print(crayons.blue('build {} because {}'.format(repr(self), f)))
-                logger.debug('build {} because {}'.format(repr(self), f))
+
+                logging.error(crayons.blue(f'Build because {f}:'))
+                print_lines(
+                        lambda s: logging.error(crayons.blue(s)),
+                        functools.partial(self.print_long, req),)
+
                 return ResultTestBuild()
             else:
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
                     self._makecall = makecall
-                    ret = self._build(makecall, None, f_in)
+                    ret = await self._build(makecall, None, f_in)
                 except Exception as e:
                     logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                     raise
@@ -226,7 +248,7 @@ class _Rule(Rule_utilities):
             with open(filename, 'w') as f:
                 f.write(s)
         else:
-            print('binary data unchanged. do not write.')
+            logging.info('binary data unchanged. do not write.')
 
     def write_pickle(self, o):
         b = pickle.dumps(o)
@@ -238,20 +260,24 @@ class _Rule(Rule_utilities):
 
         #if check_existing_binary_data(filename, b):
         if True:
-            pymake.makedirs(os.path.dirname(self.f_out))
-            with open(self.f_out, 'wb') as f:
+            pymake.makedirs(os.path.dirname(self.req.fn))
+            with open(self.req.fn, 'wb') as f:
                 f.write(b)
         else:
-            print('binary data unchanged. do not write.')
+            logging.info('binary data unchanged. do not write.')
 
     def rules(self, makecall):
         yield self
         for r in self._rules(makecall):
             yield from r.rules(makecall)
 
-    def _build(self, makecall, *args):
-        logger.info(crayons.yellow(f'Build {self!r}', bold=True))
-        self.build(makecall, *args)
+    async def _build(self, makecall, *args):
+        print_lines(
+                lambda s: logger.info(crayons.yellow(s, bold=True)),
+                lambda: print(f'Build force={makecall.args.get("force", False)}'),
+                functools.partial(self.print_long, self.req))
+
+        await self.build(makecall, *args)
 
 class Rule(_Rule):
     """
@@ -259,9 +285,9 @@ class Rule(_Rule):
 
     :param str f_out: the filename that this rule builds
     """
-    def __init__(self, f_out):
-        _Rule.__init__(self)
-        self.f_out = f_out
+    def __init__(self, req):
+        super(Rule, self).__init__()
+        self.req = req
     
     def __repr__(self):
         return "<{}.{}>".format(
@@ -269,19 +295,19 @@ class Rule(_Rule):
                 self.__class__.__name__)
 
     def output_exists(self):
-        return os.path.exists(self.f_out)
+        return self.req.output_exists()
    
     def output_mtime(self):
-        return os.path.getmtime(self.f_out)
+        return self.req.output_mtime()
 
-    def test(self, req):
+    async def test(self, mc, req):
         """
         :param req: a requirement object
 
         determine if this rule builds ``req``
         """
         if not isinstance(req, ReqFile): return None
-        if self.f_out == req.fn:
+        if self.req.fn == req.fn:
             return self
         return None
 
@@ -314,7 +340,7 @@ class RuleRegex(_Rule):
     """
 
     @classmethod
-    def test(cls, req):
+    async def test(cls, mc, req):
         if not isinstance(req, ReqFile): return None
         
         logger.debug('{} {}'.format(cls.pat_out, req.fn))
@@ -326,19 +352,17 @@ class RuleRegex(_Rule):
         
         if pat is None: return
 
-        #print(pat, req.fn)
-
         try:
             m = pat.match(req.fn)
         except Exception as e:
-            print(crayons.red(e))
-            print(crayons.red(repr(req)))
-            print(crayons.red(repr(req.fn)))
-            print(crayons.red(repr(pat)))
+            logging.error(crayons.red(e))
+            logging.error(crayons.red(repr(req)))
+            logging.error(crayons.red(repr(req.fn)))
+            logging.error(crayons.red(repr(pat)))
             raise
 
         if m is None: return None
-        return cls(req.fn, m.groups())
+        return cls(req, m.groups())
 
     def output_exists(self):
         return os.path.exists(self.f_out)
@@ -346,8 +370,9 @@ class RuleRegex(_Rule):
     def output_mtime(self):
         return os.path.getmtime(self.f_out)
 
-    def __init__(self, f_out, groups):
-        self.f_out = f_out
+    def __init__(self, req, groups):
+        self.req = req
+        self.f_out = req.fn
         self.groups = groups
 
         _Rule.__init__(self)
@@ -357,8 +382,7 @@ class RuleRegex(_Rule):
 
         
 class RuleRegexSimple(RuleRegex):
-    def build(self, makecall, _, f_in):
-        print(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+    async def build(self, makecall, _, f_in):
 
         pymake.makedirs(os.path.dirname(self.f_out))
         
@@ -372,13 +396,12 @@ class RuleRegexSimple(RuleRegex):
             out = os.path.abspath(self.f_out)
             cmd = [prog, out] + [os.path.abspath(a.fn) for a in f_in[1:]]
 
-        print(crayons.yellow("cmd = {}".format(' '.join(cmd)),'yellow',bold=True))
+        logging.info(crayons.yellow("cmd = {}".format(' '.join(cmd)),'yellow',bold=True))
 
         subprocess.run(cmd, check=True)
 
 class RuleRegexSimple2(RuleRegex):
-    def build(self, makecall, _, f_in):
-        logger.info(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+    async def build(self, makecall, _, f_in):
         for f in f_in:
             logger.info(crayons.yellow(f'  {f!r}'))
 
@@ -386,16 +409,12 @@ class RuleRegexSimple2(RuleRegex):
 
         assert f_in[0].fn[-3:] == ".py"
         
-        av = [f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
+        av = [f_in[0].fn, self.f_out] + [a for a in f_in[1:]]
         
         s = f_in[0].fn[:-3].replace('/','.')
         m = __import__(s, fromlist=['main'])
         
-        print(s)
-        print(m)
-        print(m.main)
-
-        m.main(makecall, av)
+        c = await m.main(makecall, av)
 
 class RuleFileDescriptor(Rule):
     """
@@ -404,8 +423,8 @@ class RuleFileDescriptor(Rule):
     """
 
     @classmethod
-    def test(cls, req):
-        if not isinstance(req, ReqFileDescriptor): return None
+    async def test(cls, mc, req):
+        if not isinstance(req, (ReqFileDescriptor, ReqDoc)): return None
        
         # a - this descriptor
         # b - req descriptor
@@ -415,6 +434,8 @@ class RuleFileDescriptor(Rule):
         a = pat
         b = dict(req.d)
        
+        #breakpoint()
+
         if 'type' in pat:
             logger.debug(crayons.blue(f'pat type={pat["type"]}'))
 
@@ -429,7 +450,8 @@ class RuleFileDescriptor(Rule):
         just_pat = set_a - set_b
         just_dsc = set_b - set_a
         
-        with context_if(functools.partial(logger_level_context, logger, logging.DEBUG), "type" in a_and_b and a["type"] == b["type"]):
+        with context_if(functools.partial(logger_level_context, logger, logging.DEBUG), 
+                "type" in a_and_b and a["type"] == b["type"]):
 
             for k in a_and_b:
                 if isinstance(a[k], Pat):
@@ -442,7 +464,7 @@ class RuleFileDescriptor(Rule):
                     
                 else:
                     if not (a[k] == b[k]):
-                        logger.debug(f'{k!r} differs')
+                        #logger.debug(f'{k!r} differs')
                         return None
     
             # attributes in the pattern but not in the descriptor must be nullable
@@ -458,40 +480,38 @@ class RuleFileDescriptor(Rule):
                 if b[k] is not None:
                     logger.debug(f'{cls} {k!r} is in descriptor but not in pattern and is not None')
                     return None
-    
-            return cls(req.fn, b)
+   
+            #logger.debug(crayons.green(f'match {a} and {b}'))
 
-    def __init__(self, f_out, descriptor):
-        super(RuleFileDescriptor, self).__init__(f_out)
-        self.f_out = f_out
+        return cls(req, await mc.decoder.decode(b, mc))
+
+    def __init__(self, req, descriptor):
+        super(RuleFileDescriptor, self).__init__(req)
         self.descriptor = descriptor
 
     def graph_string(self):
         return json.dumps(self.descriptor, indent=4)
 
     def __repr__(self):
-        return f'<{self.__class__} desc={self.descriptor!r} filename={self.f_out!r}>'
+        return f'<{self.__class__} desc={json.dumps(self.descriptor)!r} req={self.req!r}>'
 
 class RuleFileDescriptorSimple(RuleFileDescriptor):
 
-    def build(self, makecall, _, f_in):
-        logger.info(crayons.yellow("Build " + repr(self),'yellow',bold=True))
+    async def build(self, makecall, _, f_in):
         for f in f_in:
             logger.info(crayons.yellow(f'  {f!r}'))
 
-        pymake.makedirs(os.path.dirname(self.f_out))
+        filename = self.req.fn
+
+        pymake.makedirs(os.path.dirname(filename))
 
         assert f_in[0].fn[-3:] == ".py"
         
-        av = [f_in[0].fn, self.f_out] + [a.fn for a in f_in[1:]]
+        av = [f_in[0].fn, filename] + [a.fn for a in f_in[1:]]
         
         s = f_in[0].fn[:-3].replace('/','.')
         m = __import__(s, fromlist=['main'])
         
-        print(s)
-        print(m)
-        print(m.main)
-
-        m.main(makecall, av)
+        await m.main(makecall, av)
 
 

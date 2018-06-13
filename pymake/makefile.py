@@ -7,14 +7,15 @@ import logging
 import traceback
 from pprint import pprint
 import sys
-
+import bson
 import numpy
 
-from .req import *
 from .rules import *
 from .util import *
 from .makecall import *
 from . import file_index
+
+import pymake.req
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +46,15 @@ class Makefile:
 
         #raise Exception('no rule to make target {}'.format(repr(target)))
 
-    def find_rule(self, target):
+    async def find_rule(self, mc, target):
         for rule in self.rules:
             try:
-                r = rule.test(target)
+                r = await rule.test(mc, target)
             except:
-                print(type(rule))
-                print(rule)
-                print(rule.test)
-                print(target)
+                print(f'type(rule) = {type(rule)}')
+                print(f'rule       = {rule}')
+                print(f'rule.test  = {rule.test}')
+                print(f'target     = {target}')
                 raise
             
             if r is not None:
@@ -78,7 +79,7 @@ class Makefile:
         for rule in self.find_rule(target):
             rule.print_dep(MakeCall(self), indent + 2)
 
-    def make(self, target, **args):
+    async def make(self, target, **args):
         """
         :param test:  follow the file dependencies and print out which files would be built
                       and a short description of why check returned True. But do not
@@ -86,7 +87,7 @@ class Makefile:
         :param regex: treat targets as regex expressions and make all targets that match
         """
         
-        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'desc', 'stop'})
+        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'desc', 'doc', 'stop', 'id'})
         if d:
             raise Exception(f'unexpected keyword arguments: {d}')
 
@@ -102,40 +103,51 @@ class Makefile:
                 args = dict(kwargs)
                 args.update({'regex':False})
                 for t in self.search_gen(target):
-                    self._make(mc, t, None)
+                    await self._make(mc, t, None)
 
             elif args.get('desc', False):
                 print(repr(target[0]))
                 d = json.loads(target[0])
-                self._make(mc, ReqFileDescriptor(d), None)
+                await self._make(mc, pymake.req.ReqFileDescriptor(d), None)
+
+            elif args.get('doc', False):
+                print('doc', repr(target[0]))
+                d = json.loads(target[0])
+                await self._make(mc, pymake.req.ReqDoc(d), None)
+
+            elif args.get('id', False):
+                r = pymake.req.ReqDoc(
+                        pymake.req.clean_doc(
+                            pymake.req.client.find_one({'_id': bson.objectid.ObjectId(target[0])})))
+                await self._make(mc, r, None)
 
             elif isinstance(target, list):
                 for t in target:
-                    self._make(mc, t, None)
+                    await self._make(mc, t, None)
 
             else:
-                self._make(mc, target, None)
+                await self._make(mc, target, None)
 
     def ensure_is_req(self, target):
         if isinstance(target, str):
-            target = ReqFile(target)
+            target = pymake.req.ReqFile(target)
 
-        if not isinstance(target, Req):
+        if not isinstance(target, pymake.req.Req):
             raise Exception('{}'.format(repr(target)))
 
-        if isinstance(target, ReqFile):
-            if not isinstance(target, ReqFileDescriptor):
+        if isinstance(target, pymake.req.ReqFile):
+            if not isinstance(target, pymake.req.ReqFileDescriptor):
                 pat = re.compile('data/index/([0-9a-f]+)/(\d+)(\.\w+)')
                 m = pat.match(target.fn)
                 if m:
                     d = file_index.manager.get_descriptor(m.group(1), m.group(2))
-                    return ReqFileDescriptor(d, m.group(3))
+                    return pymake.req.ReqFileDescriptor(d, m.group(3))
 
         return target
 
-    def rules_sorted(self, target):
+    async def rules_sorted(self, mc, target):
             
-        rules = list(self.find_rule(target))
+        rules = await alist(self.find_rule(mc, target))
 
         if len(rules) > 1:
             if all([isinstance(r, RuleRegex) for r in rules]):
@@ -151,21 +163,21 @@ class Makefile:
     
         return rules
 
-    def _make(self, mc, target, ancestor):
+    async def _make(self, mc, req, ancestor):
 
-        if target is None:
-            raise Exception('target is None'+str(target))
+        if req is None:
+            raise Exception('req is None'+str(req))
 
         #print(crayons.magenta(str(target), bold=True))
         
-        if isinstance(target, Rule):
-            return target.make(mc, None)
+        if isinstance(req, Rule):
+            return await req.make(mc, None)
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
 
-        target = self.ensure_is_req(target)
+        req = self.ensure_is_req(req)
 
-        return target.make(self, mc, ancestor)
+        return await req.make(self, mc, ancestor)
         
     def search_gen(self, target):
         if isinstance(target, list):

@@ -42,7 +42,7 @@ def get_hash(desc):
 
 INDEX_DIR = "data/.file_index"
 
-class IndexFile:
+class DEPIndexFile:
     def __init__(self, h):
         self.h = h
 
@@ -64,7 +64,7 @@ class IndexFile:
         try:
             self.index = json.loads(s)
         except:
-            print("error json decoding", filename)
+            logger.debug("error json decoding {filename}")
             print(s)
             self.index = {}
 
@@ -140,11 +140,13 @@ class Manager:
             return index.index[h1][h2]
 
     def get_descriptor_from_filename(self, s):
-        m = re.match(('build/data/index/'
+        pat = ('build/data/index/'
             '([0-9a-f]{2})/'
             '([0-9a-f]{14})/'
-            '([0-9a-f]{16})'
-            ), s)
+            '([0-9a-f]{16})')
+        m = re.match(pat, s)
+        if m is None:
+            raise Exception(f'{s!r} does not match {pat!r}')
         return self.get_descriptor(m.group(1), m.group(2), m.group(3))
 
 manager = Manager()

@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class MakeCall:
     def __init__(self, makefile, args={}, graph={}, stack=[]):
         self.makefile = makefile
+        self.decoder = makefile.decoder
         self.args = args
 
         self.graph = graph
@@ -33,18 +34,17 @@ class MakeCall:
         args1.update(args)
         return MakeCall(self.makefile, args1, self.graph, self.stack)
 
-    def make(self, target, test=None, ancestor=None):
+    async def make(self, req, test=None, ancestor=None):
         # added this because needed to make a file when test was True
         if test is None:
             test = self.args.get('test', False)
 
         makecall = self.copy(test=test)
 
-        assert(target is not None)
+        assert(req is not None)
 
-        with MakeContext(self.stack, target):
-            #return self.makefile._make(makecall, target, ancestor)
-            return self.makefile._make(self, target, ancestor)
+        with MakeContext(self.stack, req):
+            return await self.makefile._make(self, req, ancestor)
 
     def add_edge(self, r1, r2):
         if r1 is None: return
