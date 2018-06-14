@@ -417,7 +417,7 @@ class RuleRegexSimple2(RuleRegex):
         
         c = await m.main(makecall, av)
 
-class RuleFileDescriptor(Rule):
+class RuleDoc(Rule):
     """
     a rule that defines a file descriptor pattern
     a file descriptor pattern is a dict in which the attributes are regular values or patterns that can be used to match regular values
@@ -425,7 +425,7 @@ class RuleFileDescriptor(Rule):
 
     @classmethod
     async def test(cls, mc, req):
-        if not isinstance(req, (ReqFileDescriptor, ReqDoc)): return None
+        if not isinstance(req, ReqDoc): return None
        
         # a - this descriptor
         # b - req descriptor
@@ -484,19 +484,19 @@ class RuleFileDescriptor(Rule):
    
             #logger.debug(crayons.green(f'match {a} and {b}'))
 
-        return cls(req, await mc.decoder.decode(b, mc))
+        return cls(req, await mc.decoder.decode(b, mc.copy(force=False)))
 
     def __init__(self, req, descriptor):
-        super(RuleFileDescriptor, self).__init__(req)
+        super(RuleDoc, self).__init__(req)
         self.descriptor = descriptor
 
     def graph_string(self):
         return json.dumps(self.descriptor, indent=4)
 
     def __repr__(self):
-        return f'<{self.__class__} desc={json.dumps(self.descriptor)!r} req={self.req!r}>'
+        return f'<{self.__class__} desc={self.descriptor!r} req={self.req!r}>'
 
-class RuleFileDescriptorSimple(RuleFileDescriptor):
+class RuleDocSimple(RuleDoc):
 
     async def build(self, makecall, _, f_in):
         for f in f_in:

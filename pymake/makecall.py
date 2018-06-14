@@ -6,6 +6,7 @@ import re
 import os
 import logging
 import traceback
+import json
 
 import crayons
 import pygraphviz as gv
@@ -53,7 +54,8 @@ class MakeCall:
             v1 = dict_get(self.graph, r1.graph_string(), {})
             v2 = dict_get(v1, r2.graph_string(), {})
         except Exception as e:
-            print(e, repr(e))
+            logger.error(f'{e!r}')
+            raise
 
     def render_graph(self):
         print(crayons.magenta('render graph', bold=True))

@@ -13,7 +13,6 @@ import numpy
 from .rules import *
 from .util import *
 from .makecall import *
-from . import file_index
 
 import pymake.req
 
@@ -47,9 +46,10 @@ class Makefile:
         #raise Exception('no rule to make target {}'.format(repr(target)))
 
     async def find_rule(self, mc, target):
+        mc1 = mc.copy(force=False)
         for rule in self.rules:
             try:
-                r = await rule.test(mc, target)
+                r = await rule.test(mc1, target)
             except:
                 print(f'type(rule) = {type(rule)}')
                 print(f'rule       = {rule}')
@@ -136,7 +136,7 @@ class Makefile:
             raise Exception('{}'.format(repr(target)))
 
         if isinstance(target, pymake.req.ReqFile):
-            if not isinstance(target, pymake.req.ReqFileDescriptor):
+            if not isinstance(target, pymake.req.ReqDoc):
                 pat = re.compile('data/index/([0-9a-f]+)/(\d+)(\.\w+)')
                 m = pat.match(target.fn)
                 if m:

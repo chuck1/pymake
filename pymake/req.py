@@ -9,6 +9,8 @@ import logging
 import traceback
 import pymongo
 import bson
+import json
+import pprint
 
 import pymake
 from cached_property import cached_property
@@ -17,7 +19,6 @@ from mybuiltins import ason
 from .exceptions import *
 from .util import *
 from .result import *
-from .file_index import *
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,9 @@ class Req:
 
     def print_long(self):
         print(repr(self))
+
+    def open(self, mode):
+        return OpenContext(self, mode)
 
     async def make(self, makefile, mc, ancestor):
         logger.debug(repr(self))
@@ -247,31 +251,65 @@ class ReqFile(Req):
     def graph_string(self):
         return self.fn
 
+    def read_string(self):
+        with open(self.fn, 'r') as f:
+            return f.read()
+
+    def read_binary(self):
+        with open(self.fn, 'rb') as f:
+            return f.read()
+
     def read_pickle(self):
         with open(self.fn, 'rb') as f:
             try:
                 return pickle.load(f)
             except Exception as e:
-                logger.info('error unpickling', req)
-                logger.info(e)
+                logger.error(f'error unpickling {self!r}')
+                logger.error(repr(e))
                 raise
 
-class ReqFileDescriptor(ReqFile):
-    def __init__(self, d):
-        self.d = d
+class FileW:
+    def __init__(self, buf):
+        self.buf = buf
 
-        self.fn = manager.get_filename(self.d)
+    def write(self, b):
+        self.buf.write(b)
 
-    def __repr__(self):
-        #return f'{self.__class__.__name__}({self.d})'
-        return f'{self.__class__.__name__}({{"type":{self.d["type"]}}})'
+class FileR:
+    def __init__(self, buf):
+        self.buf = buf
 
-    def graph_string(self):
-        return json.dumps(self.d, indent=2)
+    def read(self, size=-1):
+        return self.buf.read(size)
 
-    def print_long(self):
-        print(f'file: {self.fn}')
-        pprint.pprint(self.d)
+class OpenContext:
+    def __init__(self, req, mode):
+        self.req = req
+        self.mode = mode
+        
+        assert mode in ('w', 'wb', 'r', 'rb')
+
+        if self.mode == 'w':
+            self.f = FileW(io.StringIO())
+        elif self.mode == 'wb':
+            self.f = FileW(io.BytesIO())
+        elif self.mode == 'r':
+            self.f = FileR(io.StringIO(self.req.read_string()))
+        elif self.mode == 'rb':
+            self.f = FileR(io.BytesIO(self.req.read_binary()))
+        
+    def __enter__(self):
+        return self.f
+
+    def __exit__(self, exc_type, _2, _3):
+        if exc_type is not None: return
+
+        if self.mode == 'w':
+            s = self.f.buf.getvalue()
+            self.req.write_string(s)
+        elif self.mode == 'wb':
+            s = self.f.buf.getvalue()
+            self.req.write_binary(s)
 
 class ReqDoc(Req):
     def __init__(self, d):
@@ -284,7 +322,7 @@ class ReqDoc(Req):
         return {'/ReqDoc': {'args': [ason.encode(self.d)]}}
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({{"type":{self.d["type"]}}})'
+        return f'{self.__class__.__name__} id = {self.get_id()} {{"type":{self.d["type"]}}}'
 
     def get_encoded(self):
         _ = ason.encode(self.d)
@@ -304,7 +342,7 @@ class ReqDoc(Req):
         return str(d["_id"])
 
     def graph_string(self):
-        return json.dumps(self.d, indent=2)
+        return json.dumps(self.get_encoded(), indent=2)
 
     def output_exists(self):
         d = client.find_one(self.get_encoded())
@@ -339,7 +377,11 @@ class ReqDoc(Req):
         try:
             return pickle.loads(self.read_contents())
         except:
-            logger.error(f'error loading: {self!r}')
+            print_lines(
+                    lambda s: logger.error(crayons.red(s)),
+                    functools.partial(print, f'error load pickle'),
+                    self.print_long,
+                    )
             raise
 
 

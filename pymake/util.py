@@ -29,8 +29,8 @@ def bin_compare(b0,b1):
             s0 = chr(c0)
             s1 = chr(c1)
         except Exception as e:
-            print('error in bin_compare')
-            print(e)
+            logger.error('error in bin_compare')
+            logger.error(e)
             s0 = ''
             s1 = ''
         
@@ -83,7 +83,7 @@ def makedirs(d):
     except OSError:
         pass
     except Exception as e:
-        print(e)
-        print(d)
+        logger.error(e)
+        logger.error(d)
         raise
 
