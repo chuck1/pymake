@@ -87,7 +87,7 @@ class Makefile:
         :param regex: treat targets as regex expressions and make all targets that match
         """
         
-        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'desc', 'doc', 'stop', 'id'})
+        d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'doc', 'stop', 'id'})
         if d:
             raise Exception(f'unexpected keyword arguments: {d}')
 
@@ -105,15 +105,12 @@ class Makefile:
                 for t in self.search_gen(target):
                     await self._make(mc, t, None)
 
-            elif args.get('desc', False):
-                print(repr(target[0]))
-                d = json.loads(target[0])
-                await self._make(mc, pymake.req.ReqFileDescriptor(d), None)
-
             elif args.get('doc', False):
-                print('doc', repr(target[0]))
                 d = json.loads(target[0])
-                await self._make(mc, pymake.req.ReqDoc(d), None)
+                r = pymake.req.ReqDoc(d)
+                logger.info('make')
+                print_lines(logger.info, r.print_long)
+                await self._make(mc, r, None)
 
             elif args.get('id', False):
                 r = pymake.req.ReqDoc(

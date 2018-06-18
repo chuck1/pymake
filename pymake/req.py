@@ -368,9 +368,18 @@ class ReqDoc(Req):
         client.update_one(self.get_encoded(), {'$set': {'_contents': b}})
 
     def read_contents(self):
-        return client.find_one(self.get_encoded())["_contents"]
+        d = client.find_one(self.get_encoded())
+        if "_contents" not in d:
+            breakpoint()
+        return d["_contents"]
 
     def read_json(self):
+        return self.read_contents()
+
+    def read_string(self):
+        return self.read_contents()
+
+    def read_binary(self):
         return self.read_contents()
 
     def read_pickle(self):
