@@ -55,7 +55,7 @@ class _Rule(Rule_utilities):
         self.up_to_date = False
         self.req_out = None
 
-    def build_requirements(self, makecall, f):
+    async def build_requirements(self, makecall, f):
         raise Exception(repr(self.__class__))
         yield
 
@@ -113,7 +113,8 @@ class _Rule(Rule_utilities):
             
             return req
 
-        #print(crayons.red(self))
+        logger.debug(crayons.red(self))
+
         async for r in self.build_requirements(makecall2, func):
             #print(crayons.red(self))
             yield (await r)
