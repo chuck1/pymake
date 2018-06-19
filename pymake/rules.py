@@ -490,6 +490,7 @@ class RuleDoc(Rule):
     def __init__(self, req, descriptor):
         super(RuleDoc, self).__init__(req)
         self.descriptor = descriptor
+        self.d = descriptor
 
     def graph_string(self):
         return json.dumps(self.descriptor, indent=4)
@@ -515,5 +516,18 @@ class RuleDocSimple(RuleDoc):
         m = __import__(s, fromlist=['main'])
         
         await m.main(makecall, av)
+
+
+def _copy(src, dst):
+    with src.open('r')as f0:
+        s = f0.read()
+
+    with dst.open('w') as f1:
+        f1.write(s)
+
+class RuleDocCopy(RuleDoc):
+    async def build(self, makecall, _, requirements):
+        _copy(requirements[0], self.req)
+
 
 

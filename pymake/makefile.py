@@ -89,7 +89,8 @@ class Makefile:
         
         d = (set(args.keys()) - {'test', 'force', 'regex', 'show_plot', 'touch', 'list', 'verbose', 'search', 'doc', 'stop', 'id'})
         if d:
-            raise Exception(f'unexpected keyword arguments: {d}')
+            #raise Exception(f'unexpected keyword arguments: {d}')
+            pass
 
 
         self.args = args

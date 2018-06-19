@@ -344,6 +344,9 @@ class ReqDoc(Req):
     def graph_string(self):
         return json.dumps(self.get_encoded(), indent=2)
 
+    async def delete(self):
+        response = client.coll.delete_one({'_id': bson.objectid.ObjectId(self.get_id())})
+
     def output_exists(self):
         d = client.find_one(self.get_encoded())
         if d is None: return False
@@ -363,14 +366,18 @@ class ReqDoc(Req):
     def write_json(self, b):
         self.write_contents(b)
 
+    def write_string(self, b):
+        assert isinstance(b, str)
+        self.write_contents(b)
+
     def write_contents(self, b):
         bson.json_util.dumps(b)
         client.update_one(self.get_encoded(), {'$set': {'_contents': b}})
 
     def read_contents(self):
         d = client.find_one(self.get_encoded())
-        if "_contents" not in d:
-            breakpoint()
+        #if "_contents" not in d:
+        #    breakpoint()
         return d["_contents"]
 
     def read_json(self):
