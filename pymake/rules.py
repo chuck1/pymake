@@ -525,9 +525,20 @@ def _copy(src, dst):
     with dst.open('w') as f1:
         f1.write(s)
 
+def _copy_binary(src, dst):
+    with src.open('rb')as f0:
+        s = f0.read()
+
+    with dst.open('wb') as f1:
+        f1.write(s)
+
 class RuleDocCopy(RuleDoc):
     async def build(self, makecall, _, requirements):
         _copy(requirements[0], self.req)
+
+class RuleDocCopyBinary(RuleDoc):
+    async def build(self, makecall, _, requirements):
+        _copy_binary(requirements[0], self.req)
 
 
 

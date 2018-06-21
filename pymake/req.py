@@ -112,8 +112,8 @@ class Req:
                 return ResultNoRuleFileExists()
             else:
                 self.print_long()
-                print('exists', self.output_exists())
-                print('mtime ', self.output_mtime())
+                #logging.debug('exists', self.output_exists())
+                #logging.debug('mtime ', self.output_mtime())
                 raise NoTargetError("no rules to make {}".format(repr(self)))
        
         rule = rules[0]
@@ -155,6 +155,30 @@ class Req:
 
     def write_pickle(self, o):
         self.write_binary(pickle.dumps(o))
+
+    async def read_pickle(self, mc=None):
+
+        if mc is not None:
+            await mc.make(self)
+
+        b = self.read_binary()
+
+        try:
+            return pickle.loads(b)
+        except Exception as e:
+            logger.error(crayons.red('pickle error'))
+            logger.error(crayons.red(repr(e)))
+            logger.error(crayons.red(f'delete {self!r}'))
+            
+            await self.delete()
+
+            if mc is None:
+                raise
+
+            await mc.make(self)
+
+            b = self.read_binary()
+            return pickle.loads(b)
 
 class ReqFake(Req):
     def __init__(self, fn):
@@ -258,15 +282,6 @@ class ReqFile(Req):
     def read_binary(self):
         with open(self.fn, 'rb') as f:
             return f.read()
-
-    def read_pickle(self):
-        with open(self.fn, 'rb') as f:
-            try:
-                return pickle.load(f)
-            except Exception as e:
-                logger.error(f'error unpickling {self!r}')
-                logger.error(repr(e))
-                raise
 
 class FileW:
     def __init__(self, buf):
@@ -389,15 +404,5 @@ class ReqDoc(Req):
     def read_binary(self):
         return self.read_contents()
 
-    def read_pickle(self):
-        try:
-            return pickle.loads(self.read_contents())
-        except:
-            print_lines(
-                    lambda s: logger.error(crayons.red(s)),
-                    functools.partial(print, f'error load pickle'),
-                    self.print_long,
-                    )
-            raise
 
 
