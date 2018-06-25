@@ -7,3 +7,4 @@ dist/
 .dev/
 *.egg-info/
 env/
+*.egg-info/
