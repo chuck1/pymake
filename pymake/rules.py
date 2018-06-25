@@ -452,8 +452,8 @@ class RuleDoc(Rule):
         just_pat = set_a - set_b
         just_dsc = set_b - set_a
         
-        with context_if(functools.partial(logger_level_context, logger, logging.DEBUG), 
-                "type" in a_and_b and a["type"] == b["type"]):
+        b0 = False #"type" in a_and_b and a["type"] == b["type"]
+        with context_if(functools.partial(logger_level_context, logger, logging.DEBUG), b0):
 
             for k in a_and_b:
                 if isinstance(a[k], Pat):
