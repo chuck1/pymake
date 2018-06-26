@@ -39,8 +39,8 @@ class Makefile:
     def __init__(self):
         self.rules = []
     
-    def find_one(self, target):
-        for r in self.find_rule(target):
+    async def find_one(self, mc, target):
+        async for r in self.find_rule(mc, target):
             return r
 
         #raise Exception('no rule to make target {}'.format(repr(target)))
@@ -131,15 +131,15 @@ class Makefile:
             target = pymake.req.ReqFile(target)
 
         if not isinstance(target, pymake.req.Req):
-            raise Exception('{}'.format(repr(target)))
+            raise Exception('Excepted Req, got {}'.format(repr(target)))
 
-        if isinstance(target, pymake.req.ReqFile):
-            if not isinstance(target, pymake.req.ReqDoc):
-                pat = re.compile('data/index/([0-9a-f]+)/(\d+)(\.\w+)')
-                m = pat.match(target.fn)
-                if m:
-                    d = file_index.manager.get_descriptor(m.group(1), m.group(2))
-                    return pymake.req.ReqFileDescriptor(d, m.group(3))
+        #if isinstance(target, pymake.req.ReqFile):
+        #    if not isinstance(target, pymake.req.ReqDoc):
+        #        pat = re.compile('data/index/([0-9a-f]+)/(\d+)(\.\w+)')
+        #        m = pat.match(target.fn)
+        #        if m:
+        #            d = file_index.manager.get_descriptor(m.group(1), m.group(2))
+        #            return pymake.req.ReqFileDescriptor(d, m.group(3))
 
         return target
 

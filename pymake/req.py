@@ -180,16 +180,6 @@ class Req:
             b = self.read_binary()
             return pickle.loads(b)
 
-class ReqFake(Req):
-    def __init__(self, fn):
-        self.fn = fn
-
-    async def make(self, makefile, mc, ancestor):
-        return ResultNoBuild('is fake')
-
-    def __repr__(self):
-        return f'<{self.__class__.__name__} fn={self.fn!r}>'
-
 class ReqFile(Req):
     """
     simple file requirement
@@ -283,6 +273,22 @@ class ReqFile(Req):
         with open(self.fn, 'rb') as f:
             return f.read()
 
+class ReqFake(ReqFile):
+    def __init__(self, fn):
+        self.fn = fn
+
+    async def make(self, makefile, mc, ancestor):
+        return ResultNoBuild('is fake')
+
+    def output_exists(self):
+        return None
+
+    def output_mtime(self):
+        return None
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__} fn={self.fn!r}>'
+
 class FileW:
     def __init__(self, buf):
         self.buf = buf
@@ -296,6 +302,9 @@ class FileR:
 
     def read(self, size=-1):
         return self.buf.read(size)
+
+    def readline(self):
+        return self.buf.readline()
 
 class OpenContext:
     def __init__(self, req, mode):
