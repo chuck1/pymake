@@ -46,6 +46,7 @@ class Makefile:
         #raise Exception('no rule to make target {}'.format(repr(target)))
 
     async def find_rule(self, mc, target):
+        assert isinstance(target, Req)
         mc1 = mc.copy(force=False)
         for rule in self.rules:
             try:

@@ -289,6 +289,7 @@ class Rule(_Rule):
     """
     def __init__(self, req):
         super(Rule, self).__init__()
+        assert isinstance(req, Req)
         self.req = req
     
     def __repr__(self):
@@ -309,6 +310,8 @@ class Rule(_Rule):
         determine if this rule builds ``req``
         """
         if not isinstance(req, ReqFile): return None
+        assert isinstance(self.req, Req)
+        assert isinstance(req, Req)
         if self.req.fn == req.fn:
             return self
         return None

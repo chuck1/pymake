@@ -257,6 +257,11 @@ class ReqFile(Req):
         with open(self.fn, 'wb') as f:
             pickle.dump(o, f)
 
+    def write_string(self, b):
+        pymake.makedirs(os.path.dirname(self.fn))
+        with open(self.fn, 'w') as f:
+            f.write(b)
+
     def write_binary(self, b):
         pymake.makedirs(os.path.dirname(self.fn))
         with open(self.fn, 'wb') as f:
