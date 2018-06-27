@@ -61,6 +61,7 @@ class _Rule(Rule_utilities):
         self.req_out = None
 
     def build_requirements(self, makecall, f):
+        breakpoint()
         raise Exception(repr(self.__class__))
         yield
 
