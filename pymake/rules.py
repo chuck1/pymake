@@ -116,7 +116,6 @@ class _Rule(Rule_utilities):
         logger.debug(crayons.red(self))
 
         async for r in self.build_requirements(makecall2, func):
-            #print(crayons.red(self))
             yield (await r)
 
     async def get_requirements(self, makecall):
