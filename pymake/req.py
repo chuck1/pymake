@@ -235,7 +235,7 @@ class ReqFile(Req):
             logger.error(f'error loading: {self.fn!r}')
             raise
 
-    def load_json(self):
+    def read_json(self):
         with open(self.fn, 'r') as f:
             s = f.read()
         try:
