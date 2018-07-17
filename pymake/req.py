@@ -346,7 +346,7 @@ class ReqDoc(Req):
         return {'/ReqDoc': {'args': [ason.encode(self.d)]}}
 
     def __repr__(self):
-        return f'{self.__class__.__name__} id = {self.get_id()} {{"type":{self.d["type"]}}}'
+        return f'{self.__class__.__name__} id = {self.get_id()} {{"type":{self.d["type"]!r}}}'
 
     def get_encoded(self):
         _ = ason.encode(self.d)
