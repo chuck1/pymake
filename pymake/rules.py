@@ -102,6 +102,8 @@ class _Rule(Rule_utilities):
 
         async def func(req):
             if req is None:
+                # there is a case in coil_testing in which I want to call func with None. 
+                # Series has a req_series_file and Array does not
                 raise Exception("None in f_in {}".format(self))
 
             r = await makecall2.make(req, ancestor=self.req_out)
