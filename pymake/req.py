@@ -51,7 +51,12 @@ class Client:
         return self.coll.find_one(q)
 
     def insert_one(self, q):
-        return self.coll.insert_one(q)
+        try:
+            return self.coll.insert_one(q)
+        except:
+            logger.error(crayons.red('error in mongo insert'))
+            pprint.pprint(q)
+            raise
 
     def update_one(self, q, u):
         if '$set' not in u:
@@ -340,6 +345,7 @@ class ReqDoc(Req):
         """
         d - bson-serializable object
         """
+        assert isinstance(d, dict)
         self.d = d
 
     def __encode__(self):
