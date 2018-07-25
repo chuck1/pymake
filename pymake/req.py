@@ -74,7 +74,7 @@ class Client:
 
         u['$set']['_last_modified'] = datetime.datetime.now()
         
-        self.coll.update_one({"_id": _id}, u)
+        return self.coll.update_one({"_id": _id}, u)
 
 client = Client()
 
@@ -174,6 +174,7 @@ class Req:
             logger.error(crayons.red('pickle error'))
             logger.error(crayons.red(repr(e)))
             logger.error(crayons.red(f'delete {self!r}'))
+            #logger.error(b)
             
             await self.delete()
 
@@ -375,7 +376,9 @@ class ReqDoc(Req):
         return json.dumps(self.get_encoded(), indent=2)
 
     async def delete(self):
-        response = client.coll.delete_one({'_id': bson.objectid.ObjectId(self.get_id())})
+        #response = client.coll.delete_one({'_id': bson.objectid.ObjectId(self.get_id())})
+        res = client.coll.update_one(self.get_encoded(), {'$unset': {'_last_modified': 1}})
+        assert res.modified_count == 1
 
     def output_exists(self):
         d = client.find_one(self.get_encoded())
