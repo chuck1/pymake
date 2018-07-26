@@ -346,7 +346,9 @@ class ReqDoc(Req):
         """
         d - bson-serializable object
         """
-        assert isinstance(d, dict)
+        if not isinstance(d, dict):
+            breakpoint()
+            raise Exception()
         self.d = d
 
     def __encode__(self):
@@ -362,6 +364,10 @@ class ReqDoc(Req):
     def print_long(self):
         print(f'id: {self.get_id()}')
         pprint.pprint(self.get_encoded())
+
+    def get_doc(self):
+        d = client.find_one(self.get_encoded())
+        return d
 
     def get_id(self):
         d = client.find_one(self.get_encoded())

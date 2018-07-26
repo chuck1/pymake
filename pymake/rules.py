@@ -119,7 +119,11 @@ class _Rule(Rule_utilities):
 
         async for r in self.build_requirements(makecall2, func):
             #print(crayons.red(self))
-            yield (await r)
+            try:
+                yield (await r)
+            except:
+                logger.error(crayons.red(f'error in {self!r}'))
+                raise
 
     async def get_requirements(self, makecall):
         
@@ -446,48 +450,13 @@ class RuleDoc(Rule):
         logger.debug(f'pat={pat}')
         logger.debug(f'dsc={req.d}')
 
-        set_a = set(a.keys())
-        set_b = set(b.keys())
-        
-        a_and_b = set_a & set_b
-
-        just_pat = set_a - set_b
-        just_dsc = set_b - set_a
-        
-        b0 = False #"type" in a_and_b and a["type"] == b["type"]
-        with context_if(functools.partial(logger_level_context, logger, logging.DEBUG), b0):
-
-            for k in a_and_b:
-                if isinstance(a[k], Pat):
-                    if not a[k].match(b[k]):
-                        logger.debug(f'{cls} {k!r} does not match pattern {a[k]!r} {b[k]!r}')
-                        return None
+        b = await mc.decoder.decode(b, mc.copy(force=False))
     
-                    if isinstance(a[k], PatNullable) and b[k] is None:
-                        b[k] = a[k].default
-                    
-                else:
-                    if not (a[k] == b[k]):
-                        #logger.debug(f'{k!r} differs')
-                        return None
-    
-            # attributes in the pattern but not in the descriptor must be nullable
-            for k in just_pat:
-                if not isinstance(pat[k], PatNullable):
-                    logger.debug(f'{cls} {k!r} is in pattern but not descriptor and is not nullable')
-                    return None
-                else:
-                    b[k] = pat[k].default
-            
-            # attributes in the descriptor but not in the pattern must be null
-            for k in just_dsc:
-                if b[k] is not None:
-                    logger.debug(f'{cls} {k!r} is in descriptor but not in pattern and is not None')
-                    return None
-   
-            #logger.debug(crayons.green(f'match {a} and {b}'))
+        if not match_dict(a, b): return
 
-        return cls(req, await mc.decoder.decode(b, mc.copy(force=False)))
+        #b = await mc.decoder.decode(b, mc.copy(force=False))
+
+        return cls(req, b)
 
     def __init__(self, req, descriptor):
         super(RuleDoc, self).__init__(req)
