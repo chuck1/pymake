@@ -186,6 +186,20 @@ class Req:
             b = self.read_binary()
             return pickle.loads(b)
 
+    def read_csv(self):
+        import csv
+
+        #ith open('eggs.csv', newline='') as f:
+        with self.open('r') as f:
+
+            reader = csv.reader(
+                    f, 
+                    delimiter=',', 
+                    #quotechar='|',
+                    )
+            for row in reader:
+                yield row
+
 class ReqFile(Req):
     """
     simple file requirement
@@ -217,7 +231,7 @@ class ReqFile(Req):
     def __repr__(self):
         return 'pymake.ReqFile({})'.format(repr(self.fn))
 
-    def load_text(self):
+    def read_text(self):
         try:
             with open(self.fn, 'r') as f:
                 return f.read()
@@ -271,7 +285,7 @@ class ReqFile(Req):
     def graph_string(self):
         return self.fn
 
-    def read_string(self):
+    def read_text(self):
         with open(self.fn, 'r') as f:
             return f.read()
 
@@ -312,6 +326,9 @@ class FileR:
     def readline(self):
         return self.buf.readline()
 
+    def __iter__(self):
+        return iter(self.buf)
+
 class OpenContext:
     def __init__(self, req, mode):
         self.req = req
@@ -324,7 +341,7 @@ class OpenContext:
         elif self.mode == 'wb':
             self.f = FileW(io.BytesIO())
         elif self.mode == 'r':
-            self.f = FileR(io.StringIO(self.req.read_string()))
+            self.f = FileR(io.StringIO(self.req.read_text()))
         elif self.mode == 'rb':
             self.f = FileR(io.BytesIO(self.req.read_binary()))
         
@@ -340,6 +357,7 @@ class OpenContext:
         elif self.mode == 'wb':
             s = self.f.buf.getvalue()
             self.req.write_binary(s)
+
 
 class ReqDoc(Req):
     def __init__(self, d):
@@ -422,7 +440,7 @@ class ReqDoc(Req):
     def read_json(self):
         return self.read_contents()
 
-    def read_string(self):
+    def read_text(self):
         return self.read_contents()
 
     def read_binary(self):
