@@ -6,6 +6,7 @@ import pickle
 import re
 import os
 import logging
+import time
 import traceback
 import pymongo
 import bson
@@ -21,6 +22,41 @@ from .util import *
 from .result import *
 
 logger = logging.getLogger(__name__)
+
+class FakePickleArchive:
+
+    def __init__(self):
+        self._next_id = int(time.time()*1000)
+
+        self.__map = {}
+
+    def next_id(self):
+        i = self._next_id
+        self._next_id += 1
+        return i
+
+    def write(self, o):
+        i = self.next_id()
+
+        p = FakePickle(i)
+
+        self.__map[i] = o
+
+        return p
+
+    def contains(self, p):
+        assert isinstance(p, FakePickle)
+        return p.i in self.__map
+
+    def read(self, p):
+        assert isinstance(p, FakePickle)
+        return self.__map[p.i]
+
+fake_pickle_archive = FakePickleArchive()
+
+class FakePickle:
+    def __init__(self, i):
+        self.i = i
 
 def clean_doc(d0):
     d1 = dict(d0)
@@ -159,8 +195,16 @@ class Req:
         return False
 
     def write_pickle(self, o):
-        self.write_binary(pickle.dumps(o))
+        
+        try:
+            b = pickle.dumps(o)
+        except:
+            # use FakePickle object
+            p = fake_pickle_archive.write(o)
+            b = pickle.dumps(p)
 
+        self.write_binary(b)
+        
     async def read_pickle(self, mc=None):
 
         if mc is not None:
@@ -169,7 +213,7 @@ class Req:
         b = self.read_binary()
 
         try:
-            return pickle.loads(b)
+            o = pickle.loads(b)
         except Exception as e:
             logger.error(crayons.red('pickle error'))
             logger.error(crayons.red(repr(e)))
@@ -184,7 +228,16 @@ class Req:
             await mc.make(self)
 
             b = self.read_binary()
-            return pickle.loads(b)
+            o = pickle.loads(b)
+
+        if isinstance(o, FakePickle):
+            if fake_pickle_archive.contains(o):
+                o = fake_pickle_archive.read(o)
+            else:
+                self.delete()
+                raise Exception('got FakePickle that is not in the archive')
+
+        return o
 
     def read_csv(self):
         import csv
