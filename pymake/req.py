@@ -364,15 +364,20 @@ class ReqDoc(Req):
         """
         d - bson-serializable object
         """
+
         if not isinstance(d, dict):
             breakpoint()
             raise Exception()
+        assert 'type' in d
         self.d = d
 
     def __encode__(self):
         return {'/ReqDoc': {'args': [ason.encode(self.d)]}}
 
     def __repr__(self):
+        if 'type' not in self.d:
+            print(self.d)
+            breakpoint()
         return f'{self.__class__.__name__} id = {self.get_id()} {{"type":{self.d["type"]!r}}}'
 
     def get_encoded(self):
