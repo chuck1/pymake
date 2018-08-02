@@ -30,17 +30,17 @@ class MakeCall:
     def show_plot(self):
         return self.args.get('show_plot', False)
 
-    def copy(self, **args):
+    def copy(self, **kwargs):
         args1 = dict(self.args)
-        args1.update(args)
+        args1.update(kwargs)
         return MakeCall(self.makefile, args1, self.graph, self.stack)
 
-    async def make(self, req, test=None, ancestor=None):
+    async def make(self, req, test=None, ancestor=None, **kwargs):
         # added this because needed to make a file when test was True
         if test is None:
             test = self.args.get('test', False)
 
-        makecall = self.copy(test=test)
+        makecall = self.copy(test=test, **kwargs)
 
         assert(req is not None)
 

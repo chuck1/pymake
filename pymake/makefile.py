@@ -13,7 +13,7 @@ import numpy
 from .rules import *
 from .util import *
 from .makecall import *
-
+import pymake.result
 import pymake.req
 
 logger = logging.getLogger(__name__)
@@ -165,6 +165,10 @@ class Makefile:
 
         if req is None:
             raise Exception('req is None'+str(req))
+
+        if not req.build:
+            if req.output_exists():
+                return pymake.result.ResultNoBuild()
 
         #print(crayons.magenta(str(target), bold=True))
         

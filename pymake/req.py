@@ -119,6 +119,9 @@ def touch(fname, times=None):
         os.utime(fname, times)
 
 class Req:
+
+    build = True
+
     def output_exists(self):
         return None
 
@@ -413,16 +416,19 @@ class OpenContext:
 
 
 class ReqDoc(Req):
-    def __init__(self, d):
+    def __init__(self, d, build=True):
         """
-        d - bson-serializable object
+        d     - bson-serializable object
+        build - flag is this should be built or just read
         """
 
         if not isinstance(d, dict):
-            breakpoint()
             raise Exception()
+
         assert 'type' in d
         self.d = d
+
+        self.build = build
 
     def __encode__(self):
         return {'/ReqDoc': {'args': [ason.encode(self.d)]}}
