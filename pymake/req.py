@@ -28,7 +28,7 @@ class FakePickleArchive:
     def __init__(self):
         self._next_id = int(time.time()*1000)
 
-        self.__map = {}
+        self._map = {}
 
     def next_id(self):
         i = self._next_id
@@ -36,21 +36,24 @@ class FakePickleArchive:
         return i
 
     def write(self, o):
+
         i = self.next_id()
 
         p = FakePickle(i)
 
-        self.__map[i] = o
+        self._map[i] = o
+
+        logger.info(f'fake pickle archive write: {o} {i} {p}')
 
         return p
 
     def contains(self, p):
         assert isinstance(p, FakePickle)
-        return p.i in self.__map
+        return (p.i in self._map)
 
     def read(self, p):
         assert isinstance(p, FakePickle)
-        return self.__map[p.i]
+        return self._map[p.i]
 
 fake_pickle_archive = FakePickleArchive()
 
@@ -203,6 +206,10 @@ class Req:
             b = pickle.dumps(o)
         except:
             # use FakePickle object
+            
+            logger.info(f'write fake pickle')
+            print_lines(logger.info, lambda: pprint.pprint(self.d))
+
             p = fake_pickle_archive.write(o)
             b = pickle.dumps(p)
 
@@ -237,7 +244,10 @@ class Req:
             if fake_pickle_archive.contains(o):
                 o = fake_pickle_archive.read(o)
             else:
-                self.delete()
+                await self.delete()
+                print_lines(logger.error, lambda: pprint.pprint(self.d))
+                print_lines(logger.error, lambda: pprint.pprint(fake_pickle_archive._map))
+                logger.error(f'{o.i} {(o.i in fake_pickle_archive._map)}')
                 raise Exception('got FakePickle that is not in the archive')
 
         return o
@@ -295,22 +305,6 @@ class ReqFile(Req):
             logger.error(f'error loading: {self!r} {self.fn!r}')
             raise
 
-    def load_object(self):
-        try:
-            with open(self.fn, 'rb') as f:
-                return pickle.load(f)
-        except:
-            logger.error(crayons.red(f'error loading: {self!r} {self.fn!r}'))
-            raise
-
-    def load_pickle(self):
-        try:
-            with open(self.fn, 'rb') as f:
-                return pickle.load(f)
-        except:
-            logger.error(f'error loading: {self.fn!r}')
-            raise
-
     def read_json(self):
         with open(self.fn, 'r') as f:
             s = f.read()
@@ -326,12 +320,6 @@ class ReqFile(Req):
 
         with open(self.fn, 'w') as f:
             f.write(json.dumps(d, indent=8, sort_keys=True))
-
-    def write_object(self, o):
-        pymake.makedirs(os.path.dirname(self.fn))
-
-        with open(self.fn, 'wb') as f:
-            pickle.dump(o, f)
 
     def write_binary(self, b):
         pymake.makedirs(os.path.dirname(self.fn))
@@ -464,14 +452,25 @@ class ReqDoc(Req):
         return json.dumps(self.get_encoded(), indent=2)
 
     async def delete(self):
-        #response = client.coll.delete_one({'_id': bson.objectid.ObjectId(self.get_id())})
         res = client.coll.update_one(self.get_encoded(), {'$unset': {'_last_modified': 1}})
         assert res.modified_count == 1
 
     def output_exists(self):
         d = client.find_one(self.get_encoded())
         if d is None: return False
-        return bool('_last_modified' in d)
+        b = bool('_last_modified' in d)
+        
+        if b:
+            try:
+                o = pickle.loads(self.read_contents())
+            except: pass
+            else:
+                if isinstance(o, FakePickle):
+                    if not fake_pickle_archive.contains(o):
+                        return False
+
+
+        return b
 
     def would_touch(self, mc):
         return False
