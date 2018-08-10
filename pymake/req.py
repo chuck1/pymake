@@ -43,7 +43,7 @@ class FakePickleArchive:
 
         self._map[i] = o
 
-        logger.info(f'fake pickle archive write: {o} {i} {p}')
+        logger.debug(f'fake pickle archive write: {o} {i} {p}')
 
         return p
 
@@ -109,7 +109,7 @@ class Client:
         else:
             _id = d["_id"]
 
-        logger.info(crayons.green(f'write binary: {_id}'))
+        logger.debug(crayons.green(f'write binary: {_id}'))
 
         u['$set']['_last_modified'] = datetime.datetime.now()
         
@@ -207,8 +207,8 @@ class Req:
         except:
             # use FakePickle object
             
-            logger.info(f'write fake pickle')
-            print_lines(logger.info, lambda: pprint.pprint(self.d))
+            logger.debug(f'write fake pickle')
+            print_lines(logger.debug, lambda: pprint.pprint(self.d))
 
             p = fake_pickle_archive.write(o)
             b = pickle.dumps(p)
@@ -276,6 +276,9 @@ class ReqFile(Req):
         assert isinstance(fn, str)
         self.fn = fn
 
+    def __encode__(self):
+        return {'/ReqFile': {'args': [self.fn]}}
+
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
@@ -321,6 +324,12 @@ class ReqFile(Req):
         with open(self.fn, 'w') as f:
             f.write(json.dumps(d, indent=8, sort_keys=True))
 
+    def write_text(self, s):
+        pymake.makedirs(os.path.dirname(self.fn))
+
+        with open(self.fn, 'w') as f:
+            f.write(s)
+
     def write_binary(self, b):
         pymake.makedirs(os.path.dirname(self.fn))
         with open(self.fn, 'wb') as f:
@@ -336,6 +345,9 @@ class ReqFile(Req):
     def read_binary(self):
         with open(self.fn, 'rb') as f:
             return f.read()
+
+    async def delete(self):
+        os.remove(self.fn)
 
 class ReqFake(ReqFile):
     def __init__(self, fn):
@@ -397,7 +409,7 @@ class OpenContext:
 
         if self.mode == 'w':
             s = self.f.buf.getvalue()
-            self.req.write_string(s)
+            self.req.write_text(s)
         elif self.mode == 'wb':
             s = self.f.buf.getvalue()
             self.req.write_binary(s)
@@ -486,7 +498,7 @@ class ReqDoc(Req):
     def write_json(self, b):
         self.write_contents(b)
 
-    def write_string(self, b):
+    def write_text(self, b):
         assert isinstance(b, str)
         self.write_contents(b)
 
