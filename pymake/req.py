@@ -521,5 +521,12 @@ class ReqDoc(Req):
     def read_binary(self):
         return self.read_contents()
 
+class ReqTemp(Req):
+    
+    def write_binary(self, b):
+        self.b = b
+
+    def read_binary(self):
+        return self.b
 
 
