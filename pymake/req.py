@@ -87,6 +87,7 @@ class Client:
             return False
 
     def find_one(self, q):
+        #logger.info(f"find_one {q!r}")
         return self.coll.find_one(q)
 
     def insert_one(self, q):
@@ -465,7 +466,8 @@ class ReqDoc(Req):
 
     async def delete(self):
         res = client.coll.update_one(self.get_encoded(), {'$unset': {'_last_modified': 1}})
-        assert res.modified_count == 1
+        if res.modified_count != 1:
+            raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
     def output_exists(self):
         d = client.find_one(self.get_encoded())
@@ -473,9 +475,14 @@ class ReqDoc(Req):
         b = bool('_last_modified' in d)
         
         if b:
+            # look for FakePickle object
+
+            s = d["_contents"] #self.read_contents()
             try:
-                o = pickle.loads(self.read_contents())
-            except: pass
+                o = pickle.loads(s)
+            except Exception as e:
+                #logger.warning(f"pickle load error: {e!r}")
+                pass
             else:
                 if isinstance(o, FakePickle):
                     if not fake_pickle_archive.contains(o):
@@ -503,10 +510,13 @@ class ReqDoc(Req):
         self.write_contents(b)
 
     def write_contents(self, b):
+        # make sure is compatible
         bson.json_util.dumps(b)
+
         client.update_one(self.get_encoded(), {'$set': {'_contents': b}})
 
     def read_contents(self):
+        assert self.output_exists()
         d = client.find_one(self.get_encoded())
         #if "_contents" not in d:
         #    breakpoint()
@@ -519,7 +529,9 @@ class ReqDoc(Req):
         return self.read_contents()
 
     def read_binary(self):
-        return self.read_contents()
+        b = self.read_contents()
+        assert isinstance(b, bytes)
+        return b
 
 class ReqTemp(Req):
     
@@ -527,6 +539,13 @@ class ReqTemp(Req):
         self.b = b
 
     def read_binary(self):
+        return self.b
+
+    def write_text(self, b):
+        self.b = b
+
+    def read_text(self):
+        assert isinstance(self.b, str)
         return self.b
 
 
