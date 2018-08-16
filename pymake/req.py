@@ -383,6 +383,9 @@ class FileR:
     def readline(self):
         return self.buf.readline()
 
+    def readlines(self):
+        return self.buf.readlines()
+
     def __iter__(self):
         return iter(self.buf)
 
