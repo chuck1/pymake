@@ -154,10 +154,13 @@ class Req:
         return False
 
     def write_pickle(self, o):
+       
+        self._stored = o
         
         try:
             b = pickle.dumps(o)
-        except:
+        except Exception as e:
+            logger.warning(crayons.yellow(repr(e)))
             # use FakePickle object
             
             logger.debug(f'write fake pickle')
@@ -169,6 +172,9 @@ class Req:
         self.write_binary(b)
         
     async def read_pickle(self, mc=None):
+
+        if hasattr(self, '_stored'):
+            logger.warning(f'HAS STORED! {self!r}')
 
         if mc is not None:
             await mc.make(self)
@@ -501,6 +507,18 @@ class ReqDoc(Req):
 
 class ReqTemp(Req):
     
+    async def make(self, makefile, mc, ancestor):
+        return ResultNoBuild('is temp')
+
+    def output_exists(self):
+        return hasattr(self, 'b')
+
+    def write_pickle(self, b):
+        self.b = b
+
+    async def read_pickle(self):
+        return self.b
+
     def write_binary(self, b):
         self.b = b
 
