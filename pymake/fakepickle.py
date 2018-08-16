@@ -1,3 +1,5 @@
+import logging
+import time
 """
 import contextlib
 import datetime
@@ -6,8 +8,6 @@ import inspect
 import pickle
 import re
 import os
-import logging
-import time
 import traceback
 import pymongo
 import bson
