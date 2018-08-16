@@ -14,63 +14,15 @@ import json
 import pprint
 
 import pymake
-from cached_property import cached_property
+import cached_property
 from mybuiltins import *
 from mybuiltins import ason
 from .exceptions import *
 from .util import *
 from .result import *
+from .fakepickle import *
 
 logger = logging.getLogger(__name__)
-
-class FakePickleArchive:
-
-    def __init__(self):
-        self._next_id = int(time.time()*1000)
-
-        self._map = {}
-
-    def next_id(self):
-        i = self._next_id
-        self._next_id += 1
-        return i
-
-    def write(self, o):
-
-        i = self.next_id()
-
-        p = FakePickle(i)
-
-        self._map[i] = o
-
-        logger.debug(f'fake pickle archive write: {o} {i} {p}')
-
-        return p
-
-    def contains(self, p):
-        assert isinstance(p, FakePickle)
-        return (p.i in self._map)
-
-    def read(self, p):
-        assert isinstance(p, FakePickle)
-        return self._map[p.i]
-
-fake_pickle_archive = FakePickleArchive()
-
-class FakePickle:
-    def __init__(self, i):
-        self.i = i
-
-def clean_doc(d0):
-    d1 = dict(d0)
-
-    keys_to_delete = [k for k in d1.keys() if k.startswith("_")]
-    
-    for k in keys_to_delete:
-        del d1[k]
-
-    return d1
-
 
 class Client:
     def __init__(self):
@@ -332,7 +284,7 @@ class ReqFile(Req):
             f.write(s)
 
     def write_binary(self, b):
-        pymake.makedirs(os.path.dirname(self.fn))
+        pymake.util.makedirs(os.path.dirname(self.fn))
         with open(self.fn, 'wb') as f:
             f.write(b)
 
@@ -442,6 +394,10 @@ class ReqDoc(Req):
             print(self.d)
             breakpoint()
         return f'{self.__class__.__name__} id = {self.get_id()} {{"type":{self.d["type"]!r}}}'
+
+    @cached_property.cached_property
+    def key_set(self):
+        return set(self.d.keys())
 
     def get_encoded(self):
         _ = ason.encode(self.d)

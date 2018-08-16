@@ -431,13 +431,42 @@ class RuleDoc(Rule):
     """
 
     @classmethod
+    def descriptor_keys_required(cls):
+        if hasattr(cls, "_keys_required"):
+            return cls._keys_required
+        
+        l = []
+
+        for k, v in cls.descriptor_pattern().items():
+            if isinstance(v, pymake.pat.PatNullable):
+                continue
+
+            l.append(k)
+
+        l = set(l)
+
+        cls._keys_required = l
+
+        return cls._keys_required
+
+    @classmethod
     async def test(cls, mc, req):
         if not isinstance(req, ReqDoc): return None
        
         # a - this descriptor
         # b - req descriptor
 
+        ks0 = cls.descriptor_keys_required()
+        ks1 = req.key_set
+        
         pat = cls.descriptor_pattern()
+
+        if bool(ks0 - ks1):
+            if pat['type'] == req.d['type']:
+                logger.debug(f'ks0 = {ks0}')
+                logger.debug(f'ks1 = {ks1}')
+            return
+
 
         a = pat
         b = dict(req.d)

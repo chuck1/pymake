@@ -10,6 +10,7 @@ import sys
 import bson
 import numpy
 
+#from mybuiltins import *
 from .rules import *
 from .util import *
 from .makecall import *
@@ -38,6 +39,7 @@ class Makefile:
     """
     def __init__(self):
         self.rules = []
+        self._rules_doc = {}
     
     async def find_one(self, mc, target):
         async for r in self.find_rule(mc, target):
@@ -46,8 +48,23 @@ class Makefile:
         #raise Exception('no rule to make target {}'.format(repr(target)))
 
     async def find_rule(self, mc, target):
+        
         mc1 = mc.copy(force=False)
-        for rule in self.rules:
+
+        def _rules_to_check():
+            if isinstance(target, pymake.req.ReqDoc):
+                if target.d['type'] not in self._rules_doc:
+                    #print_lines(logging.error, target.print_long)
+                    #raise Exception(f"no rules to make {target!r}")
+                    return
+
+                for r in self._rules_doc[target.d['type']]:
+                    yield r
+            else:
+                for r in self.rules:
+                    yield r
+
+        for rule in _rules_to_check():
             try:
                 r = await rule.test(mc1, target)
             except:
@@ -67,7 +84,16 @@ class Makefile:
         yielded rules to be available in self.rules
         """
         for r in generator:
-            self.rules.append(r)
+
+            if pymake.rules.RuleDoc in inspect.getmro(r):
+                pat = r.descriptor_pattern()
+
+                if pat['type'] not in self._rules_doc:
+                    self._rules_doc[pat['type']] = []
+
+                self._rules_doc[pat['type']].append(r)
+            else:
+                self.rules.append(r)
 
     def print_dep(self, target, indent=0):
         

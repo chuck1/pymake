@@ -22,6 +22,16 @@ def dict_get(d, k, de):
         d[k] = de
     return d[k]
 
+def clean_doc(d0):
+    d1 = dict(d0)
+
+    keys_to_delete = [k for k in d1.keys() if k.startswith("_")]
+    
+    for k in keys_to_delete:
+        del d1[k]
+
+    return d1
+
 
 def bin_compare(b0,b1):
     for c0,c1 in zip(b,b1):
