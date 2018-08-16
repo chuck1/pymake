@@ -448,6 +448,7 @@ class ReqDoc(Req):
         print(f'id: {self.get_id()}')
         s = bson.json_util.dumps(self.get_encoded())
         print(s)
+        pprint.pprint(self.get_encoded())
         #pprint.pprint(self.get_encoded())
 
     def get_doc(self):
