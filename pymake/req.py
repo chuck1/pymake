@@ -159,7 +159,7 @@ class Req:
             if b:
                 return ResultNoRuleFileExists()
             else:
-                self.print_long()
+                print_lines(logger.warning, self.print_long)
                 #logging.debug('exists', self.output_exists())
                 #logging.debug('mtime ', self.output_mtime())
                 raise NoTargetError("no rules to make {}".format(repr(self)))
@@ -446,7 +446,9 @@ class ReqDoc(Req):
 
     def print_long(self):
         print(f'id: {self.get_id()}')
-        pprint.pprint(self.get_encoded())
+        s = bson.json_util.dumps(self.get_encoded())
+        print(s)
+        #pprint.pprint(self.get_encoded())
 
     def get_doc(self):
         d = client.find_one(self.get_encoded())
@@ -526,7 +528,11 @@ class ReqDoc(Req):
         return self.read_contents()
 
     def read_text(self):
-        return self.read_contents()
+        s = self.read_contents()
+        if isinstance(s, bytes):
+            s = s.decode()
+        assert isinstance(s, str)
+        return s
 
     def read_binary(self):
         b = self.read_contents()
