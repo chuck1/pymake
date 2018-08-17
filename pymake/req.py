@@ -23,12 +23,14 @@ from .result import *
 from .fakepickle import *
 
 logger = logging.getLogger(__name__)
+logger_pickle = logging.getLogger(__name__ + '-pickle')
+logger_mongo  = logging.getLogger(__name__ + '-mongo')
 
 class Client:
     def __init__(self):
         client = pymongo.MongoClient()
         db = client.coiltest
-        self.coll = db.test
+        self._coll = db.test
 
     def exists(self, q):
         c = self.coll.find(q).limit(1)
@@ -39,12 +41,12 @@ class Client:
             return False
 
     def find_one(self, q):
-        #logger.info(f"find_one {q!r}")
-        return self.coll.find_one(q)
+        logger_mongo.debug(f"find_one {q!r}")
+        return self._coll.find_one(q)
 
     def insert_one(self, q):
         try:
-            return self.coll.insert_one(q)
+            return self._coll.insert_one(q)
         except:
             logger.error(crayons.red('error in mongo insert'))
             pprint.pprint(q)
@@ -54,19 +56,23 @@ class Client:
         if '$set' not in u:
             u['$set'] = {}
 
-        d = self.coll.find_one(q)
+        d = self._coll.find_one(q)
 
         if d is None:
-            res = self.coll.insert_one(q)
+            res = self._coll.insert_one(q)
             _id = res.inserted_id
         else:
             _id = d["_id"]
 
         logger.debug(crayons.green(f'write binary: {_id}'))
 
-        u['$set']['_last_modified'] = datetime.datetime.now()
+        t = datetime.datetime.now()
+
+        u['$set']['_last_modified'] = t
         
-        return self.coll.update_one({"_id": _id}, u)
+        self._coll.update_one({"_id": _id}, u)
+        
+        return t
 
 client = Client()
 
@@ -158,6 +164,7 @@ class Req:
         self._stored = o
         
         try:
+            logger_pickle.info(f"pickle dump {o!r}")
             b = pickle.dumps(o)
         except Exception as e:
             logger.warning(crayons.yellow(repr(e)))
@@ -167,6 +174,7 @@ class Req:
             print_lines(logger.debug, lambda: pprint.pprint(self.d))
 
             p = fake_pickle_archive.write(o)
+            logger_pickle.info(f"pickle dump {p!r}")
             b = pickle.dumps(p)
 
         self.write_binary(b)
@@ -174,7 +182,7 @@ class Req:
     async def read_pickle(self, mc=None):
 
         if hasattr(self, '_stored'):
-            logger.warning(f'HAS STORED! {self!r}')
+            logger.warning(crayons.yellow(f'HAS STORED! {self!r}'))
 
         if mc is not None:
             await mc.make(self)
@@ -183,6 +191,8 @@ class Req:
 
         try:
             o = pickle.loads(b)
+            logger_pickle.info(f"pickle load")
+            print_lines(logger_pickle.info, self.print_long)
         except Exception as e:
             logger.error(crayons.red('pickle error'))
             logger.error(crayons.red(repr(e)))
@@ -198,6 +208,7 @@ class Req:
 
             b = self.read_binary()
             o = pickle.loads(b)
+            logger_pickle.info(f"pickle load {o!r}")
 
         if isinstance(o, FakePickle):
             if fake_pickle_archive.contains(o):
@@ -209,6 +220,7 @@ class Req:
                 logger.error(f'{o.i} {(o.i in fake_pickle_archive._map)}')
                 raise Exception('got FakePickle that is not in the archive')
 
+        self._stored = o
         return o
 
     def read_csv(self):
@@ -380,7 +392,7 @@ class OpenContext:
 class ReqDoc(Req):
     def __init__(self, d, build=True):
         """
-        d     - bson-serializable object
+        d     - bson-serializable object. once initialized, MUST NOT CHANGE
         build - flag is this should be built or just read
         """
 
@@ -399,46 +411,55 @@ class ReqDoc(Req):
         if 'type' not in self.d:
             print(self.d)
             breakpoint()
-        return f'{self.__class__.__name__} id = {self.get_id()} {{"type":{self.d["type"]!r}}}'
+        return f'{self.__class__.__name__} id = {self._id} {{"type":{self.d["type"]!r}}}'
 
     @cached_property.cached_property
     def key_set(self):
         return set(self.d.keys())
 
-    def get_encoded(self):
+    @cached_property.cached_property
+    def encoded(self):
         _ = ason.encode(self.d)
         return _
 
     def print_long(self):
-        print(f'id: {self.get_id()}')
-        s = bson.json_util.dumps(self.get_encoded())
+        print(f'id: {self._id}')
+        s = bson.json_util.dumps(self.encoded)
         print(s)
-        pprint.pprint(self.get_encoded())
+        pprint.pprint(self.encoded)
         #pprint.pprint(self.get_encoded())
 
     def get_doc(self):
-        d = client.find_one(self.get_encoded())
+        d = client.find_one(self.encoded)
         return d
 
-    def get_id(self):
-        d = client.find_one(self.get_encoded())
+    @cached_property.cached_property
+    def _id(self):
+        d = client.find_one(self.encoded)
+
+        self._mtime = self._read_mtime(d)
 
         if d is None:
-            res = client.insert_one(self.get_encoded())
+            res = client.insert_one(self.encoded)
             return res.inserted_id
 
         return str(d["_id"])
 
+    def _read_mtime(self, d):
+        if d is None: return 0
+        if '_last_modified' not in d: return 0
+        return d['_last_modified'].timestamp()
+
     def graph_string(self):
-        return json.dumps(self.get_encoded(), indent=2)
+        return bson.json_util.dumps(self.encoded, indent=2)
 
     async def delete(self):
-        res = client.coll.update_one(self.get_encoded(), {'$unset': {'_last_modified': 1}})
+        res = client.coll.update_one(self.encoded, {'$unset': {'_last_modified': 1}})
         if res.modified_count != 1:
             raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
     def output_exists(self):
-        d = client.find_one(self.get_encoded())
+        d = client.find_one(self.encoded)
         if d is None: return False
         b = bool('_last_modified' in d)
         
@@ -463,9 +484,16 @@ class ReqDoc(Req):
         return False
 
     def output_mtime(self):
-        t = client.find_one(self.get_encoded()).get("_last_modified", None)
-        if t is None: return 0
-        return t.timestamp()
+
+        if hasattr(self, '_mtime'):
+            logger.debug(crayons.blue('USING SAVED MTIME'))
+            return self._mtime
+
+        d = client.find_one(self.encoded)
+
+        self._mtime = self._read_mtime(d)
+
+        return self._mtime
 
     def write_binary(self, b):
         self.write_contents(b)
@@ -479,13 +507,13 @@ class ReqDoc(Req):
 
     def write_contents(self, b):
         # make sure is compatible
-        bson.json_util.dumps(b)
-
-        client.update_one(self.get_encoded(), {'$set': {'_contents': b}})
+        #bson.json_util.dumps(b)
+        t = client.update_one(self.encoded, {'$set': {'_contents': b}})
+        self._mtime = t.timestamp()
 
     def read_contents(self):
         assert self.output_exists()
-        d = client.find_one(self.get_encoded())
+        d = client.find_one(self.encoded)
         #if "_contents" not in d:
         #    breakpoint()
         return d["_contents"]
