@@ -44,8 +44,8 @@ class MakeCall:
 
         assert(req is not None)
 
-        with MakeContext(self.stack, req):
-            return await self.makefile._make(self, req, ancestor)
+        with MakeContext(makecall.stack, req):
+            return await makecall.makefile._make(makecall, req, ancestor)
 
     def add_edge(self, r1, r2):
         if r1 is None: return

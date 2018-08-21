@@ -190,7 +190,7 @@ class _Rule(Rule_utilities):
         req.print_long()
 
     async def _make(self, makecall, req):
-        logger.debug(f'makecall. test = {makecall.args.get("test", False)}')
+        logger.debug(f'test = {makecall.args.get("test", False)}')
 
         if self.up_to_date: 
             raise Exception()
@@ -471,8 +471,6 @@ class RuleDoc(Rule):
         a = pat
         b = dict(req.d)
        
-        #breakpoint()
-
         if 'type' in pat:
             logger.debug(crayons.blue(f'pat type={pat["type"]}'))
 

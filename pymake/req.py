@@ -98,6 +98,7 @@ class Req:
 
     async def make(self, makefile, mc, ancestor):
         logger.debug(repr(self))
+        logger.debug(f'makecall args: {mc.args!r}')
 
         mc.add_edge(ancestor, self)
 
@@ -191,8 +192,8 @@ class Req:
 
         try:
             o = pickle.loads(b)
-            logger_pickle.info(f"pickle load")
-            print_lines(logger_pickle.info, self.print_long)
+            logger_pickle.debug(f"pickle load")
+            print_lines(logger_pickle.debug, self.print_long)
         except Exception as e:
             logger.error(crayons.red('pickle error'))
             logger.error(crayons.red(repr(e)))
