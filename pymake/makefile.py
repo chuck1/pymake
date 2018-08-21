@@ -85,7 +85,12 @@ class Makefile:
         """
         for r in generator:
 
-            if pymake.rules.RuleDoc in inspect.getmro(r):
+            try:
+                mro = inspect.getmro(r)
+            except:
+                mro = []
+
+            if pymake.rules.RuleDoc in mro:
                 pat = r.descriptor_pattern()
 
                 if pat['type'] not in self._rules_doc:
