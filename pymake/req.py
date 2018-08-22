@@ -455,7 +455,7 @@ class ReqDoc(Req):
         return bson.json_util.dumps(self.encoded, indent=2)
 
     async def delete(self):
-        res = client.coll.update_one(self.encoded, {'$unset': {'_last_modified': 1}})
+        res = client._coll.update_one(self.encoded, {'$unset': {'_last_modified': 1}})
         if res.modified_count != 1:
             raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
