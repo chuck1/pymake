@@ -1,4 +1,4 @@
 
 . env/bin/activate
-python -m pytest pymake
+python -m pytest pymake -vx --ff $@
 
