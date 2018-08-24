@@ -96,7 +96,7 @@ class Req:
     def open(self, mode):
         return OpenContext(self, mode)
 
-    async def make(self, makefile, mc, ancestor):
+    async def make(self, mc, ancestor):
         logger.debug(repr(self))
         logger.debug(f'makecall args: {mc.args!r}')
 
@@ -104,13 +104,13 @@ class Req:
 
         #if not mc.args['test']:
         if True:
-            if self in makefile._cache_req:
+            if self in mc.makefile._cache_req:
                 logger.debug('in cache')
                 return ResultNoBuild('in cache')
        
-        makefile._cache_req.append(self)
+        mc.makefile._cache_req.append(self)
     
-        rules = await makefile.rules_sorted(mc, self)
+        rules = await mc.makefile.rules_sorted(mc, self)
 
         if len(rules) == 0:
             logger.debug('no rules')
@@ -325,7 +325,7 @@ class ReqFake(ReqFile):
     def __init__(self, fn):
         self.fn = fn
 
-    async def make(self, makefile, mc, ancestor):
+    async def make(self, mc, ancestor):
         return ResultNoBuild('is fake')
 
     def output_exists(self):
@@ -536,7 +536,7 @@ class ReqDoc(Req):
 
 class ReqTemp(Req):
     
-    async def make(self, makefile, mc, ancestor):
+    async def make(self, mc, ancestor):
         return ResultNoBuild('is temp')
 
     def output_exists(self):

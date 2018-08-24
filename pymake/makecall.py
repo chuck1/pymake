@@ -14,6 +14,8 @@ import pygraphviz as gv
 from mybuiltins import *
 from .util import *
 
+import pymake.rules
+
 logger = logging.getLogger(__name__)
 
 class MakeCall:
@@ -45,7 +47,29 @@ class MakeCall:
         assert(req is not None)
 
         with MakeContext(makecall.stack, req):
-            return await makecall.makefile._make(makecall, req, ancestor)
+
+            if req is None:
+                raise Exception('req is None'+str(req))
+
+            if not req.build:
+                if req.output_exists():
+                    return pymake.result.ResultNoBuild()
+
+            if isinstance(req, pymake.rules.Rule):
+                return await req.make(mc, None)
+
+            req = self.ensure_is_req(req)
+    
+            return await req.make(makecall, ancestor)
+
+    def ensure_is_req(self, target):
+        if isinstance(target, str):
+            target = pymake.req.ReqFile(target)
+
+        if not isinstance(target, pymake.req.Req):
+            raise Exception('Excepted Req, got {}'.format(repr(target)))
+
+        return target
 
     def add_edge(self, r1, r2):
         if r1 is None: return

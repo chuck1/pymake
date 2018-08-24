@@ -90,6 +90,22 @@ class _Rule(Rule_utilities):
             logging.error("error in print_dep of {}".format(repr(self)))
             logging.error(e)
 
+    def msg(self, s):
+        logger.warning(crayons.green(f'{s}: {self!r}'))
+        return
+        try:
+            logger.info(crayons.green(f'{s}: {self.req.get_id()}'))
+        except Exception as e:
+            try:
+                logger.info(crayons.green(f'{s}: {self.req!r}'))
+            except:
+                logger.info(crayons.green(f'{s}: {self!s}'))
+
+
+    def print_long(self, req):
+        print(type(self))
+        req.print_long()
+
     def output_exists(self):
         return False
 
@@ -117,7 +133,7 @@ class _Rule(Rule_utilities):
 
         logger.debug(crayons.red(self))
 
-        async for r in self.build_requirements(makecall2, func):
+        async for r in self.build_requirements(makecall, func):
             #print(crayons.red(self))
             try:
                 yield (await r)
@@ -137,7 +153,7 @@ class _Rule(Rule_utilities):
         f_in = [r async for r in self.make_ancestors(makecall, test)]
 
         if makecall.args.get('force', False):
-            return True, 'forced'
+            return True, 'forced', f_in
 
         if not bool(f_in):
             breakpoint()
@@ -145,7 +161,7 @@ class _Rule(Rule_utilities):
         
         b = self.output_exists()
         if not b:
-            return True, "output does not exist"
+            return True, "output does not exist", f_in
 
         mtime = self.output_mtime()
         
@@ -158,39 +174,25 @@ class _Rule(Rule_utilities):
                     f'{self!r} f_in should return generator of Req objects, not {f!r}')
 
             if mtime is None:
-                return True, '{} does not define mtime'.format(self.__class__.__name__)
+                return True, '{} does not define mtime'.format(self.__class__.__name__), f_in
             else:
                 b = f.output_exists()
                 if b:
                     mtime_in = f.output_mtime()
 
                     if mtime_in is None:
-                        return True, 'input file {} does not define mtime'.format(repr(self))
+                        return True, 'input file {} does not define mtime'.format(repr(self)), f_in
                 
                     if mtime_in > mtime:
-                        return True, 'mtime of {} is greater'.format(f)
+                        return True, 'mtime of {} is greater'.format(f), f_in
         
 
-        return False, 'up to date'
-
-    def msg(self, s):
-        logger.warning(crayons.green(f'{s}: {self!r}'))
-        return
-        try:
-            logger.info(crayons.green(f'{s}: {self.req.get_id()}'))
-        except Exception as e:
-            try:
-                logger.info(crayons.green(f'{s}: {self.req!r}'))
-            except:
-                logger.info(crayons.green(f'{s}: {self!s}'))
-
-
-    def print_long(self, req):
-        print(type(self))
-        req.print_long()
+        return False, 'up to date', f_in
 
     async def _make(self, makecall, req):
         logger.debug(f'test = {makecall.args.get("test", False)}')
+
+        test = makecall.args.get('test', False)
 
         if self.up_to_date: 
             raise Exception()
@@ -205,18 +207,18 @@ class _Rule(Rule_utilities):
                 else:
                     return ResultNoBuild()
             
-        should_build, f = await self.check(makecall, test=makecall.args.get('test', False))
+        should_build, f, f_in = await self.check(makecall, test=test)
         #self.msg(f'should build: {should_build!s:5}. {f}')
        
-        try:
-            f_in = [r async for r in self.get_requirements(makecall)]
-        except Exception as e:
-            logging.error(repr(self))
-            traceback.print_exc()
-            raise e
+        #try:
+        #    f_in = [r async for r in self.get_requirements(makecall)]
+        #except Exception as e:
+        #    logging.error(repr(self))
+        #    traceback.print_exc()
+        #    raise e
 
         if should_build:
-            if makecall.args.get('test', False):
+            if test:
 
                 logging.error(crayons.blue(f'Build because {f}:'))
                 print_lines(
@@ -238,8 +240,7 @@ class _Rule(Rule_utilities):
                 elif ret != 0:
                     raise BuildError(str(self) + ' return code ' + str(ret))
         else:
-            if makecall.args.get('test', False):
-                #print('DONT build',repr(self))
+            if test:
                 return ResultTestNoBuild()
             else:
                 return ResultNoBuild()

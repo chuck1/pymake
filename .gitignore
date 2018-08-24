@@ -8,3 +8,4 @@ dist/
 *.egg-info/
 env/
 *.egg-info/
+.pytest_cache/

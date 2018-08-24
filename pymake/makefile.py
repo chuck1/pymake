@@ -157,22 +157,6 @@ class Makefile:
             else:
                 await self._make(mc, target, None)
 
-    def ensure_is_req(self, target):
-        if isinstance(target, str):
-            target = pymake.req.ReqFile(target)
-
-        if not isinstance(target, pymake.req.Req):
-            raise Exception('Excepted Req, got {}'.format(repr(target)))
-
-        #if isinstance(target, pymake.req.ReqFile):
-        #    if not isinstance(target, pymake.req.ReqDoc):
-        #        pat = re.compile('data/index/([0-9a-f]+)/(\d+)(\.\w+)')
-        #        m = pat.match(target.fn)
-        #        if m:
-        #            d = file_index.manager.get_descriptor(m.group(1), m.group(2))
-        #            return pymake.req.ReqFileDescriptor(d, m.group(3))
-
-        return target
 
     async def rules_sorted(self, mc, target):
             
@@ -192,26 +176,6 @@ class Makefile:
     
         return rules
 
-    async def _make(self, mc, req, ancestor):
-
-        if req is None:
-            raise Exception('req is None'+str(req))
-
-        if not req.build:
-            if req.output_exists():
-                return pymake.result.ResultNoBuild()
-
-        #print(crayons.magenta(str(target), bold=True))
-        
-        if isinstance(req, Rule):
-            return await req.make(mc, None)
-        
-        # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
-
-        req = self.ensure_is_req(req)
-
-        return await req.make(self, mc, ancestor)
-        
     def search_gen(self, target):
         if isinstance(target, list):
             for t in target:
