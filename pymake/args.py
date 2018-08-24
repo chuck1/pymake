@@ -16,7 +16,9 @@ class ReadOnlyArg:
 
 class Args:
     
-    test = ReadOnlyArg('test', False)
+    test        = ReadOnlyArg('test',       False)
+    force       = ReadOnlyArg('force',      False)
+    show_plot   = ReadOnlyArg('show_plot',  False)
 
     def __init__(self, **kwargs):
         self._args = kwargs

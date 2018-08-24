@@ -14,6 +14,7 @@ import pygraphviz as gv
 from mybuiltins import *
 from .util import *
 
+import pymake.args
 import pymake.rules
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,8 @@ class MakeCall:
     def __init__(self, makefile, args={}, graph={}, stack=[]):
         self.makefile = makefile
         self.decoder = makefile.decoder
-        self.args = args
+
+        self.args = pymake.args.Args(**args)
 
         self.graph = graph
 
@@ -33,14 +35,14 @@ class MakeCall:
         return self.args.get('show_plot', False)
 
     def copy(self, **kwargs):
-        args1 = dict(self.args)
+        args1 = dict(self.args._args)
         args1.update(kwargs)
         return MakeCall(self.makefile, args1, self.graph, self.stack)
 
     async def make(self, req, test=None, ancestor=None, **kwargs):
         # added this because needed to make a file when test was True
         if test is None:
-            test = self.args.get('test', False)
+            test = self.args.test
 
         makecall = self.copy(test=test, **kwargs)
 

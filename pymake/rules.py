@@ -152,7 +152,7 @@ class _Rule(Rule_utilities):
         
         f_in = [r async for r in self.make_ancestors(makecall, test)]
 
-        if makecall.args.get('force', False):
+        if makecall.args.force:
             return True, 'forced', f_in
 
         if not bool(f_in):
@@ -190,9 +190,9 @@ class _Rule(Rule_utilities):
         return False, 'up to date', f_in
 
     async def _make(self, makecall, req):
-        logger.debug(f'test = {makecall.args.get("test", False)}')
+        logger.debug(f'test = {makecall.args.test}')
 
-        test = makecall.args.get('test', False)
+        test = makecall.args.test
 
         if self.up_to_date: 
             raise Exception()
@@ -283,7 +283,7 @@ class _Rule(Rule_utilities):
     async def _build(self, makecall, *args):
         print_lines(
                 lambda s: logger.info(crayons.yellow(s, bold=True)),
-                lambda: print(f'Build force={makecall.args.get("force", False)}'),
+                lambda: print(f'Build force={makecall.args.force}'),
                 functools.partial(self.print_long, self.req))
 
         await self.build(makecall, *args)
