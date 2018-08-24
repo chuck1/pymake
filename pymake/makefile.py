@@ -52,7 +52,7 @@ class Makefile:
         mc1 = mc.copy(force=False)
 
         def _rules_to_check():
-            if isinstance(target, pymake.req.ReqDoc):
+            if isinstance(target, pymake.req.req_doc.ReqDoc):
                 if target.d['type'] not in self._rules_doc:
                     #print_lines(logging.error, target.print_long)
                     #raise Exception(f"no rules to make {target!r}")
@@ -139,13 +139,13 @@ class Makefile:
 
             elif args.get('doc', False):
                 d = json.loads(target[0])
-                r = pymake.req.ReqDoc(d)
+                r = pymake.req.req_doc.ReqDoc(d)
                 logger.info('make')
                 print_lines(logger.info, r.print_long)
                 await self._make(mc, r, None)
 
             elif args.get('id', False):
-                r = pymake.req.ReqDoc(
+                r = pymake.req.req_doc.ReqDoc(
                         pymake.req.clean_doc(
                             pymake.req.client.find_one({'_id': bson.objectid.ObjectId(target[0])})))
                 await self._make(mc, r, None)

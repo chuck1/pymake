@@ -24,6 +24,9 @@ def get_subregistry(r, d):
             
             r = get_subregistry(r, v)
 
+        elif isinstance(v, list):
+            r = get_subregistry_hashable(r, tuple(v))
+
         else:
             r = get_subregistry_hashable(r, v)
 
