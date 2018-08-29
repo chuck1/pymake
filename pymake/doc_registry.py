@@ -55,6 +55,11 @@ class SubRegistry:
         else:
             return f"Sub({self.d})"
 
+class Doc:
+    def __init__(self, doc):
+        self.doc = doc
+        self.mtime = datetime.datetime.now()
+
 class DocRegistry:
 
     def __init__(self):
@@ -66,7 +71,15 @@ class DocRegistry:
 
         r = get_subregistry(r, d)
 
-        return r.doc
+        return r.doc.doc
+
+    def read_mtime(self, d):
+
+        r = self._registry
+
+        r = get_subregistry(r, d)
+
+        return r.doc.mtime
 
     def write(self, d, doc):
 
@@ -74,7 +87,6 @@ class DocRegistry:
 
         r = get_subregistry(r, d)
 
-        r.doc = doc
-
+        r.doc = Doc(doc)
 
 

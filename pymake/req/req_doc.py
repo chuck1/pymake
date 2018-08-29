@@ -10,7 +10,9 @@ import pymake.req
 
 logger = logging.getLogger(__name__)
 
-class ReqDoc(pymake.req.Req):
+
+
+class ReqDocBase(pymake.req.Req):
     def __init__(self, d, build=True):
         """
         d     - bson-serializable object. once initialized, MUST NOT CHANGE
@@ -79,41 +81,8 @@ class ReqDoc(pymake.req.Req):
         if res.modified_count != 1:
             raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
-    def output_exists(self):
-        d = pymake.req.client.find_one(self.encoded)
-        if d is None: return False
-        b = bool('_last_modified' in d)
-        
-        if b:
-            # look for FakePickle object
-
-            s = d["_contents"] #self.read_contents()
-            try:
-                o = pickle.loads(s)
-            except Exception as e:
-                #logger.warning(f"pickle load error: {e!r}")
-                pass
-            else:
-                if isinstance(o, FakePickle):
-                    if not fake_pickle_archive.contains(o):
-                        return False
-
-        return b
-
     def would_touch(self, mc):
         return False
-
-    def output_mtime(self):
-
-        if hasattr(self, '_mtime'):
-            logger.debug(crayons.blue('USING SAVED MTIME'))
-            return self._mtime
-
-        d = pymake.req.client.find_one(self.encoded)
-
-        self._mtime = self._read_mtime(d)
-
-        return self._mtime
 
     def write_binary(self, b):
         self.write_contents(b)
@@ -153,19 +122,79 @@ class ReqDoc(pymake.req.Req):
         assert isinstance(b, bytes)
         return b
 
+class ReqDoc(ReqDocBase):
+    """
+    use mongodb to store pickled binary data
+    """
+
+    def output_exists(self):
+        d = pymake.req.client.find_one(self.encoded)
+        if d is None: return False
+        b = bool('_last_modified' in d)
+        
+        if b:
+            # look for FakePickle object
+
+            s = d["_contents"] #self.read_contents()
+            try:
+                o = pickle.loads(s)
+            except Exception as e:
+                #logger.warning(f"pickle load error: {e!r}")
+                pass
+            else:
+                if isinstance(o, FakePickle):
+                    if not fake_pickle_archive.contains(o):
+                        return False
+
+        return b
+
+    def output_mtime(self):
+
+        if hasattr(self, '_mtime'):
+            logger.debug(crayons.blue('USING SAVED MTIME'))
+            return self._mtime
+
+        d = pymake.req.client.find_one(self.encoded)
+
+        self._mtime = self._read_mtime(d)
+
+        return self._mtime
+
+    async def read_pickle(self, mc=None):
+ 
+        #logger.info(f"read pickle {self.encoded}")
+   
+        return await super().read_pickle(mc)
+
+
+class ReqDoc1(ReqDocBase):
+
+    def output_exists(self):
+
+        try:
+            pymake.req.registry.read(self.encoded)
+        except:
+            return False
+        else:
+            return True
+    
+    def output_mtime(self):
+
+        return pymake.req.registry.read_mtime(self.encoded)
+
     def write_pickle(self, o):
 
-        #super().write_pickle(o)
-
-        logger.info("write pickle")
+        #logger.info("write pickle")
 
         pymake.req.registry.write(self.encoded, o)
 
     async def read_pickle(self, mc=None):
  
-        logger.info("read pickle")
+        #logger.info("read pickle")
    
-        return await super().read_pickle(mc)
+        return pymake.req.registry.read(self.encoded)
+
+
 
 
 
