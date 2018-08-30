@@ -1,5 +1,4 @@
-pymake
-======
+# pymake
 
 .. image:: https://travis-ci.org/chuck1/pymake.svg?branch=master
     :target: https://travis-ci.org/chuck1/pymake
