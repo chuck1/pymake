@@ -18,6 +18,12 @@ def test_0():
                 "a",
                 1,
                 ],
+            "e": [
+                {
+                    "a": 1,
+                    },
+                    "hey",
+                ]
             }
 
     doc = Foo()
@@ -30,5 +36,6 @@ def test_0():
     print(r._registry)
     print()
     
+
 
 

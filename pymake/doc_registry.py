@@ -6,11 +6,35 @@ def get_subregistry_hashable(r, k):
 
     return r[k]
 
+def get_subregistry_1(r, v):
+    
+    if isinstance(v, dict):
+        return get_subregistry(r, v)
+
+    elif isinstance(v, list):
+        return get_subregistry_list(r, v)
+
+    else:
+        return get_subregistry_hashable(r, v)
+       
+def get_subregistry_list(r, l):
+
+    r = get_subregistry_hashable(r, "$LIST")
+
+    for v in l:
+        r = get_subregistry_hashable(r, "$LISTELEMENT")
+
+        r = get_subregistry_1(r, v)
+
+    return r
+
 def get_subregistry(r, d):
 
     assert isinstance(d, dict)
 
     keys = list(sorted(d.keys()))
+
+    assert isinstance(r, SubRegistry)
 
     while keys:
 
@@ -18,17 +42,13 @@ def get_subregistry(r, d):
 
         r = get_subregistry_hashable(r, k)
 
+        assert isinstance(r, SubRegistry)
+
         v = d[k]
 
-        if isinstance(v, dict):
-            
-            r = get_subregistry(r, v)
+        r = get_subregistry_1(r, v)
 
-        elif isinstance(v, list):
-            r = get_subregistry_hashable(r, tuple(v))
-
-        else:
-            r = get_subregistry_hashable(r, v)
+        assert isinstance(r, SubRegistry)
 
     return r
  
@@ -58,7 +78,7 @@ class SubRegistry:
 class DocRegistry:
 
     def __init__(self):
-        self._registry = {}
+        self._registry = SubRegistry()
 
     def read(self, d):
 
