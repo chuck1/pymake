@@ -52,7 +52,7 @@ class Makefile:
         mc1 = mc.copy(force=False)
 
         def _rules_to_check():
-            if isinstance(target, pymake.req.req_doc.ReqDoc):
+            if isinstance(target, pymake.req.req_doc.ReqDocBase):
                 if target.d['type'] not in self._rules_doc:
                     #print_lines(logging.error, target.print_long)
                     #raise Exception(f"no rules to make {target!r}")

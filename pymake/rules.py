@@ -452,7 +452,7 @@ class RuleDoc(Rule):
 
     @classmethod
     async def test(cls, mc, req):
-        if not isinstance(req, pymake.req.req_doc.ReqDoc): return None
+        if not isinstance(req, pymake.req.req_doc.ReqDocBase): return None
        
         # a - this descriptor
         # b - req descriptor
