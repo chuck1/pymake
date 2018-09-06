@@ -11,7 +11,6 @@ import pymake.req
 logger = logging.getLogger(__name__)
 
 
-
 class ReqDocBase(pymake.req.Req):
     def __init__(self, d, build=True):
         """
@@ -76,7 +75,7 @@ class ReqDocBase(pymake.req.Req):
     def graph_string(self):
         return bson.json_util.dumps(self.encoded, indent=2)
 
-    async def delete(self):
+    def delete(self):
         res = pymake.req.client._coll.update_one(self.encoded, {'$unset': {'_last_modified': 1}})
         if res.modified_count != 1:
             raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
@@ -127,6 +126,10 @@ class ReqDoc(ReqDocBase):
     use mongodb to store pickled binary data
     """
 
+    def __init__(self, d, **kwargs):
+        super().__init__(d, **kwargs)
+        logger.info(repr(self))
+
     def output_exists(self):
         d = pymake.req.client.find_one(self.encoded)
         if d is None: return False
@@ -160,15 +163,16 @@ class ReqDoc(ReqDocBase):
 
         return self._mtime
 
-    async def read_pickle(self, mc=None):
+    def read_pickle(self, mc=None):
  
         #logger.info(f"read pickle {self.encoded}")
    
-        return await super().read_pickle(mc)
-
+        return super().read_pickle(mc)
 
 class ReqDoc1(ReqDocBase):
-
+    """
+    using the doc registry
+    """
     def output_exists(self):
 
         try:
@@ -188,13 +192,51 @@ class ReqDoc1(ReqDocBase):
 
         pymake.req.registry.write(self.encoded, o)
 
-    async def read_pickle(self, mc=None):
+    def read_pickle(self, mc=None):
  
         #logger.info("read pickle")
    
         return pymake.req.registry.read(self.encoded)
 
+class ReqDoc2(ReqDocBase):
+    
+    def __init__(self, d, **kwargs):
+        super().__init__(d, **kwargs)
+        logger.info(repr(self))
 
+        self.req1 = ReqDoc1(d, **kwargs)
+
+        if not self.req1.output_exists():
+            self.req0 = ReqDoc(d, **kwargs)
+
+    def output_exists(self):
+        if self.req1.output_exists():
+           return True
+
+        if self.req0.output_exists():
+           self.req1.write(self.req0.read())
+           return True
+
+        return False
+
+    def output_mtime(self):
+        if self.req1.output_exists():
+           return self.req1.output_mtime()
+
+        if self.req0.output_exists():
+           return self.req0.output_mtime()
+
+    def write_pickle(self, o):
+        self.req1.write_pickle(o)
+
+    def read_pickle(self, mc=None):
+        if self.req1.output_exists():
+           return self.req1.read_pickle(mc)
+
+        if self.req0.output_exists():
+           o = self.req0.read_pickle(mc)
+           self.req1.write_pickle(o)
+           return o
 
 
 

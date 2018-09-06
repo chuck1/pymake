@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import functools
 import hashlib
@@ -38,6 +39,10 @@ class MakeCall:
         args1 = dict(self.args._args)
         args1.update(kwargs)
         return MakeCall(self.makefile, args1, self.graph, self.stack)
+
+    def make_threadsafe(self, *args, **kwargs):
+        loop = asyncio.new_event_loop()
+        return loop.run_until_complete(self.make(*args, **kwargs))
 
     async def make(self, req, test=None, ancestor=None, **kwargs):
         # added this because needed to make a file when test was True

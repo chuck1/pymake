@@ -24,6 +24,14 @@ from .result import *
 
 logger = logging.getLogger(__name__)
 
+class ReqFuture:
+    # the result of calling func(req)
+    # a thread is created and a future is returned
+
+    def __init__(self, req, fut):
+        self.req = req
+        self.fut = fut
+
 def dict_get(d, k, de):
     if not k in d:
         d[k] = de
@@ -114,7 +122,6 @@ class _Rule(Rule_utilities):
 
     async def make_ancestors(self, makecall, test):
 
-        makecall2 = makecall.copy(test=test, force=False)
 
         async def func(req):
             if req is None:
@@ -122,21 +129,32 @@ class _Rule(Rule_utilities):
                 # Series has a req_series_file and Array does not
                 raise Exception("None in f_in {}".format(self))
 
-            r = await makecall2.make(req, ancestor=self.req_out)
+            makecall2 = makecall.copy(test=test, force=False)
 
-            if not isinstance(r, Result):
-                logging.error(req)
-                logging.error(r)
-                raise Exception()
-            
-            return req
+            if False:
+                loop = asyncio.get_event_loop()
+                fut = loop.run_in_executor(None, functools.partial(makecall2.make_threadsafe, req, ancestor=self.req_out))
+                return ReqFuture(req, fut)
+            else:
+                r = await makecall2.make(req, ancestor=self.req_out)
+
+                if not isinstance(r, Result):
+                    logging.error(req)
+                    logging.error(r)
+                    raise Exception()
+                return req
 
         logger.debug(crayons.red(self))
 
+        # the build_requirements function yields the results of calling func on Req objects
+        # and func returns those Req objects
+
         async for r in self.build_requirements(makecall, func):
+                        
             #print(crayons.red(self))
             try:
-                yield (await r)
+                req = await r
+                yield req
             except:
                 logger.error(crayons.red(f'error in {self!r}'))
                 raise
@@ -151,6 +169,8 @@ class _Rule(Rule_utilities):
     async def check(self, makecall, test=False):
         
         f_in = [r async for r in self.make_ancestors(makecall, test)]
+
+        
 
         if makecall.args.force:
             return True, 'forced', f_in
@@ -208,6 +228,11 @@ class _Rule(Rule_utilities):
                     return ResultNoBuild()
             
         should_build, f, f_in = await self.check(makecall, test=test)
+
+        # wait for threads for requirements to finish
+        #await asyncio.wait([_.fut for _ in f_in])
+
+
         #self.msg(f'should build: {should_build!s:5}. {f}')
        
         #try:

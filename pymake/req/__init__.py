@@ -1,5 +1,6 @@
 import contextlib
 import datetime
+import enum
 import functools
 import inspect
 import pickle
@@ -83,9 +84,17 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
+class Datatype(enum.Enum):
+    STRING = 0
+    BYTES = 1
+    OBJECT = 2
+
 class Req:
 
     build = True
+
+    def __init__(self, *args, **kwargs):
+        self._type = None
 
     def output_exists(self):
         return None
@@ -183,13 +192,13 @@ class Req:
 
         self.write_binary(b)
         
-    async def read_pickle(self, mc=None):
+    def read_pickle(self, mc=None):
 
         if hasattr(self, '_stored'):
             logger.warning(crayons.yellow(f'HAS STORED! {self!r}'))
 
-        if mc is not None:
-            await mc.make(self)
+        #if mc is not None:
+        #    await mc.make(self)
 
         b = self.read_binary()
 
@@ -203,22 +212,24 @@ class Req:
             logger.error(crayons.red(f'delete {self!r}'))
             #logger.error(b)
             
-            await self.delete()
+            self.delete()
+ 
+            raise
 
-            if mc is None:
-                raise
+            #if mc is None:
+            #    raise
 
-            await mc.make(self)
+            #await mc.make(self)
 
-            b = self.read_binary()
-            o = pickle.loads(b)
-            logger_pickle.info(f"pickle load {o!r}")
+            #b = self.read_binary()
+            #o = pickle.loads(b)
+            #logger_pickle.info(f"pickle load {o!r}")
 
         if isinstance(o, FakePickle):
             if fake_pickle_archive.contains(o):
                 o = fake_pickle_archive.read(o)
             else:
-                await self.delete()
+                self.delete()
                 print_lines(logger.error, lambda: pprint.pprint(self.d))
                 print_lines(logger.error, lambda: pprint.pprint(fake_pickle_archive._map))
                 logger.error(f'{o.i} {(o.i in fake_pickle_archive._map)}')
@@ -321,7 +332,7 @@ class ReqFile(Req):
         with open(self.fn, 'rb') as f:
             return f.read()
 
-    async def delete(self):
+    def delete(self):
         os.remove(self.fn)
 
 class ReqFake(ReqFile):
@@ -403,7 +414,7 @@ class ReqTemp(Req):
     def write_pickle(self, b):
         self.b = b
 
-    async def read_pickle(self):
+    def read_pickle(self):
         return self.b
 
     def write_binary(self, b):

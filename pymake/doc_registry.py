@@ -1,3 +1,4 @@
+import datetime
 
 def get_subregistry_hashable(r, k):
 
@@ -78,7 +79,7 @@ class SubRegistry:
 class Doc:
     def __init__(self, doc):
         self.doc = doc
-        self.mtime = datetime.datetime.now()
+        self.mtime = datetime.datetime.now().timestamp()
 
 class DocRegistry:
 
