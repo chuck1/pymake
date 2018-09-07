@@ -9,6 +9,7 @@ from mybuiltins import ason
 
 import pymake.req
 import pymake.doc_registry
+import pymake.util
 from pymake.req import FakePickle
 
 logger = logging.getLogger(__name__)
@@ -78,10 +79,6 @@ class ReqDocBase(pymake.req.Req):
     def graph_string(self):
         return bson.json_util.dumps(self.encoded, indent=2)
 
-    def delete(self):
-        res = pymake.req.client._coll.update_one(self.encoded, {'$unset': {'_last_modified': 1}})
-        if res.modified_count != 1:
-            raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
     def would_touch(self, mc):
         return False
@@ -125,6 +122,12 @@ class ReqDoc0(ReqDocBase):
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
         logger.info(repr(self))
+
+    def delete(self):
+        logger.warning(crayons.yellow("deleteing {self!r}"))
+        res = pymake.req.client._coll.update_one(self.encoded, {'$unset': {'_last_modified': 1}})
+        if res.modified_count != 1:
+            raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
     def output_exists(self):
         d = pymake.req.client.find_one(self.encoded)
@@ -217,7 +220,7 @@ class ReqDoc1(ReqDocBase):
         try:
             o = pickle.loads(b)
         except AttributeError as e:
-            raise
+            raise pymake.util.PickleError()
         except Exception as e:
             logger.warning(crayons.yellow(repr(e)))
             o = b
@@ -236,7 +239,12 @@ class ReqDoc2(ReqDocBase):
             self.req0 = ReqDoc0(d, **kwargs)
 
             if self.req0.output_exists():
-                self.req1.write(self.req0.read())
+                try:
+                    self.req1.write(self.req0.read())
+                except pymake.util.PickleError as e:
+                    self.req0.delete()
+                    raise
+
                 assert self.req1.output_exists()
 
     def output_exists(self):

@@ -97,3 +97,5 @@ def makedirs(d):
         logger.error(d)
         raise
 
+class PickleError(Exception): pass
+
