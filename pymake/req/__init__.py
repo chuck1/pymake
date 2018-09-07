@@ -23,7 +23,8 @@ from pymake.util import *
 from pymake.result import *
 from pymake.fakepickle import *
 import pymake
-import pymake.doc_registry
+
+#import pymake.doc_registry
 
 logger = logging.getLogger(__name__)
 logger_pickle = logging.getLogger(__name__ + '-pickle')
@@ -78,7 +79,7 @@ class Client:
         return t
 
 client = Client()
-registry = pymake.doc_registry.DocRegistry()
+#registry = pymake.doc_registry.DocRegistry()
 
 def touch(fname, times=None):
     with open(fname, 'a'):
@@ -398,7 +399,7 @@ class OpenContext:
 
         if self.mode == 'w':
             s = self.f.buf.getvalue()
-            self.req.write_text(s)
+            self.req.write_string(s)
         elif self.mode == 'wb':
             s = self.f.buf.getvalue()
             self.req.write_binary(s)
@@ -423,7 +424,7 @@ class ReqTemp(Req):
     def read_binary(self):
         return self.b
 
-    def write_text(self, b):
+    def write_string(self, b):
         self.b = b
 
     def read_text(self):

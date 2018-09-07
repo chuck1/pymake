@@ -1,4 +1,9 @@
 import datetime
+import logging
+import os
+import pickle
+
+logger = logging.getLogger(__name__)
 
 def get_subregistry_hashable(r, k):
 
@@ -82,10 +87,12 @@ class Doc:
         self.mtime = datetime.datetime.now().timestamp()
 
 class DocRegistry:
-
     def __init__(self):
-        self._registry = SubRegistry()
-
+        if os.path.exists("build/doc_registry.bin"):
+            with open("build/doc_registry.bin", "rb") as f:
+                self._registry = pickle.load(f)
+        else:
+            self._registry = SubRegistry()
     def read(self, d):
 
         r = self._registry
@@ -109,5 +116,14 @@ class DocRegistry:
         r = get_subregistry(r, d)
 
         r.doc = Doc(doc)
+
+        logger.info("registry size: {}".format(len(pickle.dumps(self._registry))))
+
+    def dump(self):
+        with open("build/doc_registry.bin", "wb") as f:
+            pickle.dump(self._registry, f)
+       
+        
+
 
 

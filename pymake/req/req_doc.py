@@ -1,4 +1,5 @@
 import logging
+import pickle
 import pprint
 
 import cached_property
@@ -7,6 +8,8 @@ import bson
 from mybuiltins import ason
 
 import pymake.req
+import pymake.doc_registry
+from pymake.req import FakePickle
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +92,7 @@ class ReqDocBase(pymake.req.Req):
     def write_json(self, b):
         self.write_contents(b)
 
-    def write_text(self, b):
+    def write_string(self, b):
         assert isinstance(b, str)
         self.write_contents(b)
 
@@ -98,13 +101,6 @@ class ReqDocBase(pymake.req.Req):
         #bson.json_util.dumps(b)
         t = pymake.req.client.update_one(self.encoded, {'$set': {'_contents': b}})
         self._mtime = t.timestamp()
-
-    def read_contents(self):
-        assert self.output_exists()
-        d = pymake.req.client.find_one(self.encoded)
-        #if "_contents" not in d:
-        #    breakpoint()
-        return d["_contents"]
 
     def read_json(self):
         return self.read_contents()
@@ -121,7 +117,7 @@ class ReqDocBase(pymake.req.Req):
         assert isinstance(b, bytes)
         return b
 
-class ReqDoc(ReqDocBase):
+class ReqDoc0(ReqDocBase):
     """
     use mongodb to store pickled binary data
     """
@@ -169,34 +165,64 @@ class ReqDoc(ReqDocBase):
    
         return super().read_pickle(mc)
 
+    def read(self):
+        return self.read_contents()
+
+    def read_contents(self):
+        assert self.output_exists()
+        d = pymake.req.client.find_one(self.encoded)
+        #if "_contents" not in d:
+        #    breakpoint()
+        return d["_contents"]
+
 class ReqDoc1(ReqDocBase):
     """
     using the doc registry
     """
+    def __init__(self, d, **kwargs):
+        super().__init__(d, **kwargs)
+        logger.info(repr(self))
     def output_exists(self):
 
         try:
-            pymake.req.registry.read(self.encoded)
-        except:
+            pymake.doc_registry.registry.read(self.encoded)
+        except Exception as e:
+            logger.info(repr(e))
             return False
         else:
             return True
     
     def output_mtime(self):
 
-        return pymake.req.registry.read_mtime(self.encoded)
+        return pymake.doc_registry.registry.read_mtime(self.encoded)
 
     def write_pickle(self, o):
 
         #logger.info("write pickle")
 
-        pymake.req.registry.write(self.encoded, o)
+        pymake.doc_registry.registry.write(self.encoded, o)
 
+    def read_contents(self, mc=None):
+        return pymake.doc_registry.registry.read(self.encoded)
     def read_pickle(self, mc=None):
- 
-        #logger.info("read pickle")
-   
-        return pymake.req.registry.read(self.encoded)
+        return pymake.doc_registry.registry.read(self.encoded)
+
+    def write(self, b):
+
+        if isinstance(b, (str, dict, list)):
+            pymake.doc_registry.registry.write(self.encoded, b)
+            return
+        
+        # attempt unpickle
+        try:
+            o = pickle.loads(b)
+        except AttributeError as e:
+            raise
+        except Exception as e:
+            logger.warning(crayons.yellow(repr(e)))
+            o = b
+
+        pymake.doc_registry.registry.write(self.encoded, o)
 
 class ReqDoc2(ReqDocBase):
     
@@ -207,14 +233,22 @@ class ReqDoc2(ReqDocBase):
         self.req1 = ReqDoc1(d, **kwargs)
 
         if not self.req1.output_exists():
-            self.req0 = ReqDoc(d, **kwargs)
+            self.req0 = ReqDoc0(d, **kwargs)
+
+            if self.req0.output_exists():
+                self.req1.write(self.req0.read())
+                assert self.req1.output_exists()
 
     def output_exists(self):
         if self.req1.output_exists():
            return True
 
         if self.req0.output_exists():
-           self.req1.write(self.req0.read())
+           try:
+               self.req1.write(self.req0.read())
+               assert self.req1.output_exists()
+           except AttributeError as e:
+               self.req0.delete()
            return True
 
         return False
@@ -238,8 +272,16 @@ class ReqDoc2(ReqDocBase):
            self.req1.write_pickle(o)
            return o
 
+    def read_contents(self):
+        assert self.req1.output_exists()
+        return self.req1.read_contents()
 
+        if self.req1.output_exists():
+           return self.req1.read_contents()
 
+        if self.req0.output_exists():
+           return self.req1.read_contents()
+        raise Exception()
 
 
 
