@@ -124,7 +124,7 @@ class ReqDoc0(ReqDocBase):
         logger.info(repr(self))
 
     def delete(self):
-        logger.warning(crayons.yellow("deleteing {self!r}"))
+        logger.warning(crayons.yellow(f"deleteing {self!r}"))
         res = pymake.req.client._coll.update_one(self.encoded, {'$unset': {'_last_modified': 1}})
         if res.modified_count != 1:
             raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
