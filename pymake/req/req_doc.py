@@ -37,7 +37,8 @@ class ReqDocBase(pymake.req.Req):
         if 'type' not in self.d:
             print(self.d)
             breakpoint()
-        return f'{self.__class__.__name__} id = {self._id} {{"type":{self.d["type"]!r}}}'
+        d = {"type":self.d["type"]}
+        return f'{self.__class__.__name__}(id={self._id}, {d!r})'
 
     @cached_property.cached_property
     def key_set(self):
@@ -121,7 +122,7 @@ class ReqDoc0(ReqDocBase):
 
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
-        logger.info(repr(self))
+        logger.debug(repr(self))
 
     def delete(self):
         logger.warning(crayons.yellow(f"deleteing {self!r}"))
@@ -184,7 +185,7 @@ class ReqDoc1(ReqDocBase):
     """
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
-        logger.info(repr(self))
+        logger.debug(repr(self))
     def output_exists(self):
 
         try:
@@ -221,6 +222,8 @@ class ReqDoc1(ReqDocBase):
             o = pickle.loads(b)
         except AttributeError as e:
             raise pymake.util.PickleError()
+        except pickle.UnpicklingError as e:
+            raise pymake.util.PickleError()
         except Exception as e:
             logger.warning(crayons.yellow(repr(e)))
             o = b
@@ -231,11 +234,13 @@ class ReqDoc2(ReqDocBase):
     
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
-        logger.info(repr(self))
+        logger.debug(repr(self))
 
         self.req1 = ReqDoc1(d, **kwargs)
 
         if not self.req1.output_exists():
+            logger.info(f"{self.req1!r} does not exist")
+
             self.req0 = ReqDoc0(d, **kwargs)
 
             if self.req0.output_exists():
@@ -246,6 +251,8 @@ class ReqDoc2(ReqDocBase):
                     raise
 
                 assert self.req1.output_exists()
+        else:
+            logger.info(f"{self.req1!r} does exist")
 
     def output_exists(self):
         if self.req1.output_exists():

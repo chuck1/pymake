@@ -44,6 +44,17 @@ class Client:
         except StopIteration:
             return False
 
+    def get_desc(self, _id):
+        if isinstance(_id, str):
+            _id = bson.objectid.ObjectId(_id)
+        assert isinstance(_id, bson.objectid.ObjectId)
+        d = self.find_one({"_id": _id})
+        def f(s):
+            if s.startswith("_"): return False
+            return True
+        d = dict((k, v) for k, v in d.items() if f(k))
+        return d
+
     def find_one(self, q):
         logger_mongo.debug(f"find_one {q!r}")
         return self._coll.find_one(q)
@@ -79,7 +90,6 @@ class Client:
         return t
 
 client = Client()
-#registry = pymake.doc_registry.DocRegistry()
 
 def touch(fname, times=None):
     with open(fname, 'a'):

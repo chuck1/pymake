@@ -139,23 +139,23 @@ class Makefile:
 
             elif args.get('doc', False):
                 d = json.loads(target[0])
-                r = pymake.req.req_doc.ReqDoc(d)
+                r = pymake.req.req_doc.ReqDoc2(d)
                 logger.info('make')
                 print_lines(logger.info, r.print_long)
-                await self._make(mc, r, None)
+                await mc.make(r)#, None)
 
             elif args.get('id', False):
-                r = pymake.req.req_doc.ReqDoc(
+                r = pymake.req.req_doc.ReqDoc2(
                         pymake.req.clean_doc(
                             pymake.req.client.find_one({'_id': bson.objectid.ObjectId(target[0])})))
-                await self._make(mc, r, None)
+                await mc.make(r)
 
             elif isinstance(target, list):
                 for t in target:
                     await self._make(mc, t, None)
 
             else:
-                await self._make(mc, target, None)
+                await mc.make(target)
 
 
     async def rules_sorted(self, mc, target):

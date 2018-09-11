@@ -93,6 +93,7 @@ class DocRegistry:
                 self._registry = pickle.load(f)
         else:
             self._registry = SubRegistry()
+
     def read(self, d):
 
         r = self._registry
