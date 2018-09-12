@@ -57,6 +57,12 @@ class Client:
 
     def find_one(self, q):
         logger_mongo.debug(f"find_one {q!r}")
+
+        if "type" in q:
+            if q["type"] in [
+                "node 90",
+                ]: raise Exception()
+
         return self._coll.find_one(q)
 
     def insert_one(self, q):
@@ -397,7 +403,7 @@ class OpenContext:
         elif self.mode == 'wb':
             self.f = FileW(io.BytesIO())
         elif self.mode == 'r':
-            self.f = FileR(io.StringIO(self.req.read_text()))
+            self.f = FileR(io.StringIO(self.req.read_string()))
         elif self.mode == 'rb':
             self.f = FileR(io.BytesIO(self.req.read_binary()))
         

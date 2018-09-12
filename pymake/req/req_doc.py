@@ -38,7 +38,12 @@ class ReqDocBase(pymake.req.Req):
             print(self.d)
             breakpoint()
         d = {"type":self.d["type"]}
-        return f'{self.__class__.__name__}(id={self._id}, {d!r})'
+        return f'{self.__class__.__name__}({d!r})'
+
+    def print_long(self):
+        s = bson.json_util.dumps(self.encoded)
+        print(s)
+        pprint.pprint(self.encoded)
 
     @cached_property.cached_property
     def key_set(self):
@@ -48,29 +53,6 @@ class ReqDocBase(pymake.req.Req):
     def encoded(self):
         _ = ason.encode(self.d)
         return _
-
-    def print_long(self):
-        print(f'id: {self._id}')
-        s = bson.json_util.dumps(self.encoded)
-        print(s)
-        pprint.pprint(self.encoded)
-        #pprint.pprint(self.get_encoded())
-
-    def get_doc(self):
-        d = pymake.req.client.find_one(self.encoded)
-        return d
-
-    @cached_property.cached_property
-    def _id(self):
-        d = pymake.req.client.find_one(self.encoded)
-
-        self._mtime = self._read_mtime(d)
-
-        if d is None:
-            res = pymake.req.client.insert_one(self.encoded)
-            return res.inserted_id
-
-        return str(d["_id"])
 
     def _read_mtime(self, d):
         if d is None: return 0
@@ -94,16 +76,10 @@ class ReqDocBase(pymake.req.Req):
         assert isinstance(b, str)
         self.write_contents(b)
 
-    def write_contents(self, b):
-        # make sure is compatible
-        #bson.json_util.dumps(b)
-        t = pymake.req.client.update_one(self.encoded, {'$set': {'_contents': b}})
-        self._mtime = t.timestamp()
-
     def read_json(self):
         return self.read_contents()
 
-    def read_text(self):
+    def read_string(self):
         s = self.read_contents()
         if isinstance(s, bytes):
             s = s.decode()
@@ -123,6 +99,42 @@ class ReqDoc0(ReqDocBase):
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
+
+        if d["type"] in [
+            #"node 1", 
+            "node 20", 
+            "node 90"]: raise Exception()
+
+    def __repr__(self):
+        if 'type' not in self.d:
+            print(self.d)
+            breakpoint()
+        d = {"type":self.d["type"]}
+        return f'{self.__class__.__name__}(id={self._id}, {d!r})'
+
+    def print_long(self):
+        print(f'id: {self._id}')
+        s = bson.json_util.dumps(self.encoded)
+        print(s)
+        pprint.pprint(self.encoded)
+        #pprint.pprint(self.get_encoded())
+
+
+    @cached_property.cached_property
+    def _id(self):
+        d = pymake.req.client.find_one(self.encoded)
+
+        self._mtime = self._read_mtime(d)
+
+        if d is None:
+            res = pymake.req.client.insert_one(self.encoded)
+            return res.inserted_id
+
+        return str(d["_id"])
+
+    def get_doc(self):
+        d = pymake.req.client.find_one(self.encoded)
+        return d
 
     def delete(self):
         logger.warning(crayons.yellow(f"deleteing {self!r}"))
@@ -179,6 +191,12 @@ class ReqDoc0(ReqDocBase):
         #    breakpoint()
         return d["_contents"]
 
+    def write_contents(self, b):
+        # make sure is compatible
+        #bson.json_util.dumps(b)
+        t = pymake.req.client.update_one(self.encoded, {'$set': {'_contents': b}})
+        self._mtime = t.timestamp()
+
 class ReqDoc1(ReqDocBase):
     """
     using the doc registry
@@ -186,12 +204,12 @@ class ReqDoc1(ReqDocBase):
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
-    def output_exists(self):
 
+    def output_exists(self):
         try:
             pymake.doc_registry.registry.read(self.encoded)
         except Exception as e:
-            logger.info(repr(e))
+            logger.debug(repr(e))
             return False
         else:
             return True
@@ -201,13 +219,15 @@ class ReqDoc1(ReqDocBase):
         return pymake.doc_registry.registry.read_mtime(self.encoded)
 
     def write_pickle(self, o):
-
         #logger.info("write pickle")
-
         pymake.doc_registry.registry.write(self.encoded, o)
+
+    def write_contents(self, b):
+        pymake.doc_registry.registry.write(self.encoded, b)
 
     def read_contents(self, mc=None):
         return pymake.doc_registry.registry.read(self.encoded)
+
     def read_pickle(self, mc=None):
         return pymake.doc_registry.registry.read(self.encoded)
 
@@ -234,12 +254,17 @@ class ReqDoc2(ReqDocBase):
     
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
-        logger.debug(repr(self))
+        #logger.info(repr(self))
+
+        if d["type"] in [
+            #"node 1", 
+            #"node 20", 
+            "node 90"]: raise Exception()
 
         self.req1 = ReqDoc1(d, **kwargs)
 
         if not self.req1.output_exists():
-            logger.info(f"{self.req1!r} does not exist")
+            logger.debug(f"{self.req1!r} does not exist")
 
             self.req0 = ReqDoc0(d, **kwargs)
 
@@ -252,7 +277,7 @@ class ReqDoc2(ReqDocBase):
 
                 assert self.req1.output_exists()
         else:
-            logger.info(f"{self.req1!r} does exist")
+            logger.debug(f"{self.req1!r} does exist")
 
     def output_exists(self):
         if self.req1.output_exists():
@@ -274,6 +299,9 @@ class ReqDoc2(ReqDocBase):
 
         if self.req0.output_exists():
            return self.req0.output_mtime()
+
+    def write_contents(self, b):
+        self.req1.write_contents(b)
 
     def write_pickle(self, o):
         self.req1.write_pickle(o)
