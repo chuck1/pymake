@@ -122,7 +122,6 @@ class _Rule(Rule_utilities):
 
     async def make_ancestors(self, makecall, test):
 
-
         async def func(req):
             if req is None:
                 # there is a case in coil_testing in which I want to call func with None. 
@@ -166,7 +165,7 @@ class _Rule(Rule_utilities):
         async for r in self.build_requirements(makecall, func):
             yield (await r)
 
-    async def check(self, makecall, test=False):
+    async def rule__check(self, makecall, test=False):
         
         f_in = [r async for r in self.make_ancestors(makecall, test)]
 
@@ -220,14 +219,14 @@ class _Rule(Rule_utilities):
         
         if req:
             if req.would_touch(makecall):
-                should_build, f = self.check(makecall, test=True)
+                should_build, f = self.rule__check(makecall, test=True)
                 if should_build:
                     req.touch_maybe(makecall)
                     return ResultBuild()
                 else:
                     return ResultNoBuild()
             
-        should_build, f, f_in = await self.check(makecall, test=test)
+        should_build, f, f_in = await self.rule__check(makecall, test=test)
 
         # wait for threads for requirements to finish
         #await asyncio.wait([_.fut for _ in f_in])

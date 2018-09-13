@@ -30,6 +30,9 @@ class ReqDocBase(pymake.req.Req):
 
         self.build = build
 
+    async def get_rule(self, mc):
+        return await mc.makefile.find_one(mc, self)
+
     def __encode__(self):
         return {'/ReqDoc': {'args': [ason.encode(self.d)]}}
 
@@ -101,9 +104,11 @@ class ReqDoc0(ReqDocBase):
         logger.debug(repr(self))
 
         if d["type"] in [
-            #"node 1", 
+            "node 0", 
+            "node 1", 
             "node 20", 
-            "node 90"]: raise Exception()
+            "node 90"]:
+            raise Exception(f'invalid type for ReqDoc0: {d["type"]}')
 
     def __repr__(self):
         if 'type' not in self.d:

@@ -43,6 +43,7 @@ class Makefile:
     
     async def find_one(self, mc, target):
         async for r in self.find_rule(mc, target):
+            assert isinstance(r, pymake.rules._Rule)
             return r
 
         #raise Exception('no rule to make target {}'.format(repr(target)))
@@ -59,9 +60,11 @@ class Makefile:
                     return
 
                 for r in self._rules_doc[target.d['type']]:
+                    assert pymake.util._isinstance(r, pymake.rules._Rule)
                     yield r
             else:
                 for r in self.rules:
+                    assert pymake.util._isinstance(r, pymake.rules._Rule)
                     yield r
 
         for rule in _rules_to_check():
@@ -76,6 +79,7 @@ class Makefile:
             
             if r is not None:
                 r.req_out = target
+                assert pymake.util._isinstance(r, pymake.rules._Rule)
                 yield r
 
     def add_rules(self, generator):
@@ -84,6 +88,8 @@ class Makefile:
         yielded rules to be available in self.rules
         """
         for r in generator:
+
+            assert pymake.util._isinstance(r, pymake.rules._Rule)
 
             try:
                 mro = inspect.getmro(r)

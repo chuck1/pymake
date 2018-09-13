@@ -45,6 +45,7 @@ class MakeCall:
         return loop.run_until_complete(self.make(*args, **kwargs))
 
     async def make(self, req, test=None, ancestor=None, **kwargs):
+
         # added this because needed to make a file when test was True
         if test is None:
             test = self.args.test
@@ -55,19 +56,23 @@ class MakeCall:
 
         with MakeContext(makecall.stack, req):
 
-            if req is None:
-                raise Exception('req is None'+str(req))
+            assert req is not None
 
             if not req.build:
                 if req.output_exists():
-                    return pymake.result.ResultNoBuild()
+                    ret = pymake.result.ResultNoBuild()
+                    logger.info(f"make {req} result = {ret}")
+                    return ret
 
             if isinstance(req, pymake.rules.Rule):
                 return await req.make(mc, None)
 
             req = self.ensure_is_req(req)
     
-            return await req.make(makecall, ancestor)
+            ret = await req.make(makecall, ancestor)
+
+            logger.info(f"make {req} result = {ret}")
+            return ret
 
     def ensure_is_req(self, target):
         if isinstance(target, str):

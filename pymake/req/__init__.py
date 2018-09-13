@@ -125,34 +125,47 @@ class Req:
     def open(self, mode):
         return OpenContext(self, mode)
 
-    async def make(self, mc, ancestor):
-        logger.debug(repr(self))
-        logger.debug(f'makecall args: {mc.args!r}')
-
-        mc.add_edge(ancestor, self)
-
-        #if not mc.args['test']:
-        if True:
-            if self in mc.makefile._cache_req:
-                logger.debug('in cache')
-                return ResultNoBuild('in cache')
-       
-        mc.makefile._cache_req.append(self)
-    
+    async def get_rule(self, mc):
         rules = await mc.makefile.rules_sorted(mc, self)
 
         if len(rules) == 0:
             logger.debug('no rules')
             b = self.output_exists()
             if b:
-                return ResultNoRuleFileExists()
+                return
             else:
                 print_lines(logger.warning, self.print_long)
                 #logging.debug('exists', self.output_exists())
                 #logging.debug('mtime ', self.output_mtime())
                 raise NoTargetError("no rules to make {}".format(repr(self)))
        
-        rule = rules[0]
+        return rules[0]
+
+    async def make(self, mc, ancestor):
+        logger.debug(repr(self))
+        logger.debug(f'makecall args: {mc.args!r}')
+
+        if __debug__:
+            mc.add_edge(ancestor, self)
+
+        #if not mc.args['test']:
+        if False:
+            if self in mc.makefile._cache_req:
+                logger.debug('in cache')
+                return ResultNoBuild('in cache')
+       
+            mc.makefile._cache_req.append(self)
+
+        rule = await self.get_rule(mc)
+
+        if rule is None:
+            if self.output_exists():
+                return pymake.result.ResultNoRuleFileExists()
+            else:
+                self.print_long()
+                raise Exception(f"no rule to make {self!r}")
+
+        assert pymake.util._isinstance(rule, pymake.rules._Rule)
 
         #if self.touch_maybe(mc): return
 

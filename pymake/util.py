@@ -99,3 +99,13 @@ def makedirs(d):
 
 class PickleError(Exception): pass
 
+def _isinstance(v, cls):
+    if isinstance(v, cls): return True
+    if not inspect.isclass(v): return False
+    if not issubclass(v, cls): return False
+    if v is cls: return False
+    return True
+
+
+
+

@@ -121,8 +121,9 @@ class DocRegistry:
         logger.info("registry size: {}".format(len(pickle.dumps(self._registry))))
 
     def dump(self):
+        s = pickle.dumps(self._registry)
         with open("build/doc_registry.bin", "wb") as f:
-            pickle.dump(self._registry, f)
+            f.write(s)
        
         
 
