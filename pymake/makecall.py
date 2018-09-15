@@ -71,7 +71,7 @@ class MakeCall:
     
             ret = await req.make(makecall, ancestor)
 
-            logger.info(f"make {req} result = {ret}")
+            logger.debug(f"make {req} result = {ret}")
             return ret
 
     def ensure_is_req(self, target):

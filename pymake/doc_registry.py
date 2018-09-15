@@ -3,6 +3,8 @@ import logging
 import os
 import pickle
 
+import crayons
+
 logger = logging.getLogger(__name__)
 
 def get_subregistry_hashable(r, k):
@@ -81,6 +83,17 @@ class SubRegistry:
         else:
             return f"Sub({self.d})"
 
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        if state["doc"] is not None:
+            try:
+                pickle.dumps(state["doc"])
+            except Exception as e:
+                logger.warning(crayons.yellow(f'error pickling {state["doc"]}'))
+                logger.warning(crayons.yellow(repr(e)))
+                del state["doc"]
+        return state
+
 class Doc:
     def __init__(self, doc):
         self.doc = doc
@@ -120,8 +133,34 @@ class DocRegistry:
 
         logger.info("registry size: {}".format(len(pickle.dumps(self._registry))))
 
+    def test_pickle(self, l, r):
+    
+        if r.doc:
+            try:
+                pickle.dumps(r.doc)
+            except Exception as e:
+                logger.error(repr(l))
+                logger.error(repr(r.doc))
+                logger.error(repr(e))
+
+                for k, v in r.doc.__dict__.items():
+                    try:
+                        pickle.dumps(v)
+                    except Exception as e:
+                        logger.error(repr(k))
+                        logger.error(repr(v))
+                        logger.error(repr(e))
+
+        for k, v in r.d.items():
+            self.test_pickle(l + [k], v)
+
     def dump(self):
-        s = pickle.dumps(self._registry)
+        try:
+            s = pickle.dumps(self._registry)
+        except:
+            self.test_pickle([], self._registry)
+            raise
+
         with open("build/doc_registry.bin", "wb") as f:
             f.write(s)
        

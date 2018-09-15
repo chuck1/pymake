@@ -10,6 +10,7 @@ from mybuiltins import ason
 import pymake.req
 import pymake.doc_registry
 import pymake.util
+import pymake.fakepickle
 from pymake.req import FakePickle
 
 logger = logging.getLogger(__name__)
@@ -163,7 +164,7 @@ class ReqDoc0(ReqDocBase):
                 pass
             else:
                 if isinstance(o, FakePickle):
-                    if not fake_pickle_archive.contains(o):
+                    if not pymake.fakepickle.fake_pickle_archive.contains(o):
                         return False
 
         return b
