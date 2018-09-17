@@ -447,11 +447,15 @@ class ReqTemp(Req):
     def read_pickle(self):
         return self.b
 
-    def write_binary(self, b):
-        self.b = b
-
     def read_binary(self):
         return self.b
+
+    def read_string(self):
+        assert isinstance(self.b, str)
+        return self.b
+
+    def write_binary(self, b):
+        self.b = b
 
     def write_string(self, b):
         self.b = b

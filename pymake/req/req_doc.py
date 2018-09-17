@@ -66,7 +66,6 @@ class ReqDocBase(pymake.req.Req):
     def graph_string(self):
         return bson.json_util.dumps(self.encoded, indent=2)
 
-
     def would_touch(self, mc):
         return False
 
@@ -229,6 +228,7 @@ class ReqDoc1(ReqDocBase):
         pymake.doc_registry.registry.write(self.encoded, o)
 
     def write_contents(self, b):
+        logger.info(f"{self!r} write_contents")
         pymake.doc_registry.registry.write(self.encoded, b)
 
     def read_contents(self, mc=None):

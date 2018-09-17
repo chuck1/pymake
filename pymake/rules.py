@@ -502,7 +502,12 @@ class RuleDoc(Rule):
         logger.debug(f'pat={pat}')
         logger.debug(f'dsc={req.d}')
 
-        b = await mc.decoder.decode(b, mc.copy(force=False))
+        try:
+            b = await mc.decoder.decode(b, mc.copy(force=False))
+        except:
+            logger.error(crayons.red("failed to decode:"))
+            pprint.pprint(b)
+            raise
     
         if not match_dict(a, b): return
 

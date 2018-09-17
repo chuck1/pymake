@@ -85,13 +85,14 @@ class SubRegistry:
 
     def __getstate__(self):
         state = dict(self.__dict__)
-        if state["doc"] is not None:
-            try:
-                pickle.dumps(state["doc"])
-            except Exception as e:
-                logger.warning(crayons.yellow(f'error pickling {state["doc"]}'))
-                logger.warning(crayons.yellow(repr(e)))
-                del state["doc"]
+        if "doc" in state:
+            if state["doc"] is not None:
+                try:
+                    pickle.dumps(state["doc"])
+                except Exception as e:
+                    logger.warning(crayons.yellow(f'error pickling {state["doc"]}'))
+                    logger.warning(crayons.yellow(repr(e)))
+                    del state["doc"]
         return state
 
 class Doc:
@@ -134,22 +135,22 @@ class DocRegistry:
         logger.info("registry size: {}".format(len(pickle.dumps(self._registry))))
 
     def test_pickle(self, l, r):
+        if hasattr(r, "doc"):
+            if r.doc:
+                try:
+                    pickle.dumps(r.doc)
+                except Exception as e:
+                    logger.error(repr(l))
+                    logger.error(repr(r.doc))
+                    logger.error(repr(e))
     
-        if r.doc:
-            try:
-                pickle.dumps(r.doc)
-            except Exception as e:
-                logger.error(repr(l))
-                logger.error(repr(r.doc))
-                logger.error(repr(e))
-
-                for k, v in r.doc.__dict__.items():
-                    try:
-                        pickle.dumps(v)
-                    except Exception as e:
-                        logger.error(repr(k))
-                        logger.error(repr(v))
-                        logger.error(repr(e))
+                    for k, v in r.doc.__dict__.items():
+                        try:
+                            pickle.dumps(v)
+                        except Exception as e:
+                            logger.error(repr(k))
+                            logger.error(repr(v))
+                            logger.error(repr(e))
 
         for k, v in r.d.items():
             self.test_pickle(l + [k], v)
