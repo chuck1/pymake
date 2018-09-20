@@ -26,16 +26,15 @@ class ReqDocBase(pymake.req.Req):
         if not isinstance(d, dict):
             raise Exception()
 
-        assert 'type' in d
+        if 'type' not in d:
+            raise Exception(f'"type" not in {d!r}')
+
         self.d = d
 
         self.build = build
 
     async def get_rule(self, mc):
         return await mc.makefile.find_one(mc, self)
-
-    def __encode__(self):
-        return {'/ReqDoc': {'args': [ason.encode(self.d)]}}
 
     def __repr__(self):
         if 'type' not in self.d:
@@ -209,6 +208,9 @@ class ReqDoc1(ReqDocBase):
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
+
+    def __encode__(self):
+        return {'/ReqDoc1': {'args': [ason.encode(self.d)]}}
 
     def output_exists(self):
         try:

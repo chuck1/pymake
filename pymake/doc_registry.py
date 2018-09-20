@@ -108,6 +108,9 @@ class DocRegistry:
         else:
             self._registry = SubRegistry()
 
+        # verify that registry can be pickled
+        pickle.dumps(self._registry)
+
     def read(self, d):
 
         r = self._registry
@@ -126,13 +129,23 @@ class DocRegistry:
 
     def write(self, d, doc):
 
+        # verify that registry can be pickled before addition
+        if __debug__: pickle.dumps(self._registry)
+
         r = self._registry
 
         r = get_subregistry(r, d)
 
         r.doc = Doc(doc)
 
-        logger.info("registry size: {}".format(len(pickle.dumps(self._registry))))
+        if __debug__:
+            try:
+                s = len(pickle.dumps(self._registry))
+            except Exception as e:
+                print(crayons.red("addition of {d!r} {doc!r} caused pickle to fail"))
+                raise
+    
+            logger.info(f"registry size: {s}")
 
     def test_pickle(self, l, r):
         if hasattr(r, "doc"):

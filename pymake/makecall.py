@@ -33,7 +33,7 @@ class MakeCall:
 
     @property
     def show_plot(self):
-        return self.args.get('show_plot', False)
+        return self.args.show_plot
 
     def copy(self, **kwargs):
         args1 = dict(self.args._args)
