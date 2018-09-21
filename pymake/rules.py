@@ -253,7 +253,7 @@ class _Rule(Rule_utilities):
             else:
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
-                    self._makecall = makecall
+                    #self._makecall = makecall
                     ret = await self._build(makecall, None, f_in)
                 except Exception as e:
                     logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
@@ -376,7 +376,7 @@ class RuleRegex(_Rule):
     async def test(cls, mc, req):
         if not isinstance(req, ReqFile): return None
         
-        logger.debug('{} {}'.format(cls.pat_out, req.fn))
+        #logger.debug('{} {}'.format(cls.pat_out, req.fn))
 
         if callable(cls.pat_out):
             pat = cls.pat_out()

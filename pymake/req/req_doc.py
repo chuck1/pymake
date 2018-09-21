@@ -287,6 +287,9 @@ class ReqDoc2(ReqDocBase):
         else:
             logger.debug(f"{self.req1!r} does exist")
 
+    def __encode__(self):
+       return {'/ReqDoc2': {'args': [ason.encode(self.d)]}}
+
     def output_exists(self):
         if self.req1.output_exists():
            return True
