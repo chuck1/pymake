@@ -116,8 +116,8 @@ class DocRegistry:
         r = self._registry
 
         r = get_subregistry(r, d)
-
-        return r.doc.doc
+        doc0 = r.doc
+        return doc0.doc
 
     def read_mtime(self, d):
 

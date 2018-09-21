@@ -46,17 +46,17 @@ class MakeCall:
 
     async def make(self, req, test=None, ancestor=None, **kwargs):
 
+        assert (req is not None) and isinstance(req, pymake.req.Req)
+
+        logger.debug(repr(req))
+
         # added this because needed to make a file when test was True
         if test is None:
             test = self.args.test
 
         makecall = self.copy(test=test, **kwargs)
 
-        assert(req is not None)
-
         with MakeContext(makecall.stack, req):
-
-            assert req is not None
 
             if not req.build:
                 if req.output_exists():

@@ -127,6 +127,8 @@ class _Rule(Rule_utilities):
                 # there is a case in coil_testing in which I want to call func with None. 
                 # Series has a req_series_file and Array does not
                 raise Exception("None in f_in {}".format(self))
+            
+            assert isinstance(req, pymake.req.Req)
 
             makecall2 = makecall.copy(test=test, force=False)
 
@@ -152,7 +154,11 @@ class _Rule(Rule_utilities):
                         
             #print(crayons.red(self))
             try:
-                req = await r
+                if asyncio.iscoroutine(r):
+                    req = await r
+                else:
+                    req = r
+
                 yield req
             except:
                 logger.error(crayons.red(f'error in {self!r}'))

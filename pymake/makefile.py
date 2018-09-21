@@ -145,7 +145,7 @@ class Makefile:
 
             elif args.get('doc', False):
                 d = json.loads(target[0])
-                r = pymake.req.req_doc.ReqDoc2(d)
+                r = pymake.req.req_doc.ReqDoc0(d)
                 logger.info('make')
                 print_lines(logger.info, r.print_long)
                 await mc.make(r)#, None)
