@@ -5,7 +5,7 @@ import pprint
 import cached_property
 import crayons
 import bson
-from mybuiltins import ason
+from mybuiltins import *
 
 import pymake.req
 import pymake.doc_registry
@@ -22,6 +22,7 @@ class ReqDocBase(pymake.req.Req):
         d     - bson-serializable object. once initialized, MUST NOT CHANGE
         build - flag is this should be built or just read
         """
+        super().__init__()
 
         if not isinstance(d, dict):
             raise Exception()
@@ -46,7 +47,7 @@ class ReqDocBase(pymake.req.Req):
     def print_long(self):
         s = bson.json_util.dumps(self.encoded)
         print(s)
-        pprint.pprint(self.encoded)
+        mypprint(self.encoded)
 
     @cached_property.cached_property
     def key_set(self):
@@ -209,6 +210,10 @@ class ReqDoc1(ReqDocBase):
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
 
+    def __eq__(self, other):
+        if not isinstance(other, ReqDoc1): return False
+        return self.d == other.d
+
     def __encode__(self):
         return {'/ReqDoc1': {'args': [ason.encode(self.d)]}}
 
@@ -224,6 +229,9 @@ class ReqDoc1(ReqDocBase):
     def output_mtime(self):
 
         return pymake.doc_registry.registry.read_mtime(self.encoded)
+
+    def delete(self):
+        pymake.doc_registry.registry.delete(self.encoded)
 
     def write_pickle(self, o):
         #logger.info("write pickle")

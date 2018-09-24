@@ -112,6 +112,17 @@ class Req:
 
     def __init__(self, *args, **kwargs):
         self._type = None
+    
+        # volatile
+        self._up_to_date = False
+        self._on_build = []
+
+    def maybe_create_triggers(self, reqs):
+        if not hasattr(self, "reqs"):
+            self.reqs = reqs
+
+            for req in reqs:
+                req._on_build.append(self)
 
     def output_exists(self):
         return None
@@ -141,7 +152,7 @@ class Req:
        
         return rules[0]
 
-    async def make(self, mc, ancestor):
+    async def _make(self, mc, ancestor):
         logger.debug(repr(self))
         logger.debug(f'makecall args: {mc.args!r}')
 
@@ -289,6 +300,7 @@ class ReqFile(Req):
     :param fn: relative path to file
     """
     def __init__(self, fn):
+        super().__init__()
         assert isinstance(fn, str)
         self.fn = fn
 
@@ -365,11 +377,12 @@ class ReqFile(Req):
     def delete(self):
         os.remove(self.fn)
 
-class ReqFake(ReqFile):
-    def __init__(self, fn):
+class ReqFake(Req):
+    def __init__(self, fn=None):
+        super().__init__()
         self.fn = fn
 
-    async def make(self, mc, ancestor):
+    async def _make(self, mc, ancestor):
         return ResultNoBuild('is fake')
 
     def output_exists(self):
@@ -435,7 +448,7 @@ class OpenContext:
 
 class ReqTemp(Req):
     
-    async def make(self, mc, ancestor):
+    async def _make(self, mc, ancestor):
         return ResultNoBuild('is temp')
 
     def output_exists(self):

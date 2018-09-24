@@ -80,9 +80,10 @@ class MakeContext:
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is not None:
-            print(crayons.green('stack:'))
+            logger.warning(crayons.green('stack:'))
             for i in self.l:
-                print(crayons.green(f'\t{i!r}'))
+                logger.warning(crayons.green(f'\t{i!r}'))
+                #i.print_long()
         
         self.l.pop()
 

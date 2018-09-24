@@ -45,8 +45,22 @@ class MakeCall:
         return loop.run_until_complete(self.make(*args, **kwargs))
 
     async def make(self, req, test=None, ancestor=None, **kwargs):
+        """
+        this is the ONLY make function that should be called outside the pymake module
+        """
 
         assert (req is not None) and isinstance(req, pymake.req.Req)
+        if isinstance(req, pymake.req.ReqFake): return pymake.result.ResultNoBuild()
+
+        # check cache
+        req1 = self.makefile.check_cache(req)
+        if req1 is not None:
+            logger.debug(crayons.green(f"cached req found {req!r} {req1._up_to_date}"))
+            req = req1
+        else:
+            self.makefile.reqs.append(req)
+
+        if req._up_to_date: return pymake.result.ResultNoBuild()
 
         logger.debug(repr(req))
 
@@ -69,7 +83,7 @@ class MakeCall:
 
             req = self.ensure_is_req(req)
     
-            ret = await req.make(makecall, ancestor)
+            ret = await req._make(makecall, ancestor)
 
             logger.debug(f"make {req} result = {ret}")
             return ret

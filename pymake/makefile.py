@@ -40,7 +40,23 @@ class Makefile:
     def __init__(self):
         self.rules = []
         self._rules_doc = {}
+
+        # cache req files
+        # when a req is made, the req and its requirements be stored here
+        # whenever a req is made, the cache will be checked and if an matching req is there, it will be 
+        # used instead.
+        # say req A depends on req B
+        # we make req A, which leads to making req B
+        # both are stored in the cache
+        # req A stores a bool that says its up to date and creates a signal for req B that will be called if
+        # req B gets updated with the program is still running
+        self.reqs = []
     
+    def check_cache(self, req):
+        for req1 in self.reqs:
+            if req1 == req:
+                return req1
+
     async def find_one(self, mc, target):
         async for r in self.find_rule(mc, target):
             assert isinstance(r, pymake.rules._Rule)

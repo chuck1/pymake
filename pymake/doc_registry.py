@@ -111,6 +111,16 @@ class DocRegistry:
         # verify that registry can be pickled
         pickle.dumps(self._registry)
 
+    def delete(self, d):
+        logger.warning(crayons.yellow("delete"))
+
+        r = self._registry
+
+        r = get_subregistry(r, d)
+        
+        if hasattr(r, "doc"):
+            delattr(r, "doc")
+
     def read(self, d):
 
         r = self._registry

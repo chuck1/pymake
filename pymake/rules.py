@@ -128,7 +128,8 @@ class _Rule(Rule_utilities):
                 # Series has a req_series_file and Array does not
                 raise Exception("None in f_in {}".format(self))
             
-            assert isinstance(req, pymake.req.Req)
+            if not isinstance(req, pymake.req.Req):
+                raise RuntimeError(f"expected Req. got {type(req)} {req!r}")
 
             makecall2 = makecall.copy(test=test, force=False)
 
@@ -171,18 +172,18 @@ class _Rule(Rule_utilities):
         async for r in self.build_requirements(makecall, func):
             yield (await r)
 
-    async def rule__check(self, makecall, test=False):
+    async def rule__check(self, makecall, req=None, test=False):
         
         f_in = [r async for r in self.make_ancestors(makecall, test)]
 
-        
+        req.maybe_create_triggers(f_in)
 
         if makecall.args.force:
             return True, 'forced', f_in
 
-        if not bool(f_in):
-            breakpoint()
-            raise Exception()
+        #if not bool(f_in):
+        #    breakpoint()
+        #    raise Exception()
         
         b = self.output_exists()
         if not b:
@@ -225,14 +226,14 @@ class _Rule(Rule_utilities):
         
         if req:
             if req.would_touch(makecall):
-                should_build, f = self.rule__check(makecall, test=True)
+                should_build, f = self.rule__check(makecall, req=req, test=True)
                 if should_build:
                     req.touch_maybe(makecall)
                     return ResultBuild()
                 else:
                     return ResultNoBuild()
             
-        should_build, f, f_in = await self.rule__check(makecall, test=test)
+        should_build, f, f_in = await self.rule__check(makecall, req=req, test=test)
 
         # wait for threads for requirements to finish
         #await asyncio.wait([_.fut for _ in f_in])
@@ -260,22 +261,24 @@ class _Rule(Rule_utilities):
                 #blue('build {} because {}'.format(repr(self), f))
                 try:
                     #self._makecall = makecall
-                    ret = await self._build(makecall, None, f_in)
+                    ret = await self._build(makecall, req, None, f_in)
                 except Exception as e:
                     logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                     raise
 
                 if ret is None:
+                    self.req._up_to_date = True
                     return ResultBuild()
+
                 elif ret != 0:
                     raise BuildError(str(self) + ' return code ' + str(ret))
         else:
             if test:
                 return ResultTestNoBuild()
             else:
+                self.req._up_to_date = True
                 return ResultNoBuild()
 
-        self.up_to_date = True
     
     def write_text(self, filename, s):
         # it appears that this functionality is actually not useful as currently
@@ -289,11 +292,11 @@ class _Rule(Rule_utilities):
         else:
             logging.info('binary data unchanged. do not write.')
 
-    def write_pickle(self, o):
+    def DEPwrite_pickle(self, o):
         b = pickle.dumps(o)
         self.write_binary(b)
 
-    def write_binary(self, b):
+    def DEPwrite_binary(self, b):
         # it appears that this functionality is actually not useful as currently
         # implemented. revisit later
 
@@ -310,13 +313,19 @@ class _Rule(Rule_utilities):
         for r in self._rules(makecall):
             yield from r.rules(makecall)
 
-    async def _build(self, makecall, *args):
+    async def _build(self, makecall, req, *args):
         print_lines(
                 lambda s: logger.info(crayons.yellow(s, bold=True)),
                 lambda: print(f'Build force={makecall.args.force}'),
                 functools.partial(self.print_long, self.req))
 
         await self.build(makecall, *args)
+        
+        # call callbacks
+        for req1 in req._on_build:
+            req1._up_to_date = False
+
+
 
 class Rule(_Rule):
     """
