@@ -136,10 +136,6 @@ class MakeCall:
         
         f1(None, self.graph, f1)
         
-        g.write('layout.dot')
-        return
-
-        with open('layout.dot', 'w') as f:
-            f.write(g.string())
+        g.write('build/layout.dot')
 
 
