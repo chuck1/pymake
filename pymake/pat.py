@@ -94,7 +94,7 @@ class PatBool(Pat):
         return isinstance(x, bool)
 
 class PatNullable(Pat):
-    def __init__(self, pat, default=None):
+    def __init__(self, pat=PatAny(), default=None):
         self.pat = pat
         self.default = default
 

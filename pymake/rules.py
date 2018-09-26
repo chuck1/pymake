@@ -518,17 +518,15 @@ class RuleDoc(Rule):
         logger.debug(f'dsc={req.d}')
 
         try:
-            b = await mc.decoder.decode(b, mc.copy(force=False))
+            b1 = await mc.decoder.decode(b, mc.copy(force=False))
         except:
             logger.error(crayons.red("failed to decode:"))
             pprint.pprint(b)
             raise
     
-        if not match_dict(a, b): return
+        if not match_dict(a, b1): return
 
-        #b = await mc.decoder.decode(b, mc.copy(force=False))
-
-        return cls(req, b)
+        return cls(req, b1)
 
     def __init__(self, req, descriptor):
         super(RuleDoc, self).__init__(req)

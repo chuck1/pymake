@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ReqDocBase(pymake.req.Req):
     def __init__(self, d, build=True):
         """
-        d     - bson-serializable object. once initialized, MUST NOT CHANGE
+        d     - bson-serializable object. once initialized, MUST NOT CHANGE. has already been decoded
         build - flag is this should be built or just read
         """
         super().__init__()
@@ -47,6 +47,7 @@ class ReqDocBase(pymake.req.Req):
     def print_long(self):
         s = bson.json_util.dumps(self.encoded)
         print(s)
+        pprint.pprint(dict((k, type(v)) for k, v in self.encoded.items()))
         mypprint(self.encoded)
 
     @cached_property.cached_property
