@@ -212,6 +212,7 @@ class ReqDoc1(ReqDocBase):
         logger.debug(repr(self))
 
     def __eq__(self, other):
+        assert isinstance(self.d, dict)
         if not isinstance(other, ReqDoc1): return False
         return self.d == other.d
 
