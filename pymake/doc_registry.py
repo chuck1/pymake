@@ -152,7 +152,7 @@ class DocRegistry:
             try:
                 s = len(pickle.dumps(self._registry))
             except Exception as e:
-                print(crayons.red("addition of {d!r} {doc!r} caused pickle to fail"))
+                logger.error(crayons.red(f"addition of {d!r} {doc!r} caused pickle to fail"))
                 raise
     
             logger.info(f"registry size: {s}")

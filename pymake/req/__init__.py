@@ -293,6 +293,12 @@ class Req:
             for row in reader:
                 yield row
 
+    def copy_binary(self, filename):
+        b = self.read_binary()
+        pymake.utils.makedirs(os.path.dirname(filename))
+        with open(filename, 'wb') as f:
+            f.write(b)
+
 class ReqFile(Req):
     """
     simple file requirement

@@ -60,6 +60,7 @@ class MakeCall:
         else:
             self.makefile.reqs.append(req)
 
+        
         if req._up_to_date: return pymake.result.ResultNoBuild()
 
         logger.debug(repr(req))

@@ -32,7 +32,6 @@ def render_graph_on_exit(mc):
 
 class Makefile:
 
-    _cache_req = []
 
     """
     manages the building of targets

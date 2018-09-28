@@ -1,3 +1,4 @@
+import copy
 import logging
 import pickle
 import pprint
@@ -25,14 +26,19 @@ class ReqDocBase(pymake.req.Req):
         super().__init__()
 
         if not isinstance(d, dict):
-            raise Exception()
+            raise Exception(f'expected dict, not {type(d)} {d!r}')
 
         if 'type' not in d:
             raise Exception(f'"type" not in {d!r}')
 
-        self.d = d
+        self.d = copy.deepcopy(d)
 
         self.build = build
+
+    def copy(self, d0):
+        d1 = copy.deepcopy(self.d)
+        d1.update(d0)
+        return self.__class__(d1)
 
     async def get_rule(self, mc):
         return await mc.makefile.find_one(mc, self)

@@ -581,5 +581,9 @@ class RuleDocCopyBinary(RuleDoc):
     async def build(self, makecall, _, requirements):
         _copy_binary(requirements[0], self.req)
 
+class RuleDocCopyObject(RuleDoc):
+    async def build(self, mc, _, reqs):
+        self.req.write_pickle(reqs[0].read_pickle())
+
 
 
