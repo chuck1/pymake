@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import pickle
+import shelve
 
 import crayons
 
@@ -42,7 +43,7 @@ def get_subregistry(r, d):
 
     keys = list(sorted(d.keys()))
 
-    assert isinstance(r, SubRegistry)
+    assert isinstance(r, (shelve.Shelf, SubRegistry))
 
     while keys:
 
@@ -64,6 +65,9 @@ class SubRegistry:
     def __init__(self):
         self.d = {}
         self.doc = None
+
+    def items(self):
+        return self.d.items()
 
     def __iter__(self):
         return iter(self.d)
@@ -101,15 +105,19 @@ class Doc:
         self.mtime = datetime.datetime.now().timestamp()
 
 class DocRegistry:
-    def __init__(self):
-        if os.path.exists("build/doc_registry.bin"):
-            with open("build/doc_registry.bin", "rb") as f:
-                self._registry = pickle.load(f)
-        else:
-            self._registry = SubRegistry()
+    def __init__(self, db):
+        #if os.path.exists("build/doc_registry.bin"):
+        #    with open("build/doc_registry.bin", "rb") as f:
+        #        self._registry = pickle.load(f)
+        #else:
+        #    self._registry = SubRegistry()
+
+        self._registry = db
 
         # verify that registry can be pickled
-        pickle.dumps(self._registry)
+        if __debug__:
+            pass
+            #pickle.dumps(self._registry)
 
     def delete(self, d):
         logger.warning(crayons.yellow("delete"))
@@ -140,7 +148,7 @@ class DocRegistry:
     def write(self, d, doc):
 
         # verify that registry can be pickled before addition
-        if __debug__: pickle.dumps(self._registry)
+        #if __debug__: pickle.dumps(self._registry)
 
         r = self._registry
 
@@ -148,7 +156,7 @@ class DocRegistry:
 
         r.doc = Doc(doc)
 
-        if __debug__:
+        if False:#__debug__:
             try:
                 s = len(pickle.dumps(self._registry))
             except Exception as e:

@@ -48,8 +48,12 @@ class MakeCall:
         """
         this is the ONLY make function that should be called outside the pymake module
         """
+        if req is None:
+            raise Exception("req is None")
 
-        assert (req is not None) and isinstance(req, pymake.req.Req)
+        if not isinstance(req, pymake.req.Req):
+            raise Exception(f"req should be a pymake.req.Req object, not {req!r}")
+
         if isinstance(req, pymake.req.ReqFake): return pymake.result.ResultNoBuild()
 
         # check cache

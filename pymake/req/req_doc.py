@@ -265,9 +265,9 @@ class ReqDoc1(ReqDocBase):
         try:
             o = pickle.loads(b)
         except AttributeError as e:
-            raise pymake.util.PickleError()
+            raise pymake.util.PickleError(repr(e))
         except pickle.UnpicklingError as e:
-            raise pymake.util.PickleError()
+            raise pymake.util.PickleError(repr(e))
         except Exception as e:
             logger.warning(crayons.yellow(repr(e)))
             o = b
@@ -294,7 +294,8 @@ class ReqDoc2(ReqDocBase):
 
             if self.req0.output_exists():
                 try:
-                    self.req1.write(self.req0.read())
+                    b = self.req0.read()
+                    self.req1.write(b)
                 except pymake.util.PickleError as e:
                     self.req0.delete()
                     raise
