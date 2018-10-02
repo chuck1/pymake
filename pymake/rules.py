@@ -314,11 +314,11 @@ class _Rule(Rule_utilities):
             yield from r.rules(makecall)
 
     async def _build(self, makecall, req, *args):
-        print_lines(
-                lambda s: logger.info(crayons.yellow(s, bold=True)),
+        for line in lines(
                 lambda: print(f'Build force={makecall.args.force}'),
-                functools.partial(self.print_long, self.req))
-
+                functools.partial(self.print_long, self.req)):
+            logger.info(crayons.yellow(line, bold=True))
+               
         await self.build(makecall, *args)
         
         # call callbacks

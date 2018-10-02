@@ -162,7 +162,7 @@ class Makefile:
                 d = json.loads(target[0])
                 r = pymake.req.req_doc.ReqDoc0(d)
                 logger.info('make')
-                print_lines(logger.info, r.print_long)
+                for line in lines(r.print_long): logger.info(line)
                 await mc.make(r)#, None)
 
             elif args.get('id', False):
