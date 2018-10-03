@@ -226,16 +226,9 @@ class ReqDoc1(ReqDocBase):
         return {'/ReqDoc1': {'args': [ason.encode(self.d)]}}
 
     def output_exists(self):
-        try:
-            pymake.doc_registry.registry.read(self.encoded)
-        except Exception as e:
-            logger.debug(repr(e))
-            return False
-        else:
-            return True
+        return pymake.doc_registry.registry.exists(self.encoded)
     
     def output_mtime(self):
-
         return pymake.doc_registry.registry.read_mtime(self.encoded)
 
     def delete(self):

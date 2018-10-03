@@ -63,7 +63,9 @@ class Address:
         h = h % 1024
         h = struct.pack('h', h).hex()
 
-        self.l = [h] + l
+        #self.l = [h] + l
+
+        self.l = l
 
 
 

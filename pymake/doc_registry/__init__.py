@@ -94,18 +94,19 @@ class DocRegistry:
     def delete(self, d):
         logger.warning(crayons.yellow("delete"))
 
-        r = self._registry
-
-        r = get_subregistry(r, d)
+        r = self.get_subregistry(d)
         
-        if hasattr(r, "doc"):
-            delattr(r, "doc")
+        r.doc = None
 
     def get_subregistry(self, d, f=None):
         a = pymake.doc_registry.address.Address(d)
         r = self._registry
         r = get_subregistry(r, a.l, f=f)
         return r
+
+    def exists(self, d):
+        r = self.get_subregistry(d)
+        return (r.doc is not None)
 
     def read(self, d):
 
@@ -116,6 +117,8 @@ class DocRegistry:
         r = self.get_subregistry(d)
 
         doc0 = r.doc
+
+        logger.info(f"read from {type(r)} {id(r)}")
 
         return doc0.doc
 
