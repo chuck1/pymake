@@ -5,57 +5,26 @@ import pickle
 import shelve
 
 import crayons
+import pymake.doc_registry.address
 
 logger = logging.getLogger(__name__)
 
-def get_subregistry_hashable(r, k):
 
-    if k not in r:
-        r[k] = SubRegistry()
+def get_subregistry(r, l, f=None):
 
-    return r[k]
-
-def get_subregistry_1(r, v):
-    
-    if isinstance(v, dict):
-        return get_subregistry(r, v)
-
-    elif isinstance(v, list):
-        return get_subregistry_list(r, v)
-
-    else:
-        return get_subregistry_hashable(r, v)
-       
-def get_subregistry_list(r, l):
-
-    r = get_subregistry_hashable(r, "$LIST")
-
-    for v in l:
-        r = get_subregistry_hashable(r, "$LISTELEMENT")
-
-        r = get_subregistry_1(r, v)
-
-    return r
-
-def get_subregistry(r, d):
-
-    assert isinstance(d, dict)
-
-    keys = list(sorted(d.keys()))
+    assert isinstance(l, list)
 
     assert isinstance(r, (shelve.Shelf, SubRegistry))
 
-    while keys:
+    for k in l:
 
-        k = keys.pop(0)
+        if k not in r:
+            r[k] = SubRegistry()
+        
+        r = r[k]
 
-        r = get_subregistry_hashable(r, k)
-
-        assert isinstance(r, SubRegistry)
-
-        v = d[k]
-
-        r = get_subregistry_1(r, v)
+        # created for debugging
+        if f is not None: f(r)
 
         assert isinstance(r, SubRegistry)
 
@@ -119,6 +88,9 @@ class DocRegistry:
             pass
             #pickle.dumps(self._registry)
 
+        # for debugging
+        self.keys_read = set()
+
     def delete(self, d):
         logger.warning(crayons.yellow("delete"))
 
@@ -129,19 +101,27 @@ class DocRegistry:
         if hasattr(r, "doc"):
             delattr(r, "doc")
 
+    def get_subregistry(self, d, f=None):
+        a = pymake.doc_registry.address.Address(d)
+        r = self._registry
+        r = get_subregistry(r, a.l, f=f)
+        return r
+
     def read(self, d):
 
-        r = self._registry
+        #a = pymake.doc_registry.address.Address(d)
 
-        r = get_subregistry(r, d)
+        #self.keys_read.add(a.l[0])
+
+        r = self.get_subregistry(d)
+
         doc0 = r.doc
+
         return doc0.doc
 
     def read_mtime(self, d):
 
-        r = self._registry
-
-        r = get_subregistry(r, d)
+        r = self.get_subregistry(d)
 
         return r.doc.mtime
 
@@ -150,9 +130,7 @@ class DocRegistry:
         # verify that registry can be pickled before addition
         #if __debug__: pickle.dumps(self._registry)
 
-        r = self._registry
-
-        r = get_subregistry(r, d)
+        r = self.get_subregistry(d)
 
         r.doc = Doc(doc)
 
