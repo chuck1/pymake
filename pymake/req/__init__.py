@@ -145,7 +145,7 @@ class Req:
             if b:
                 return
             else:
-                print_lines(logger.warning, self.print_long)
+                for line in lines(self.print_long): logger.warning(line)
                 #logging.debug('exists', self.output_exists())
                 #logging.debug('mtime ', self.output_mtime())
                 raise NoTargetError("no rules to make {}".format(repr(self)))

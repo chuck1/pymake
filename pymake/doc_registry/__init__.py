@@ -63,8 +63,8 @@ class SubRegistry:
                 try:
                     pickle.dumps(state["doc"])
                 except Exception as e:
-                    logger.warning(crayons.yellow(f'error pickling {state["doc"]}'))
-                    logger.warning(crayons.yellow(repr(e)))
+                    logger.warning(crayons.yellow(f'error pickling {state["doc"]} {e!r}'))
+                    #logger.warning(crayons.yellow(repr(e)))
                     del state["doc"]
         return state
 
@@ -106,6 +106,7 @@ class DocRegistry:
 
     def exists(self, d):
         r = self.get_subregistry(d)
+        if not hasattr(r, "doc"): return False
         return (r.doc is not None)
 
     def read(self, d):
@@ -118,7 +119,7 @@ class DocRegistry:
 
         doc0 = r.doc
 
-        logger.info(f"read from {type(r)} {id(r)}")
+        logger.debug(f"read from {type(r)} {id(r)}")
 
         return doc0.doc
 
