@@ -259,8 +259,8 @@ class ReqDoc1(ReqDocBase):
             o = pickle.loads(b)
         except AttributeError as e:
             raise pymake.util.PickleError(repr(e))
-        except pickle.UnpicklingError as e:
-            raise pymake.util.PickleError(repr(e))
+        #except pickle.UnpicklingError as e:
+        #    raise pymake.util.PickleError(repr(e))
         except Exception as e:
             logger.warning(crayons.yellow(repr(e)))
             o = b

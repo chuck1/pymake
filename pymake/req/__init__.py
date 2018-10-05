@@ -173,7 +173,7 @@ class Req:
             if self.output_exists():
                 return pymake.result.ResultNoRuleFileExists()
             else:
-                self.print_long()
+                for line in lines(self.print_long): logger.error(crayons.red(line))
                 raise Exception(f"no rule to make {self!r}")
 
         assert pymake.util._isinstance(rule, pymake.rules._Rule)
