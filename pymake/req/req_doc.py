@@ -101,6 +101,19 @@ class ReqDocBase(pymake.req.Req):
         assert isinstance(b, bytes)
         return b
 
+
+    @cached_property.cached_property
+    def _id(self):
+        d = pymake.req.client.find_one(self.encoded)
+
+        #self._mtime = self._read_mtime(d)
+
+        if d is None:
+            res = pymake.req.client.insert_one(self.encoded)
+            return res.inserted_id
+
+        return str(d["_id"])
+
 class ReqDoc0(ReqDocBase):
     """
     use mongodb to store pickled binary data
