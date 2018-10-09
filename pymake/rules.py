@@ -156,6 +156,7 @@ class _Rule(Rule_utilities):
             #print(crayons.red(self))
             try:
                 if asyncio.iscoroutine(r):
+                    raise Exception(f'{self!r}')
                     req = await r
                 else:
                     req = r

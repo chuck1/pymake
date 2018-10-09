@@ -117,11 +117,12 @@ class DocRegistry:
 
         r = self.get_subregistry(d)
 
-        doc0 = r.doc
-
         logger.debug(f"read from {type(r)} {id(r)}")
 
-        return doc0.doc
+        if r.doc is None:
+            raise Exception(f"Object not found: {d!r}")
+
+        return r.doc.doc
 
     def read_mtime(self, d):
 
