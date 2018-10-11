@@ -188,6 +188,10 @@ class _Rule(Rule_utilities):
 
         mtime = self.output_mtime()
         
+        if mtime is None:
+            return True, '{} does not define mtime'.format(self.__class__.__name__), f_in
+
+
         for f in f_in:
             if isinstance(f, Rule):
                 continue
@@ -196,24 +200,24 @@ class _Rule(Rule_utilities):
                 raise Exception(
                     f'{self!r} f_in should return generator of Req objects, not {f!r}')
 
-            if mtime is None:
-                return True, '{} does not define mtime'.format(self.__class__.__name__), f_in
-            else:
-                b = f.output_exists()
-                if b:
-                    mtime_in = f.output_mtime()
+            logger.info(f'check {f!r}')
 
-                    if mtime_in is None:
-                        return True, 'input file {} does not define mtime'.format(repr(self)), f_in
-                
-                    if mtime_in > mtime:
-                        return True, 'mtime of {} is greater'.format(f), f_in
+            b = f.output_exists()
+            if b:
+                mtime_in = f.output_mtime()
+
+                if mtime_in is None:
+                    return True, 'input file {} does not define mtime'.format(repr(self)), f_in
+            
+                if mtime_in > mtime:
+                    return True, 'mtime of {} is greater'.format(f), f_in
         
 
         return False, 'up to date', f_in
 
     async def _make(self, makecall, req):
         logger.debug(f'test = {makecall.args.test}')
+        logger.info(f'make {req!r}')
 
         test = makecall.args.test
 
@@ -263,7 +267,7 @@ class _Rule(Rule_utilities):
 
         else:
 
-            self.req._up_to_date = True
+            self.req.set_up_to_date(True)
             return ResultNoBuild()
 
     def _make_test(self, makecall, req, should_build):
@@ -322,7 +326,7 @@ class _Rule(Rule_utilities):
         
         # call callbacks
         for req1 in req._on_build:
-            req1._up_to_date = False
+            req1.set_up_to_date(False)
 
 
 

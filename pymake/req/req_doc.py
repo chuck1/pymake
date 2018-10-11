@@ -49,6 +49,10 @@ class ReqDocBase(pymake.req.Req):
             print(self.d)
             breakpoint()
         d = {"type":self.d["type"]}
+
+        if "condition" in self.d:
+            d["condition"] = self.d["condition"]
+
         return f'{self.__class__.__name__}({d!r})'
 
     def print_long(self):

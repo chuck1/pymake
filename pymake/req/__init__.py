@@ -51,10 +51,15 @@ class Req:
         self.__up_to_date = False
         self._on_build = []
 
-    @proprty
+    def __setstate__(self, state):
+        if "_Req__up_to_date" not in state:
+            state["_Req__up_to_date"] = False
+        self.__dict__ = dict(state)
+    
+    @property
     def up_to_date(self):
-        if not hasattr(self, "reqs"):
-            return False
+        #if not hasattr(self, "reqs"):
+        #    return False
         return self.__up_to_date
 
     def set_up_to_date(self, value):
@@ -68,7 +73,7 @@ class Req:
             for req in reqs:
 
                 # make sure req is in cache
-                req = makefile.cache_get(req)
+                #req = makefile.cache_get(req)
 
                 req._on_build.append(self)
 
@@ -88,7 +93,7 @@ class Req:
         rules = await mc.makefile.rules_sorted(mc, self)
 
         if len(rules) == 0:
-            logger.debug('no rules')
+            logger.debug(f'no rules to make {self!r}')
             b = self.output_exists()
             if b:
                 return

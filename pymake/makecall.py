@@ -59,7 +59,7 @@ class MakeCall:
         req = self.makefile.cache_get(req)
 
         # TODO we may need to still check requirements that can change at runtime
-        if req._up_to_date: return pymake.result.ResultNoBuild()
+        if req.up_to_date: return pymake.result.ResultNoBuild()
 
         logger.debug(repr(req))
 
