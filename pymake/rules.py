@@ -262,11 +262,8 @@ class _Rule(Rule_utilities):
                 logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                 raise
 
-            if ret is None:
-                self.req._up_to_date = True
-                return ResultBuild()
-            elif ret != 0:
-                raise BuildError(str(self) + ' return code ' + str(ret))
+            self.req._up_to_date = True
+            return ResultBuild()
 
         else:
 
