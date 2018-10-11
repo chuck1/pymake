@@ -36,7 +36,7 @@ class Makefile:
     """
     manages the building of targets
     """
-    def __init__(self):
+    def __init__(self, req_cache):
         self.rules = []
         self._rules_doc = {}
 
@@ -49,7 +49,9 @@ class Makefile:
         # both are stored in the cache
         # req A stores a bool that says its up to date and creates a signal for req B that will be called if
         # req B gets updated with the program is still running
-        self.reqs = []
+        
+        #self.reqs = []
+        self.reqs = req_cache
 
     def cache_contains(self, req):
         for req1 in self.reqs:
@@ -60,7 +62,7 @@ class Makefile:
     def cache_get(self, req):
         for req1 in self.reqs:
             if req1 == req:
-                logger.debug(crayons.green(f"cached req found {req!r} {req1._up_to_date}"))
+                logger.debug(crayons.green(f"cached req found {req!r} {req1.up_to_date}"))
                 return req1
 
         self.reqs.append(req)

@@ -48,8 +48,18 @@ class Req:
         self._type = None
     
         # volatile
-        self._up_to_date = False
+        self.__up_to_date = False
         self._on_build = []
+
+    @proprty
+    def up_to_date(self):
+        if not hasattr(self, "reqs"):
+            return False
+        return self.__up_to_date
+
+    def set_up_to_date(self, value):
+        assert isinstance(value, bool)
+        self.__up_to_date = value
 
     def maybe_create_triggers(self, makefile, reqs):
         if not hasattr(self, "reqs"):

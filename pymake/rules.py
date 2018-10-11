@@ -258,7 +258,7 @@ class _Rule(Rule_utilities):
                 logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                 raise
 
-            self.req._up_to_date = True
+            self.req.set_up_to_date(True)
             return ResultBuild()
 
         else:
