@@ -56,8 +56,7 @@ class MakeCall:
 
         if isinstance(req, pymake.req.ReqFake): return pymake.result.ResultNoBuild()
 
-        # check cache
-        req = self.makefile.check_cache(req)
+        req = self.makefile.cache_get(req)
 
         # TODO we may need to still check requirements that can change at runtime
         if req._up_to_date: return pymake.result.ResultNoBuild()

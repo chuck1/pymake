@@ -12,6 +12,7 @@ import pymake.req
 import pymake.doc_registry
 import pymake.util
 import pymake.fakepickle
+import pymake.client
 from pymake.req import FakePickle
 
 logger = logging.getLogger(__name__)
@@ -104,7 +105,7 @@ class ReqDocBase(pymake.req.Req):
 
     @cached_property.cached_property
     def _id(self):
-        d = pymake.req.client.find_one(self.encoded)
+        d = pymake.client.client.find_one(self.encoded)
 
         #self._mtime = self._read_mtime(d)
 

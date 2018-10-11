@@ -57,8 +57,8 @@ class Req:
 
             for req in reqs:
 
-                # TODO make sure req is in cache
-                assert makefile.cache_contains(req)
+                # make sure req is in cache
+                req = makefile.cache_get(req)
 
                 req._on_build.append(self)
 
