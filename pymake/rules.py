@@ -177,15 +177,11 @@ class _Rule(Rule_utilities):
         
         f_in = [r async for r in self.make_ancestors(makecall, test)]
 
-        req.maybe_create_triggers(f_in)
+        req.maybe_create_triggers(makecall.makefile, f_in)
 
         if makecall.args.force:
             return True, 'forced', f_in
 
-        #if not bool(f_in):
-        #    breakpoint()
-        #    raise Exception()
-        
         b = self.output_exists()
         if not b:
             return True, "output does not exist", f_in

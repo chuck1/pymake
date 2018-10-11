@@ -50,7 +50,13 @@ class Makefile:
         # req A stores a bool that says its up to date and creates a signal for req B that will be called if
         # req B gets updated with the program is still running
         self.reqs = []
-    
+
+    def cache_contains(self, req):
+        for req1 in self.reqs:
+            if req1 == req:
+                return True
+        return False
+
     def check_cache(self, req):
         for req1 in self.reqs:
             if req1 == req:

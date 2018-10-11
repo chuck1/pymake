@@ -30,72 +30,6 @@ logger = logging.getLogger(__name__)
 logger_pickle = logging.getLogger(__name__ + '-pickle')
 logger_mongo  = logging.getLogger(__name__ + '-mongo')
 
-class Client:
-    def __init__(self):
-        client = pymongo.MongoClient()
-        db = client.coiltest
-        self._coll = db.test
-
-    def exists(self, q):
-        c = self.coll.find(q).limit(1)
-        try:
-            next(c)
-            return True
-        except StopIteration:
-            return False
-
-    def get_desc(self, _id):
-        if isinstance(_id, str):
-            _id = bson.objectid.ObjectId(_id)
-        assert isinstance(_id, bson.objectid.ObjectId)
-        d = self.find_one({"_id": _id})
-        def f(s):
-            if s.startswith("_"): return False
-            return True
-        d = dict((k, v) for k, v in d.items() if f(k))
-        return d
-
-    def find_one(self, q):
-        logger_mongo.debug(f"find_one {q!r}")
-
-        if "type" in q:
-            if q["type"] in [
-                "node 90",
-                ]: raise Exception()
-
-        return self._coll.find_one(q)
-
-    def insert_one(self, q):
-        try:
-            return self._coll.insert_one(q)
-        except:
-            logger.error(crayons.red('error in mongo insert'))
-            pprint.pprint(q)
-            raise
-
-    def update_one(self, q, u):
-        if '$set' not in u:
-            u['$set'] = {}
-
-        d = self._coll.find_one(q)
-
-        if d is None:
-            res = self._coll.insert_one(q)
-            _id = res.inserted_id
-        else:
-            _id = d["_id"]
-
-        logger.debug(crayons.green(f'write binary: {_id}'))
-
-        t = datetime.datetime.now()
-
-        u['$set']['_last_modified'] = t
-        
-        self._coll.update_one({"_id": _id}, u)
-        
-        return t
-
-client = Client()
 
 def touch(fname, times=None):
     with open(fname, 'a'):
@@ -117,11 +51,15 @@ class Req:
         self._up_to_date = False
         self._on_build = []
 
-    def maybe_create_triggers(self, reqs):
+    def maybe_create_triggers(self, makefile, reqs):
         if not hasattr(self, "reqs"):
             self.reqs = reqs
 
             for req in reqs:
+
+                # TODO make sure req is in cache
+                assert makefile.cache_contains(req)
+
                 req._on_build.append(self)
 
     def output_exists(self):
