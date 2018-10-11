@@ -54,7 +54,13 @@ class Makefile:
     def check_cache(self, req):
         for req1 in self.reqs:
             if req1 == req:
+                logger.debug(crayons.green(f"cached req found {req!r} {req1._up_to_date}"))
                 return req1
+
+        self.reqs.append(req)
+        return req
+
+
 
     async def find_one(self, mc, target):
         async for r in self.find_rule(mc, target):

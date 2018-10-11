@@ -249,38 +249,43 @@ class _Rule(Rule_utilities):
         #    traceback.print_exc()
         #    raise e
 
+        if test:
+            return self._make_test(makecall, req, should_build)
+
+
+
         if should_build:
-            if test:
 
-                logging.error(crayons.blue(f'Build because {f}:'))
-                print_lines(
-                        lambda s: logging.error(crayons.blue(s)),
-                        functools.partial(self.print_long, req),)
+            try:
+                ret = await self._build(makecall, req, None, f_in)
+            except Exception as e:
+                logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
+                raise
 
-                return ResultTestBuild()
-            else:
-                #blue('build {} because {}'.format(repr(self), f))
-                try:
-                    #self._makecall = makecall
-                    ret = await self._build(makecall, req, None, f_in)
-                except Exception as e:
-                    logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
-                    raise
-
-                if ret is None:
-                    self.req._up_to_date = True
-                    return ResultBuild()
-
-                elif ret != 0:
-                    raise BuildError(str(self) + ' return code ' + str(ret))
-        else:
-            if test:
-                return ResultTestNoBuild()
-            else:
+            if ret is None:
                 self.req._up_to_date = True
-                return ResultNoBuild()
+                return ResultBuild()
+            elif ret != 0:
+                raise BuildError(str(self) + ' return code ' + str(ret))
 
-    
+        else:
+
+            self.req._up_to_date = True
+            return ResultNoBuild()
+
+    def _make_test(self, makecall, req, should_build):
+
+         if should_build:
+
+            logging.error(crayons.blue(f'Build because {f}:'))
+            print_lines(
+                    lambda s: logging.error(crayons.blue(s)),
+                    functools.partial(self.print_long, req),)
+
+            return ResultTestBuild()
+         else:
+            return ResultTestNoBuild()
+  
     def write_text(self, filename, s):
         # it appears that this functionality is actually not useful as currently
         # implemented. revisit later

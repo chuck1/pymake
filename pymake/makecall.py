@@ -57,14 +57,9 @@ class MakeCall:
         if isinstance(req, pymake.req.ReqFake): return pymake.result.ResultNoBuild()
 
         # check cache
-        req1 = self.makefile.check_cache(req)
-        if req1 is not None:
-            logger.debug(crayons.green(f"cached req found {req!r} {req1._up_to_date}"))
-            req = req1
-        else:
-            self.makefile.reqs.append(req)
+        req = self.makefile.check_cache(req)
 
-        
+        # TODO we may need to still check requirements that can change at runtime
         if req._up_to_date: return pymake.result.ResultNoBuild()
 
         logger.debug(repr(req))
