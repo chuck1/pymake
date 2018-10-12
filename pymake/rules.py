@@ -63,7 +63,15 @@ class _Rule(Rule_utilities):
         self.up_to_date = False
         self.req_out = None
 
-    async def build_requirements(self, makecall, f):
+    async def requirements_0(self, makecall, func):
+        raise Exception(repr(self.__class__))
+        yield
+
+    async def requirements_1(self, makecall, func):
+        raise Exception(repr(self.__class__))
+        yield
+
+    async def build_requirements(self, makecall, func):
         raise Exception(repr(self.__class__))
         yield
 
@@ -123,82 +131,57 @@ class _Rule(Rule_utilities):
     async def make_ancestors(self, makecall, test):
 
         async def func(req):
-            if req is None:
-                # there is a case in coil_testing in which I want to call func with None. 
-                # Series has a req_series_file and Array does not
-                raise Exception("None in f_in {}".format(self))
-            
-            if not isinstance(req, pymake.req.Req):
-                raise RuntimeError(f"expected Req. got {type(req)} {req!r}")
+            assert req is not None
+            assert isinstance(req, pymake.req.Req)
+
 
             makecall2 = makecall.copy(test=test, force=False)
 
-            if False:
-                loop = asyncio.get_event_loop()
-                fut = loop.run_in_executor(None, functools.partial(makecall2.make_threadsafe, req, ancestor=self.req_out))
-                return ReqFuture(req, fut)
-            else:
-                r = await makecall2.make(req, ancestor=self.req_out)
+            r = await makecall2.make(req, ancestor=self.req_out)
 
-                if not isinstance(r, Result):
-                    logging.error(req)
-                    logging.error(r)
-                    raise Exception()
-                return req
+
+            assert isinstance(r, Result)
+
+
+            return req
 
         logger.debug(crayons.red(self))
 
         # the build_requirements function yields the results of calling func on Req objects
         # and func returns those Req objects
 
-        async for r in self.build_requirements(makecall, func):
+        async for req in self.build_requirements(makecall, func):
                         
-            #print(crayons.red(self))
-            try:
-                if asyncio.iscoroutine(r):
-                    raise Exception(f'{self!r}')
-                    req = await r
-                else:
-                    req = r
-
-                yield req
-            except:
-                logger.error(crayons.red(f'error in {self!r}'))
-                raise
-
-    async def get_requirements(self, makecall):
-        
-        async def func(req): return req
-        
-        async for r in self.build_requirements(makecall, func):
-            yield (await r)
+            assert not asyncio.iscoroutine(req)
+            
+            yield req
 
     async def rule__check(self, makecall, req=None, test=False):
         
-        f_in = [r async for r in self.make_ancestors(makecall, test)]
+        reqs = [r async for r in self.make_ancestors(makecall, test)]
 
-        req.maybe_create_triggers(makecall.makefile, f_in)
+        req.maybe_create_triggers(makecall.makefile, reqs)
 
         if makecall.args.force:
-            return True, 'forced', f_in
+            return True, 'forced', reqs
 
         b = self.output_exists()
         if not b:
-            return True, "output does not exist", f_in
+            return True, "output does not exist", reqs
 
         mtime = self.output_mtime()
         
         if mtime is None:
-            return True, '{} does not define mtime'.format(self.__class__.__name__), f_in
+            return True, '{} does not define mtime'.format(self.__class__.__name__), reqs
 
 
-        for f in f_in:
+        for f in reqs:
             if isinstance(f, Rule):
                 continue
             
             if not isinstance(f, Req):
                 raise Exception(
-                    f'{self!r} f_in should return generator of Req objects, not {f!r}')
+                    f'{self!r} reqs should return generator of Req objects, not {f!r}')
 
             logger.info(f'check {f!r}')
 
@@ -207,13 +190,13 @@ class _Rule(Rule_utilities):
                 mtime_in = f.output_mtime()
 
                 if mtime_in is None:
-                    return True, 'input file {} does not define mtime'.format(repr(self)), f_in
+                    return True, 'input file {} does not define mtime'.format(repr(self)), reqs
             
                 if mtime_in > mtime:
-                    return True, 'mtime of {} is greater'.format(f), f_in
+                    return True, 'mtime of {} is greater'.format(f), reqs
         
 
-        return False, 'up to date', f_in
+        return False, 'up to date', reqs
 
     async def _make(self, makecall, req):
         logger.debug(f'test = {makecall.args.test}')
@@ -234,30 +217,17 @@ class _Rule(Rule_utilities):
                 else:
                     return ResultNoBuild()
             
-        should_build, f, f_in = await self.rule__check(makecall, req=req, test=test)
+        should_build, f, reqs = await self.rule__check(makecall, req=req, test=test)
 
-        # wait for threads for requirements to finish
-        #await asyncio.wait([_.fut for _ in f_in])
-
-
-        #self.msg(f'should build: {should_build!s:5}. {f}')
-       
-        #try:
-        #    f_in = [r async for r in self.get_requirements(makecall)]
-        #except Exception as e:
-        #    logging.error(repr(self))
-        #    traceback.print_exc()
-        #    raise e
 
         if test:
             return self._make_test(makecall, req, should_build)
 
 
-
         if should_build:
 
             try:
-                ret = await self._build(makecall, req, None, f_in)
+                ret = await self._build(makecall, req, None, reqs)
             except Exception as e:
                 logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                 raise
