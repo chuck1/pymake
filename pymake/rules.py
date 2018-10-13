@@ -152,7 +152,7 @@ class _Rule(Rule_utilities):
 
         async for req in self.build_requirements(makecall, func):
                         
-            assert not asyncio.iscoroutine(req)
+            if asyncio.iscoroutine(req): raise Exception(f'{self!r}')
             
             yield req
 

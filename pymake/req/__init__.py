@@ -298,12 +298,8 @@ class ReqFile(Req):
     def read_json(self):
         with open(self.fn, 'r') as f:
             s = f.read()
-        try:
-            return json.loads(s)
-        except:
-            logger.error(f'error loading: {self.fn!r}')
-            breakpoint()
-            raise
+            
+        return json.loads(s)
 
     def write_json(self, d):
         pymake.makedirs(os.path.dirname(self.fn))

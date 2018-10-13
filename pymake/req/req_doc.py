@@ -152,7 +152,7 @@ class ReqDoc0(ReqDocBase):
 
     @cached_property.cached_property
     def _id(self):
-        d = pymake.req.client.find_one(self.encoded)
+        d = pymake.client.client.find_one(self.encoded)
 
         self._mtime = self._read_mtime(d)
 
@@ -173,7 +173,7 @@ class ReqDoc0(ReqDocBase):
             raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
     def output_exists(self):
-        d = pymake.req.client.find_one(self.encoded)
+        d = pymake.client.client.find_one(self.encoded)
         if d is None: return False
         b = bool('_last_modified' in d)
         
@@ -216,7 +216,7 @@ class ReqDoc0(ReqDocBase):
 
     def read_contents(self):
         assert self.output_exists()
-        d = pymake.req.client.find_one(self.encoded)
+        d = pymake.client.client.find_one(self.encoded)
         #if "_contents" not in d:
         #    breakpoint()
         return d["_contents"]
@@ -224,7 +224,7 @@ class ReqDoc0(ReqDocBase):
     def write_contents(self, b):
         # make sure is compatible
         #bson.json_util.dumps(b)
-        t = pymake.req.client.update_one(self.encoded, {'$set': {'_contents': b}})
+        t = pymake.client.client.update_one(self.encoded, {'$set': {'_contents': b}})
         self._mtime = t.timestamp()
 
 class ReqDoc1(ReqDocBase):
