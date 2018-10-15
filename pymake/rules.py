@@ -183,7 +183,7 @@ class _Rule(Rule_utilities):
                 raise Exception(
                     f'{self!r} reqs should return generator of Req objects, not {f!r}')
 
-            logger.info(f'check {f!r}')
+            logger.debug(f'check {f!r}')
 
             b = f.output_exists()
             if b:
@@ -200,7 +200,7 @@ class _Rule(Rule_utilities):
 
     async def _make(self, makecall, req):
         logger.debug(f'test = {makecall.args.test}')
-        logger.info(f'make {req!r}')
+        logger.debug(f'make {req!r}')
 
         test = makecall.args.test
 
