@@ -114,7 +114,7 @@ class ReqDocBase(pymake.req.Req):
         #self._mtime = self._read_mtime(d)
 
         if d is None:
-            res = pymake.req.client.insert_one(self.encoded)
+            res = pymake.client.client.insert_one(self.encoded)
             return res.inserted_id
 
         return str(d["_id"])
@@ -157,7 +157,7 @@ class ReqDoc0(ReqDocBase):
         self._mtime = self._read_mtime(d)
 
         if d is None:
-            res = pymake.req.client.insert_one(self.encoded)
+            res = pymake.client.client.insert_one(self.encoded)
             return res.inserted_id
 
         return str(d["_id"])
