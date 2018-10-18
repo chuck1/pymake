@@ -1,5 +1,6 @@
 import datetime
 import functools
+import hashlib
 import logging
 import os
 import pickle
@@ -40,7 +41,7 @@ def _address(d):
 
         k = keys.pop(0)
 
-        yield k
+        yield str(k)
 
         v = d[k]
 
@@ -59,14 +60,22 @@ class Address:
         assert isinstance(d, dict)
         l = list(_address(d))
 
-        h = functools.reduce(lambda x, y: (hash(x) * hash(y)) % 2**(8*7), l)
-        h = h % 1024
-        h = struct.pack('h', h).hex()
+        #h = functools.reduce(lambda x, y: (hash(x) * hash(y)) % 2**(8*7), l)
+        #h = h % 1024
+        #h = struct.pack('h', h).hex()
 
         #self.l = [h] + l
 
         self.l = l
 
+        self.s = "".join(str(_) for _ in l)
+
+        #self.h = hash(tuple(l))
+
+
+        m = hashlib.sha256()
+        m.update(pickle.dumps(l))
+        self.h = m.hexdigest()
 
 
 

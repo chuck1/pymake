@@ -73,23 +73,15 @@ class Doc:
         self.doc = doc
         self.mtime = datetime.datetime.now().timestamp()
 
+class DocMeta:
+    def __init__(self):
+        self.mtime = datetime.datetime.now().timestamp()
+
 class DocRegistry:
-    def __init__(self, db):
-        #if os.path.exists("build/doc_registry.bin"):
-        #    with open("build/doc_registry.bin", "rb") as f:
-        #        self._registry = pickle.load(f)
-        #else:
-        #    self._registry = SubRegistry()
+    def __init__(self, db, db_meta):
 
         self._registry = db
-
-        # verify that registry can be pickled
-        if __debug__:
-            pass
-            #pickle.dumps(self._registry)
-
-        # for debugging
-        self.keys_read = set()
+        self._db_meta = db_meta
 
     def delete(self, d):
         logger.warning(crayons.yellow("delete"))
@@ -104,51 +96,54 @@ class DocRegistry:
         r = get_subregistry(r, a.l, f=f)
         return r
 
+    def get_subregistry_meta(self, d, f=None):
+        a = pymake.doc_registry.address.Address(d)
+        r = self._db_meta
+        r = get_subregistry(r, a.l, f=f)
+        return r
+
     def exists(self, d):
-        r = self.get_subregistry(d)
+        r = self.get_subregistry_meta(d)
         if not hasattr(r, "doc"): return False
         return (r.doc is not None)
 
     def read(self, d):
-
-        #a = pymake.doc_registry.address.Address(d)
-
-        #self.keys_read.add(a.l[0])
 
         r = self.get_subregistry(d)
 
         logger.debug(f"read from {type(r)} {id(r)}")
 
         if r.doc is None:
-            raise Exception(f"Object not found: {d!r}")
+            a = pymake.doc_registry.address.Address(d)
+            raise Exception(f"Object not found: {d!r} {a.s!r} {a.h!r}")
 
         return r.doc.doc
 
     def read_mtime(self, d):
 
-        r = self.get_subregistry(d)
+        r = self.get_subregistry_meta(d)
 
         return r.doc.mtime
 
     def write(self, d, doc):
 
-        # verify that registry can be pickled before addition
-        #if __debug__: pickle.dumps(self._registry)
-
         r = self.get_subregistry(d)
+        r_meta = self.get_subregistry_meta(d)
 
         r.doc = Doc(doc)
+        r_meta.doc = DocMeta()
 
-        if False:#__debug__:
-            try:
-                s = len(pickle.dumps(self._registry))
-            except Exception as e:
-                logger.error(crayons.red(f"addition of {d!r} {doc!r} caused pickle to fail"))
-                raise
-    
-            logger.info(f"registry size: {s}")
+    def DEPdump(self):
+        try:
+            s = pickle.dumps(self._registry)
+        except:
+            self.test_pickle([], self._registry)
+            raise
 
-    def test_pickle(self, l, r):
+        with open("build/doc_registry.bin", "wb") as f:
+            f.write(s)
+       
+    def DEPtest_pickle(self, l, r):
         if hasattr(r, "doc"):
             if r.doc:
                 try:
@@ -169,17 +164,65 @@ class DocRegistry:
         for k, v in r.d.items():
             self.test_pickle(l + [k], v)
 
-    def dump(self):
-        try:
-            s = pickle.dumps(self._registry)
-        except:
-            self.test_pickle([], self._registry)
-            raise
-
-        with open("build/doc_registry.bin", "wb") as f:
-            f.write(s)
        
-        
+class Registry2:
+    def __init__(self, db):
 
+        self.address_book = db
+
+    def next_id(self):
+        c = self.address_book.get("counter", 0)
+        self.address_book["counter"] = c + 1
+        return int2str(c, 36)
+
+    def get_filename(self, d):
+        a = pymake.doc_registry.address.Address(d)
+
+        pre = "build/registry"
+
+        if s in self.address_book:
+            return os.path.join(pre, self.address_book[s])
+        else:
+            filename = self.next_id()
+            self.address_book[s] = filename
+            return os.path.join(pre, filename)
+
+    def delete(self, d):
+        logger.warning(crayons.yellow("delete"))
+        s = self.get_filename(d)
+        os.remove(s)
+
+    def exists(self, d):
+        return os.path.exists(self.get_filename(d))
+
+    def read(self, d):
+        s = self.get_filename(d)
+
+    def read_mtime(self, d):
+
+        r = self.get_subregistry(d)
+
+        return r.doc.mtime
+
+    def write(self, d, doc):
+
+        r = self.get_subregistry(d)
+
+        r.doc = Doc(doc)
+
+class DocRegistry2(DocRegistry):
+
+    def get_subregistry(self, d, f=None):
+        
+        a = pymake.doc_registry.address.Address(d)
+
+        k = str(a.h) #a.s
+
+        if k not in self._registry:
+            self._registry[k] = SubRegistry()
+
+        r = self._registry[k]
+
+        return r
 
 
