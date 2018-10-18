@@ -41,6 +41,11 @@ class ReqDocBase(pymake.req.Req):
         d1.update(d0)
         return self.__class__(d1)
 
+    def __deepcopy__(self, memo):
+        print(f"{self.__class__.__name__} deepcopy")
+        return self
+        #return self.__class__(copy.deepcopy(self.d, memo))
+
     async def get_rule(self, mc):
         return await mc.makefile.find_one(mc, self)
 
