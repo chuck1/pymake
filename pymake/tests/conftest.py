@@ -1,22 +1,34 @@
-
+import os
 import shelve
 import pytest
+import pymake.find_rules
 import pymake.makefile
+import pymake.tests.rules
 from mybuiltins import ason
 
 @pytest.fixture()
 def db():
-    with shelve.open("build/doc_registry.db", writeback=True) as db:
+    s = "build/doc_registry.db"
+
+    if os.path.exists(s):
+        os.remove(s)
+
+    with shelve.open(s, writeback=True) as db:
         yield db
 
 @pytest.fixture()
 def db_meta():
-    with shelve.open("build/doc_registry_meta.db", writeback=True) as db_meta:
+    s = "build/doc_registry_meta.db"
+    
+    if os.path.exists(s):
+        os.remove(s)
+
+    with shelve.open(s, writeback=True) as db_meta:
         yield db_meta
 
 
 @pytest.fixture()
-def makefile():
+def makefile(db, db_meta):
 
     req_cache = None
 
@@ -30,9 +42,11 @@ def makefile():
    
     #m.rules += rules_regex
 
-    m.add_rules(coil_testing.find_rules.search(pymake.tests.rules, pymake.rules.RuleDoc))
+    m.add_rules(pymake.find_rules.search(pymake.tests.rules, pymake.rules.RuleDoc))
 
     m.decoder = ason.Decoder()
+
+    pymake.doc_registry.registry = pymake.doc_registry.DocRegistry(db, db_meta)
 
     return m
 

@@ -1,3 +1,4 @@
+import pymake.rules
 
 class A(pymake.rules.RuleDoc):
 
