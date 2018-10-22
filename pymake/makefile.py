@@ -8,7 +8,7 @@ import traceback
 from pprint import pprint
 import sys
 import bson
-import numpy
+#import numpy
 
 #from mybuiltins import *
 from .rules import *
@@ -198,11 +198,12 @@ class Makefile:
 
         if len(rules) > 1:
             if all([isinstance(r, RuleRegex) for r in rules]):
-                l = [sum(len(g) for g in r.groups) for r in rules]
+                raise Exception()
+                #l = [sum(len(g) for g in r.groups) for r in rules]
                 #green(l)
-                i = numpy.argsort(l)
+                #i = numpy.argsort(l)
                 #green(i)
-                rules = numpy.array(rules)[i]
+                #rules = numpy.array(rules)[i]
                 #green(rules)
         else:
             #green('exactly one matching rule found')
