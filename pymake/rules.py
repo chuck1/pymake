@@ -551,8 +551,8 @@ class RuleDocCopy(RuleDoc):
         _copy(requirements[0], self.req)
 
 class RuleDocCopyBinary(RuleDoc):
-    async def build(self, makecall, _, _1):
-        _copy_binary(await self.req0(), self.req)
+    async def build(self, mc, _, _1):
+        _copy_binary(await self.req0(mc), self.req)
 
 class RuleDocCopyObject(RuleDoc):
     async def build(self, mc, _, reqs):
