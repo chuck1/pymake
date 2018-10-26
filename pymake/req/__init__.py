@@ -110,7 +110,7 @@ class Req:
         logger.debug(f'makecall args: {mc.args!r}')
 
         if __debug__:
-            mc.add_edge(ancestor, self)
+            mc.makefile.add_edge(ancestor, self)
 
         #if not mc.args['test']:
         if False:

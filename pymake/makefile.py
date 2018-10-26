@@ -24,10 +24,12 @@ def touch(fname, times=None):
         os.utime(fname, times)
 
 @contextlib.contextmanager
-def render_graph_on_exit(mc):
-    try:
-        yield
-    finally:
+class render_graph_on_exit:
+    def __init__(self, mc):
+        self.mc = mc
+    def __enter__(self):
+        return
+    def __exit__(self, *args):
         mc.render_graph()
 
 class Makefile:
@@ -52,6 +54,8 @@ class Makefile:
         
         self.reqs = []
         #self.reqs = req_cache
+
+        self.graph = {}
 
     def cache_contains(self, req):
         for req1 in self.reqs:
@@ -247,5 +251,46 @@ class Makefile:
             if m:
                 print(rule, f_out)
                 #print(f, repr(rule))
+
+    def add_edge(self, r1, r2):
+        if r1 is None: return
+
+        try:
+            v1 = dict_get(self.graph, r1.graph_string(), {})
+            v2 = dict_get(v1, r2.graph_string(), {})
+        except Exception as e:
+            logger.error(f'{e!r}')
+            raise
+
+    def render_graph(self):
+        print(crayons.magenta('render graph', bold=True))
+        g = gv.AGraph(directed=True, rankdir='LR')
+
+        def safe_label(s0):
+            s1 = s0.replace('\n', '\\l')
+            s2 = s1.replace('\\"','\'')
+            #breakpoint()
+            return s2
+
+        def f1(n, d, f):
+            if n:
+                h0 = hashlib.md5(n.encode()).hexdigest()
+
+            for k, v in d.items():
+                
+                h = hashlib.md5(k.encode()).hexdigest()
+
+                g.add_node(h, label=safe_label(k))
+                #print(f'h={h!r}')
+                #print(f'k={k!r}')
+
+                if n:
+                    g.add_edge(h0, h)
+
+                f(k, v, f1)
+        
+        f1(None, self.graph, f1)
+        
+        g.write('build/layout.dot')
 
 

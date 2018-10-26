@@ -151,7 +151,9 @@ class _Rule(Rule_utilities):
         # and func returns those Req objects
 
         async for req in self.build_requirements(makecall, func):
-                        
+            
+            logger.debug(repr(req))
+
             if asyncio.iscoroutine(req): raise Exception(f'{self!r}')
             
             yield req

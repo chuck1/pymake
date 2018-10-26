@@ -69,8 +69,9 @@ class SubRegistry:
         return state
 
 class Doc:
-    def __init__(self, doc):
+    def __init__(self, doc, d=None):
         self.doc = doc
+        self.d = d
         self.mtime = datetime.datetime.now().timestamp()
 
 class DocMeta:

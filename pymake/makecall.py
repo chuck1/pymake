@@ -21,13 +21,11 @@ import pymake.rules
 logger = logging.getLogger(__name__)
 
 class MakeCall:
-    def __init__(self, makefile, args={}, graph={}, stack=[]):
+    def __init__(self, makefile, args={}, stack=[]):
         self.makefile = makefile
         self.decoder = makefile.decoder
 
         self.args = pymake.args.Args(**args)
-
-        self.graph = graph
 
         self.stack = stack
 
@@ -38,7 +36,7 @@ class MakeCall:
     def copy(self, **kwargs):
         args1 = dict(self.args._args)
         args1.update(kwargs)
-        return MakeCall(self.makefile, args1, self.graph, self.stack)
+        return MakeCall(self.makefile, args1, self.stack)
 
     def make_threadsafe(self, *args, **kwargs):
         loop = asyncio.new_event_loop()
@@ -95,46 +93,5 @@ class MakeCall:
             raise Exception('Excepted Req, got {}'.format(repr(target)))
 
         return target
-
-    def add_edge(self, r1, r2):
-        if r1 is None: return
-
-        try:
-            v1 = dict_get(self.graph, r1.graph_string(), {})
-            v2 = dict_get(v1, r2.graph_string(), {})
-        except Exception as e:
-            logger.error(f'{e!r}')
-            raise
-
-    def render_graph(self):
-        print(crayons.magenta('render graph', bold=True))
-        g = gv.AGraph(directed=True, rankdir='LR')
-
-        def safe_label(s0):
-            s1 = s0.replace('\n', '\\l')
-            s2 = s1.replace('\\"','\'')
-            #breakpoint()
-            return s2
-
-        def f1(n, d, f):
-            if n:
-                h0 = hashlib.md5(n.encode()).hexdigest()
-
-            for k, v in d.items():
-                
-                h = hashlib.md5(k.encode()).hexdigest()
-
-                g.add_node(h, label=safe_label(k))
-                #print(f'h={h!r}')
-                #print(f'k={k!r}')
-
-                if n:
-                    g.add_edge(h0, h)
-
-                f(k, v, f1)
-        
-        f1(None, self.graph, f1)
-        
-        g.write('build/layout.dot')
 
 
