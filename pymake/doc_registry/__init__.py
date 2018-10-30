@@ -75,7 +75,8 @@ class Doc:
         self.mtime = datetime.datetime.now().timestamp()
 
 class DocMeta:
-    def __init__(self):
+    def __init__(self, d=None):
+        self.d = d
         self.mtime = datetime.datetime.now().timestamp()
 
 class DocRegistry:
@@ -131,8 +132,8 @@ class DocRegistry:
         r = self.get_subregistry(d)
         r_meta = self.get_subregistry_meta(d)
 
-        r.doc = Doc(doc)
-        r_meta.doc = DocMeta()
+        r.doc = Doc(doc, d=d)
+        r_meta.doc = DocMeta(d=d)
 
     def DEPdump(self):
         try:

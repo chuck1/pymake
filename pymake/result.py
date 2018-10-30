@@ -14,6 +14,9 @@ class ResultNoBuild(Result):
     def is_build_required(self):
         return False
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.msg!r})'
+
 class ResultTestBuild(ResultBuild): pass
 
 class ResultTestNoBuild(ResultNoBuild): pass

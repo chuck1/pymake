@@ -52,12 +52,14 @@ class MakeCall:
         if not isinstance(req, pymake.req.Req):
             raise Exception(f"req should be a pymake.req.Req object, not {req!r}")
 
-        if isinstance(req, pymake.req.ReqFake): return pymake.result.ResultNoBuild()
+        if isinstance(req, pymake.req.ReqFake):
+            return pymake.result.ResultNoBuild("fake")
 
         req = self.makefile.cache_get(req)
 
         # TODO we may need to still check requirements that can change at runtime
-        if req.up_to_date: return pymake.result.ResultNoBuild()
+        if req.up_to_date: 
+            return pymake.result.ResultNoBuild("up to date")
 
         logger.debug(repr(req))
 

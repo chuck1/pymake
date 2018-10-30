@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 class ReqDocBase(pymake.req.Req):
-    def __init__(self, d, build=True):
+    def __init__(self, d, build=True, **kwargs):
         """
         d     - bson-serializable object. once initialized, MUST NOT CHANGE. has already been decoded
         build - flag is this should be built or just read
         """
-        super().__init__()
+        super().__init__(**kwargs)
 
         if not isinstance(d, dict):
             raise Exception(f'expected dict, not {type(d)} {d!r}')

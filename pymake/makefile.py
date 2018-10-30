@@ -38,7 +38,7 @@ class Makefile:
     """
     manages the building of targets
     """
-    def __init__(self, req_cache):
+    def __init__(self, req_cache=None):
         self.rules = []
         self._rules_doc = {}
 

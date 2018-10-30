@@ -44,9 +44,11 @@ class Req:
 
     build = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, require_rule=False, **kwargs):
         self._type = None
     
+        self.require_rule = require_rule
+
         # volatile
         self.__up_to_date = False
         self._on_build = []
@@ -123,11 +125,13 @@ class Req:
         rule = await self.get_rule(mc)
 
         if rule is None:
-            if self.output_exists():
-                return pymake.result.ResultNoRuleFileExists()
-            else:
-                for line in lines(self.print_long): logger.error(crayons.red(line))
-                raise Exception(f"no rule to make {self!r}")
+
+            if not self.require_rule:
+                if self.output_exists():
+                    return pymake.result.ResultNoRuleFileExists()
+                
+            for line in lines(self.print_long): logger.error(crayons.red(line))
+            raise Exception(f"no rule to make {self!r}")
 
         assert pymake.util._isinstance(rule, pymake.rules._Rule)
 
