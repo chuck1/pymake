@@ -35,15 +35,28 @@ def _address(d):
 
     assert isinstance(d, dict)
 
-    keys = list(sorted(d.keys()))
+    def _process_key(s):
+        if isinstance(s, str): return s
+        if s is None: return str(s)
+        if isinstance(s, (float, int)): return str(s)
+        raise TypeError(f'unexpected key type {type(s)} {s!r}')
+
+    class Key:
+        def __init__(self, s):
+            self.s0 = s
+            self.s1 = _process_key(s)
+
+        def __lt__(self, other):
+            return (self.s1 < other.s1)
+
+    keys = list(sorted([Key(s) for s in d.keys()]))
 
     while keys:
-
         k = keys.pop(0)
 
-        yield str(k)
+        yield k.s1
 
-        v = d[k]
+        v = d[k.s0]
 
         yield from _address_1(v)
 
