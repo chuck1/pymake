@@ -345,9 +345,11 @@ class ReqDoc2(ReqDocBase):
            return self.req0.output_mtime()
 
     def write_contents(self, b):
+        #self.req0.write_contents(b)
         self.req1.write_contents(b)
 
     def write_pickle(self, o):
+        #self.req0.write_pickle(o)
         self.req1.write_pickle(o)
 
     def read_pickle(self, mc=None):

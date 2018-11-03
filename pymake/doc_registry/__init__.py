@@ -107,7 +107,12 @@ class DocRegistry:
     def exists(self, d):
         r = self.get_subregistry_meta(d)
         if not hasattr(r, "doc"): return False
-        return (r.doc is not None)
+        if r.doc is None: return False
+
+        r1 = self.get_subregistry(d)
+        if r1.doc is None: return False
+
+        return True
 
     def read(self, d):
 

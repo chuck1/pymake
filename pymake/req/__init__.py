@@ -182,7 +182,7 @@ class Req:
             # use FakePickle object
             
             logger.debug(f'write fake pickle')
-            print_lines(logger.debug, lambda: pprint.pprint(self.d))
+            for line in lines(functools.partial(pprint.pprint, self.d)): logger.debug(line)
 
             p = fake_pickle_archive.write(o)
             logger_pickle.info(f"pickle dump {p!r}")
@@ -203,7 +203,7 @@ class Req:
         try:
             o = pickle.loads(b)
             logger_pickle.debug(f"pickle load")
-            print_lines(logger_pickle.debug, self.print_long)
+            for line in lines(self.print_long): logger_pickle.debug(line)
         except Exception as e:
             logger.error(crayons.red('pickle error'))
             logger.error(crayons.red(repr(e)))
