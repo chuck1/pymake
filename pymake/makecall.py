@@ -46,6 +46,8 @@ class MakeCall:
         """
         this is the ONLY make function that should be called outside the pymake module
         """
+
+        # validate
         if req is None:
             raise Exception("req is None")
 
@@ -55,17 +57,14 @@ class MakeCall:
         if isinstance(req, pymake.req.ReqFake):
             return pymake.result.ResultNoBuild("fake")
 
+        # get equivalent req object from cache or add to cache
         req = self.makefile.cache_get(req)
 
-        # TODO we may need to still check requirements that can change at runtime
-        if req.up_to_date: 
-            return pymake.result.ResultNoBuild("up to date")
 
         logger.debug(repr(req))
 
         # added this because needed to make a file when test was True
-        if test is None:
-            test = self.args.test
+        if test is None: test = self.args.test
 
         makecall = self.copy(test=test, **kwargs)
 
@@ -77,23 +76,11 @@ class MakeCall:
                     logger.info(f"make {req} result = {ret}")
                     return ret
 
-            if isinstance(req, pymake.rules.Rule):
-                return await req.make(mc, None)
-
-            req = self.ensure_is_req(req)
-    
             ret = await req._make(makecall, ancestor)
 
             logger.debug(f"make {req} result = {ret}")
+            
             return ret
 
-    def ensure_is_req(self, target):
-        if isinstance(target, str):
-            target = pymake.req.ReqFile(target)
-
-        if not isinstance(target, pymake.req.Req):
-            raise Exception('Excepted Req, got {}'.format(repr(target)))
-
-        return target
 
 

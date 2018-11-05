@@ -60,15 +60,15 @@ class _Rule(Rule_utilities):
         """
         """
         self.__rules = None
-        self.up_to_date = False
         self.req_out = None
 
     async def requirements_0(self, makecall, func):
-        raise Exception(repr(self.__class__))
-        yield
+        logger.warning(f'{self.__class__!r} does not define requirements_0')
+        async for _ in self.build_requirements(makecall, func): yield _
 
     async def requirements_1(self, makecall, func):
-        raise Exception(repr(self.__class__))
+        logger.warning(f'{self.__class__!r} does not define requirements_1')
+        return
         yield
 
     async def build_requirements(self, makecall, func):
@@ -128,20 +128,21 @@ class _Rule(Rule_utilities):
     def output_mtime(self):
         return None
 
-    async def make_ancestors(self, makecall, test):
+    async def __requirements(self, makecall, test, requirements_function):
+        """
+        requirements that can be skipped if requirements_0 are up_to_date and the req
+        has stored that it is up to date
+        """
 
         async def func(req):
             assert req is not None
             assert isinstance(req, pymake.req.Req)
 
-
             makecall2 = makecall.copy(test=test, force=False)
 
             r = await makecall2.make(req, ancestor=self.req_out)
 
-
             assert isinstance(r, Result)
-
 
             return req
 
@@ -150,41 +151,34 @@ class _Rule(Rule_utilities):
         # the build_requirements function yields the results of calling func on Req objects
         # and func returns those Req objects
 
-        async for req in self.build_requirements(makecall, func):
+        async for req in requirements_function(makecall, func):
             
             logger.debug(repr(req))
 
-            if asyncio.iscoroutine(req): raise Exception(f'{self!r}')
+            if __debug__ and asyncio.iscoroutine(req): raise Exception(f'{self!r}')
+
+            if not isinstance(req, Req):
+                raise Exception(f'{self!r} reqs should return generator of Req objects, not {req!r}')
             
             yield req
 
-    async def rule__check(self, makecall, req=None, test=False):
+    async def __check_requirements(self, makecall, requirements_function, req=None, test=False):
         
-        reqs = [r async for r in self.make_ancestors(makecall, test)]
+        reqs = [r async for r in self.__requirements(makecall, test, requirements_function)]
 
-        req.maybe_create_triggers(makecall.makefile, reqs)
 
-        if makecall.args.force:
-            return True, 'forced', reqs
+        if makecall.args.force: return True, 'forced', reqs
 
         b = self.output_exists()
-        if not b:
-            return True, "output does not exist", reqs
+
+        if not b: return True, "output does not exist", reqs
 
         mtime = self.output_mtime()
         
         if mtime is None:
             return True, '{} does not define mtime'.format(self.__class__.__name__), reqs
 
-
         for f in reqs:
-            if isinstance(f, Rule):
-                continue
-            
-            if not isinstance(f, Req):
-                raise Exception(
-                    f'{self!r} reqs should return generator of Req objects, not {f!r}')
-
             logger.debug(f'check {f!r}')
 
             b = f.output_exists()
@@ -197,32 +191,56 @@ class _Rule(Rule_utilities):
                 if mtime_in > mtime:
                     return True, 'mtime of {} is greater'.format(f), reqs
         
-
         return False, 'up to date', reqs
+
+    async def __check(self, makecall, req=None, test=False):
+
+        b_0, s_0, reqs_0 = await self.__check_requirements(makecall, self.requirements_0, req=req, test=test)
+
+        if not b_0:
+            if req.up_to_date: 
+                False, "up_to_date", None
+        
+        b_1, s_1, reqs_1 = await self.__check_requirements(makecall, self.requirements_1, req=req, test=test)
+
+        reqs = reqs_0 + reqs_1
+
+        # these reqs will become triggers for this req.
+        # next time we try to build this req, ...
+        req.maybe_create_triggers(makecall.makefile, reqs)
+
+        if b_0:
+            return True, s_0, reqs
+
+        if b_1:
+            return True, s_1, reqs
+
+        return False, "up_to_date", None
+
+    async def _make_touch(self, makecall, req):
+
+        should_build, f = self.rule__check(makecall, req=req, test=True)
+        
+        if should_build:
+            req.touch_maybe(makecall)
+            return ResultBuild()
+        else:
+            return ResultNoBuild()
 
     async def _make(self, makecall, req):
         logger.debug(f'test = {makecall.args.test}')
         logger.debug(f'make {req!r}')
 
-        test = makecall.args.test
+        # touch
+        # TODO not sure if compatible with req_cache
+        #if req and req.would_touch(makecall):
+        #    return self._make_touch(makecall, req)
 
-        if self.up_to_date: 
-            raise Exception()
-            return
-        
-        if req:
-            if req.would_touch(makecall):
-                should_build, f = self.rule__check(makecall, req=req, test=True)
-                if should_build:
-                    req.touch_maybe(makecall)
-                    return ResultBuild()
-                else:
-                    return ResultNoBuild()
             
-        should_build, f, reqs = await self.rule__check(makecall, req=req, test=test)
+        should_build, f, reqs = await self.__check(makecall, req=req, test=makecall.args.test)
 
 
-        if test:
+        if makecall.args.test:
             return self._make_test(makecall, req, should_build)
 
 
@@ -235,11 +253,13 @@ class _Rule(Rule_utilities):
                 raise
 
             self.req.set_up_to_date(True)
+
             return ResultBuild()
 
         else:
 
-            self.req.set_up_to_date(True)
+            #self.req.set_up_to_date(True)
+
             return ResultNoBuild()
 
     def _make_test(self, makecall, req, should_build):
@@ -264,22 +284,6 @@ class _Rule(Rule_utilities):
             pymake.os0.makedirs(os.path.dirname(filename))
             with open(filename, 'w') as f:
                 f.write(s)
-        else:
-            logging.info('binary data unchanged. do not write.')
-
-    def DEPwrite_pickle(self, o):
-        b = pickle.dumps(o)
-        self.write_binary(b)
-
-    def DEPwrite_binary(self, b):
-        # it appears that this functionality is actually not useful as currently
-        # implemented. revisit later
-
-        #if check_existing_binary_data(filename, b):
-        if True:
-            pymake.makedirs(os.path.dirname(self.req.fn))
-            with open(self.req.fn, 'wb') as f:
-                f.write(b)
         else:
             logging.info('binary data unchanged. do not write.')
 

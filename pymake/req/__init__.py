@@ -60,8 +60,6 @@ class Req:
     
     @property
     def up_to_date(self):
-        #if not hasattr(self, "reqs"):
-        #    return False
         return self.__up_to_date
 
     def set_up_to_date(self, value):
@@ -111,6 +109,10 @@ class Req:
         logger.debug(repr(self))
         logger.debug(f'makecall args: {mc.args!r}')
 
+
+
+
+
         if __debug__:
             mc.makefile.add_edge(ancestor, self)
 
@@ -134,12 +136,6 @@ class Req:
             raise Exception(f"no rule to make {self!r}")
 
         assert pymake.util._isinstance(rule, pymake.rules._Rule)
-
-        #if self.touch_maybe(mc): return
-
-        #mc.add_edge(ancestor, rule)
-
-        #for rule in rules:
 
         try:
             ret = await rule._make(mc, self)
@@ -210,7 +206,7 @@ class Req:
             logger.error(crayons.red(f'delete {self!r}'))
             #logger.error(b)
             
-            self.delete()
+            #self.delete()
  
             raise
 
