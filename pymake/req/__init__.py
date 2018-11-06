@@ -67,14 +67,21 @@ class Req:
         self.__up_to_date = value
 
     def maybe_create_triggers(self, makefile, reqs):
-        if not hasattr(self, "reqs"):
-            self.reqs = reqs
+        # do not skip this is self.reqs is already set.
+        # we might be updating self.reqs because something in requirements_0 changed
 
-            for req in reqs:
+        # TODO should we also be searching for instances of this in the _on_build
+        # lists of all cached reqs? so that if this no longer depends on something the
+        # reference will be removed?
 
-                # make sure req is in cache
-                #req = makefile.cache_get(req)
+        self.reqs = reqs
 
+        for req in reqs:
+
+            # make sure req is in cache
+            #req = makefile.cache_get(req)
+
+            if self not in req._on_build:
                 req._on_build.append(self)
 
     def output_exists(self):

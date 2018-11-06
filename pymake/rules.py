@@ -199,9 +199,20 @@ class _Rule(Rule_utilities):
 
         if not b_0:
             if req.up_to_date: 
-                False, "up_to_date", None
+                return False, "up_to_date", None
         
         b_1, s_1, reqs_1 = await self.__check_requirements(makecall, self.requirements_1, req=req, test=test)
+
+
+        if b_0:
+            logger.info(f'{self.__class__!r}. b_0 = True. s_0 = {s_0!r}')
+            for r in reqs_0:
+                logger.info(f'  {r!r}')
+
+        logger.debug(f'checking requirements_1 for {req!r}. b_0 = {b_0}. up_to_date = {req.up_to_date}')
+        for r in reqs_1:
+            logger.debug(f'  {r!r}')
+
 
         reqs = reqs_0 + reqs_1
 
@@ -257,8 +268,9 @@ class _Rule(Rule_utilities):
             return ResultBuild()
 
         else:
-
-            #self.req.set_up_to_date(True)
+            # we know that either req.up_to_date is already True or req.maybe_create_triggers was called
+            # and therefore it is safe to set this as up_to_date
+            self.req.set_up_to_date(True)
 
             return ResultNoBuild()
 
