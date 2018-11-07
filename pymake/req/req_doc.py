@@ -89,12 +89,12 @@ class ReqDocBase(pymake.req.Req):
     def write_binary(self, b):
         self.write_contents(b)
 
-    def write_json(self, b):
-        self.write_contents(b)
+    async def write_json(self, b):
+        await self.write_contents(b)
 
-    def write_string(self, b):
+    async def write_string(self, b):
         assert isinstance(b, str)
-        self.write_contents(b)
+        await self.write_contents(b)
 
     def read_json(self):
         return self.read_contents()
@@ -257,13 +257,13 @@ class ReqDoc1(ReqDocBase):
     def delete(self):
         pymake.doc_registry.registry.delete(self.encoded)
 
-    def write_pickle(self, o):
+    async def write_pickle(self, o):
         #logger.info("write pickle")
-        pymake.doc_registry.registry.write(self.encoded, o)
+        await pymake.doc_registry.registry.write(self.encoded, o)
 
-    def write_contents(self, b):
+    async def write_contents(self, b):
         logger.info(f"{self!r} write_contents")
-        pymake.doc_registry.registry.write(self.encoded, b)
+        await pymake.doc_registry.registry.write(self.encoded, b)
 
     def read_contents(self, mc=None):
         return pymake.doc_registry.registry.read(self.encoded)
@@ -271,10 +271,10 @@ class ReqDoc1(ReqDocBase):
     def read_pickle(self, mc=None):
         return pymake.doc_registry.registry.read(self.encoded)
 
-    def write(self, b):
+    async def write(self, b):
 
         if isinstance(b, (str, dict, list)):
-            pymake.doc_registry.registry.write(self.encoded, b)
+            await pymake.doc_registry.registry.write(self.encoded, b)
             return
         
         # attempt unpickle
@@ -288,12 +288,19 @@ class ReqDoc1(ReqDocBase):
             logger.warning(crayons.yellow(repr(e)))
             o = b
 
-        pymake.doc_registry.registry.write(self.encoded, o)
+        await pymake.doc_registry.registry.write(self.encoded, o)
 
 class ReqDoc2(ReqDocBase):
-    
+   
+    @classmethod
+    async def new(cls, *args, **kwargs):
+        o = cls(*args, **kwargs)
+        await o.ainit()
+        return o
+
     def __init__(self, d, **kwargs):
         super().__init__(d, **kwargs)
+        self.kwargs = kwargs
         #logger.info(repr(self))
 
         if d["type"] in [
@@ -301,17 +308,19 @@ class ReqDoc2(ReqDocBase):
             #"node 20", 
             "node 90"]: raise Exception()
 
-        self.req1 = ReqDoc1(d, **kwargs)
+    async def ainit(self):
+
+        self.req1 = ReqDoc1(self.d, **self.kwargs)
 
         if not self.req1.output_exists():
             logger.debug(f"{self.req1!r} does not exist")
 
-            self.req0 = ReqDoc0(d, **kwargs)
+            self.req0 = ReqDoc0(self.d, **self.kwargs)
 
             if self.req0.output_exists():
                 try:
                     b = self.req0.read()
-                    self.req1.write(b)
+                    await self.req1.write(b)
                 except pymake.util.PickleError as e:
                     self.req0.delete()
                     raise
@@ -344,9 +353,9 @@ class ReqDoc2(ReqDocBase):
         if self.req0.output_exists():
            return self.req0.output_mtime()
 
-    def write_contents(self, b):
+    async def write_contents(self, b):
         #self.req0.write_contents(b)
-        self.req1.write_contents(b)
+        await self.req1.write_contents(b)
 
     def write_pickle(self, o):
         #self.req0.write_pickle(o)

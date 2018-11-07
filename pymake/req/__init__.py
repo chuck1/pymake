@@ -50,23 +50,41 @@ class Req:
         self.require_rule = require_rule
 
         # volatile
-        self.__up_to_date = False
+        self.__up_to_date_0 = False
+        self.__up_to_date_1 = False
+
         self._on_build = []
 
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        if "_Req__up_to_date_0" in state:
+            del state["_Req__up_to_date_0"]
+        return state
+
     def __setstate__(self, state):
-        if "_Req__up_to_date" not in state:
-            state["_Req__up_to_date"] = False
+        if "_Req__up_to_date_0" not in state:
+            state["_Req__up_to_date_0"] = False
+        if "_Req__up_to_date_1" not in state:
+            state["_Req__up_to_date_1"] = False
         self.__dict__ = dict(state)
     
     @property
-    def up_to_date(self):
-        return self.__up_to_date
+    def up_to_date_0(self):
+        return self.__up_to_date_0
 
-    def set_up_to_date(self, value):
+    @property
+    def up_to_date_1(self):
+        return self.__up_to_date_1
+
+    def set_up_to_date_0(self, value):
         assert isinstance(value, bool)
-        self.__up_to_date = value
+        self.__up_to_date_0 = value
 
-    def maybe_create_triggers(self, makefile, reqs):
+    def set_up_to_date_1(self, value):
+        assert isinstance(value, bool)
+        self.__up_to_date_1 = value
+
+    def create_triggers_0(self, makefile, reqs):
         # do not skip this is self.reqs is already set.
         # we might be updating self.reqs because something in requirements_0 changed
 
@@ -74,13 +92,21 @@ class Req:
         # lists of all cached reqs? so that if this no longer depends on something the
         # reference will be removed?
 
-        self.reqs = reqs
+        self.reqs_0 = reqs
 
         for req in reqs:
 
             # make sure req is in cache
             #req = makefile.cache_get(req)
 
+            if self not in req._on_build:
+                req._on_build.append(self)
+
+    def create_triggers_1(self, makefile, reqs):
+
+        self.reqs_1 = reqs
+
+        for req in reqs:
             if self not in req._on_build:
                 req._on_build.append(self)
 
@@ -328,7 +354,7 @@ class ReqFile(Req):
     def graph_string(self):
         return self.fn
 
-    def read_text(self):
+    def read_string(self):
         with open(self.fn, 'r') as f:
             return f.read()
 
@@ -395,15 +421,15 @@ class OpenContext:
         elif self.mode == 'rb':
             self.f = FileR(io.BytesIO(self.req.read_binary()))
         
-    def __enter__(self):
+    async def __aenter__(self):
         return self.f
 
-    def __exit__(self, exc_type, _2, _3):
+    async def __aexit__(self, exc_type, _2, _3):
         if exc_type is not None: return
 
         if self.mode == 'w':
             s = self.f.buf.getvalue()
-            self.req.write_string(s)
+            await self.req.write_string(s)
         elif self.mode == 'wb':
             s = self.f.buf.getvalue()
             self.req.write_binary(s)

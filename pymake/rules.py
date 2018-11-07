@@ -195,21 +195,27 @@ class _Rule(Rule_utilities):
 
     async def __check(self, makecall, req=None, test=False):
 
+        if req.up_to_date_0: 
+            return False, "up_to_date_0", None
+
         b_0, s_0, reqs_0 = await self.__check_requirements(makecall, self.requirements_0, req=req, test=test)
 
+        req.create_triggers_0(makecall.makefile, reqs_0)
+
         if not b_0:
-            if req.up_to_date: 
-                return False, "up_to_date", None
+            if req.up_to_date_1: 
+                return False, "up_to_date_1", None
         
         b_1, s_1, reqs_1 = await self.__check_requirements(makecall, self.requirements_1, req=req, test=test)
 
+        req.create_triggers_1(makecall.makefile, reqs_1)
 
         if b_0:
             logger.info(f'{self.__class__!r}. b_0 = True. s_0 = {s_0!r}')
             for r in reqs_0:
                 logger.info(f'  {r!r}')
 
-        logger.debug(f'checking requirements_1 for {req!r}. b_0 = {b_0}. up_to_date = {req.up_to_date}')
+        logger.debug(f'checking requirements_1 for {req!r}. b_0 = {b_0}. up_to_date_1 = {req.up_to_date_1}')
         for r in reqs_1:
             logger.debug(f'  {r!r}')
 
@@ -218,7 +224,6 @@ class _Rule(Rule_utilities):
 
         # these reqs will become triggers for this req.
         # next time we try to build this req, ...
-        req.maybe_create_triggers(makecall.makefile, reqs)
 
         if b_0:
             return True, s_0, reqs
@@ -263,14 +268,16 @@ class _Rule(Rule_utilities):
                 logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
                 raise
 
-            self.req.set_up_to_date(True)
+            self.req.set_up_to_date_0(True)
+            self.req.set_up_to_date_1(True)
 
             return ResultBuild()
 
         else:
             # we know that either req.up_to_date is already True or req.maybe_create_triggers was called
             # and therefore it is safe to set this as up_to_date
-            self.req.set_up_to_date(True)
+            self.req.set_up_to_date_0(True)
+            self.req.set_up_to_date_1(True)
 
             return ResultNoBuild()
 
@@ -314,7 +321,7 @@ class _Rule(Rule_utilities):
         
         # call callbacks
         for req1 in req._on_build:
-            req1.set_up_to_date(False)
+            req1.set_up_to_date_1(False)
 
 
 
@@ -565,8 +572,8 @@ def _copy_binary(src, dst):
         f1.write(s)
 
 class RuleDocCopy(RuleDoc):
-    async def build(self, makecall, _, requirements):
-        _copy(requirements[0], self.req)
+    async def build(self, mc, _, _1):
+        _copy(await self.req_0(mc), self.req)
 
 class RuleDocCopyBinary(RuleDoc):
     async def build(self, mc, _, _1):

@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import os
@@ -21,7 +22,16 @@ def get_subregistry(r, l, f=None):
         if k not in r:
             r[k] = SubRegistry()
         
-        r = r[k]
+        try:
+            r = r[k]
+        except AttributeError as e:
+            # should be unpickling error
+            print(crayons.red(f'get_subregistry l={l!r}'))
+            print(crayons.red(f'deleting branch'))
+
+            r[k] = SubRegistry()
+            r = r[k]
+            
 
         # created for debugging
         if f is not None: f(r)
@@ -79,13 +89,52 @@ class DocMeta:
         self.d = d
         self.mtime = datetime.datetime.now().timestamp()
 
+def get_id(d):
+        doc = pymake.client.client.find_one(d)
+
+        #self._mtime = self._read_mtime(d)
+
+        if doc is None:
+            res = pymake.client.client.insert_one(d)
+            return str(res.inserted_id)
+
+        return str(doc["_id"])
+
+def _lock(f):
+    async def wrapped(self, d, *args):
+
+        _id = get_id(d)
+
+        l = await self.get_lock(_id)
+
+        print('_lock', type(self), type(d), _id, l)
+
+        async with l:
+            return await f(self, d, *args)
+    return wrapped
+
+METHOD = "ID"
+
 class DocRegistry:
+
     def __init__(self, db, db_meta):
 
         self._registry = db
         self._db_meta = db_meta
 
-    def delete(self, d):
+        self._locks = {}
+
+        self.__lock = asyncio.Lock()
+
+    async def get_lock(self, _id):
+        async with self.__lock:
+            if _id not in self._locks:
+                self._locks[_id] = asyncio.Lock()
+
+            return self._locks[_id]
+
+    @_lock
+    async def delete(self, d):
         logger.warning(crayons.yellow("delete"))
 
         r = self.get_subregistry(d)
@@ -93,16 +142,27 @@ class DocRegistry:
         r.doc = None
 
     def get_subregistry(self, d, f=None):
-        a = pymake.doc_registry.address.Address(d)
-        r = self._registry
-        r = get_subregistry(r, a.l, f=f)
-        return r
+        if METHOD == "ADDRESS":
+            a = pymake.doc_registry.address.Address(d)
+            r = self._registry
+            r = get_subregistry(r, a.l, f=f)
+            return r
+        else:
+            db = self._registry
+            _id = get_id(d)
+            if _id not in db: db[_id] = SubRegistry()
+            return db[_id]
 
     def get_subregistry_meta(self, d, f=None):
-        a = pymake.doc_registry.address.Address(d)
-        r = self._db_meta
-        r = get_subregistry(r, a.l, f=f)
-        return r
+        if METHOD == "ADDRESS":
+            a = pymake.doc_registry.address.Address(d)
+            r = self._db_meta
+            r = get_subregistry(r, a.l, f=f)
+            return r
+        else:
+            _id = get_id(d)
+            if _id not in self._db_meta: self._db_meta[_id] = SubRegistry()
+            return self._db_meta[_id]
 
     def exists(self, d):
         r = self.get_subregistry_meta(d)
@@ -110,6 +170,7 @@ class DocRegistry:
         if r.doc is None: return False
 
         r1 = self.get_subregistry(d)
+        if not hasattr(r1, "doc"): return False
         if r1.doc is None: return False
 
         return True
@@ -132,7 +193,8 @@ class DocRegistry:
 
         return r.doc.mtime
 
-    def write(self, d, doc):
+    @_lock
+    async def write(self, d, doc):
 
         r = self.get_subregistry(d)
         r_meta = self.get_subregistry_meta(d)

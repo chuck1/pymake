@@ -65,7 +65,7 @@ class Makefile:
     def cache_get(self, req):
         for req1 in self.reqs:
             if req1 == req:
-                logger.debug(crayons.green(f"cached req found {req!r} {req1.up_to_date}"))
+                logger.debug(crayons.green(f"cached req found {req!r} up_to_date_0={req1.up_to_date_0} up_to_date_1={req1.up_to_date_1}"))
                 return req1
 
         self.reqs.append(req)
