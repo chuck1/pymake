@@ -21,13 +21,15 @@ import pymake.rules
 logger = logging.getLogger(__name__)
 
 class MakeCall:
-    def __init__(self, makefile, args={}, stack=[]):
+    def __init__(self, makefile, args={}, stack=[], thread_depth=0):
         self.makefile = makefile
         self.decoder = makefile.decoder
 
         self.args = pymake.args.Args(**args)
 
         self.stack = stack
+
+        self.thread_depth = thread_depth
 
     @property
     def show_plot(self):

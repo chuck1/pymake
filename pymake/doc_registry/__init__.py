@@ -106,7 +106,7 @@ def _lock(f):
 
         l = await self.get_lock(_id)
 
-        print('_lock', type(self), type(d), _id, l)
+        #print('_lock', type(self), type(d), _id, l)
 
         async with l:
             return await f(self, d, *args)

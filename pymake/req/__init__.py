@@ -127,7 +127,7 @@ class Req:
 
         if len(rules) == 0:
             logger.debug(f'no rules to make {self!r}')
-            b = self.output_exists()
+            b = await self.output_exists()
             if b:
                 return
             else:
@@ -162,7 +162,7 @@ class Req:
         if rule is None:
 
             if not self.require_rule:
-                if self.output_exists():
+                if await self.output_exists():
                     return pymake.result.ResultNoRuleFileExists()
                 
             for line in lines(self.print_long): logger.error(crayons.red(line))

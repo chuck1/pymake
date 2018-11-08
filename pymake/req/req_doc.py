@@ -262,7 +262,7 @@ class ReqDoc1(ReqDocBase):
         await pymake.doc_registry.registry.write(self.encoded, o)
 
     async def write_contents(self, b):
-        logger.info(f"{self!r} write_contents")
+        logger.debug(f"{self!r} write_contents")
         await pymake.doc_registry.registry.write(self.encoded, b)
 
     def read_contents(self, mc=None):

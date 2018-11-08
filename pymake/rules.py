@@ -1,4 +1,3 @@
-__version__ = '0.2'
 import asyncio
 import functools
 import inspect
@@ -23,6 +22,8 @@ from .util import *
 from .result import *
 
 logger = logging.getLogger(__name__)
+
+THREADED = True
 
 class ReqFuture:
     # the result of calling func(req)
@@ -125,11 +126,25 @@ class _Rule(Rule_utilities):
     def output_mtime(self):
         return None
 
-    async def __requirements(self, makecall, test, requirements_function):
+    async def __requirements(self, makecall, test, requirements_function, threaded):
         """
         requirements that can be skipped if requirements_0 are up_to_date and the req
         has stored that it is up to date
         """
+
+        def threaded_(mc, req):
+            
+            loop = asyncio.new_event_loop()
+
+            coro = mc.make(req, ancestor=self.req_out)
+
+            ret = loop.run_until_complete(coro)
+
+            assert isinstance(ret, Result)
+
+            return req
+
+        loop = asyncio.get_event_loop()
 
         async def func(req):
             assert req is not None
@@ -137,11 +152,14 @@ class _Rule(Rule_utilities):
 
             makecall2 = makecall.copy(test=test, force=False)
 
-            r = await makecall2.make(req, ancestor=self.req_out)
-
-            assert isinstance(r, Result)
-
-            return req
+            if threaded:
+                makecall2.thread_depth = makecall.thread_depth + 1
+                task = loop.run_in_executor(None, functools.partial(threaded_, makecall2, req))
+                return task
+            else:
+                r = await makecall2.make(req, ancestor=self.req_out)
+                assert isinstance(r, Result)
+                return req
 
         logger.debug(crayons.red(self))
 
@@ -152,16 +170,40 @@ class _Rule(Rule_utilities):
             
             logger.debug(repr(req))
 
-            if __debug__ and asyncio.iscoroutine(req): raise Exception(f'{self!r}')
+            if threaded:
+                if not isinstance(req, asyncio.Future): raise TypeError(f'expected Task got {req!r}')
+                yield req
+            else:
 
-            if not isinstance(req, Req):
-                raise Exception(f'{self!r} reqs should return generator of Req objects, not {req!r}')
+                if __debug__ and asyncio.iscoroutine(req): raise Exception(f'{self!r}')
+
+                if not isinstance(req, Req):
+                    raise Exception(f'{self!r} should return Req objects, not {req!r}')
             
-            yield req
+                yield req
 
     async def __check_requirements(self, makecall, requirements_function, req=None, test=False):
-        
-        reqs = [r async for r in self.__requirements(makecall, test, requirements_function)]
+
+        threaded = THREADED
+        if makecall.thread_depth > 2:
+            threaded = False
+
+        if threaded:
+            tasks = [r async for r in self.__requirements(makecall, test, requirements_function, threaded)]
+            if tasks:
+                logger.info(f'len(tasks) = {len(tasks)}')
+                for task in tasks:
+                    logger.info(f'  {task}')
+                done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_EXCEPTION)
+                if pending: raise Exception()
+                for task in tasks:
+                    if task.exception():
+                        raise task.exception()
+                reqs = [task.result() for task in done]
+            else:
+                reqs = list()
+        else:
+            reqs = [r async for r in self.__requirements(makecall, test, requirements_function)]
 
 
         if makecall.args.force: return True, 'forced', reqs
