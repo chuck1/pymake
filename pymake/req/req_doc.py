@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import logging
 import pickle
@@ -62,6 +63,8 @@ class ReqDocBase(pymake.req.Req):
 
     def print_long(self):
         s = bson.json_util.dumps(self.encoded)
+        print('d=')
+        pprint.pprint(self.d)
         print(s)
         pprint.pprint(dict((k, type(v)) for k, v in self.encoded.items()))
         mypprint(self.encoded)
@@ -86,10 +89,12 @@ class ReqDocBase(pymake.req.Req):
     def would_touch(self, mc):
         return False
 
-    def write_binary(self, b):
-        self.write_contents(b)
+    async def write_binary(self, b):
+        assert isinstance(b, bytes)
+        await self.write_contents(b)
 
     async def write_json(self, b):
+        assert not asyncio.iscoroutine(b)
         await self.write_contents(b)
 
     async def write_string(self, b):
@@ -107,10 +112,13 @@ class ReqDocBase(pymake.req.Req):
         return s
 
     async def read_binary(self):
-        b = self.read_contents()
-        assert isinstance(b, bytes)
+        b = await self.read_contents()
+        if not isinstance(b, bytes):
+            print(f'{self!r} should be bytes but is {type(b)}')
+            if input('delete?') == 'Y':
+                await self.delete()
+            raise TypeError(f'{self!r} is not bytes')
         return b
-
 
     @cached_property.cached_property
     def _id(self):
@@ -210,12 +218,6 @@ class ReqDoc0(ReqDocBase):
 
         return self._mtime
 
-    async def read_pickle(self, mc=None):
- 
-        #logger.info(f"read pickle {self.encoded}")
-   
-        return await super().read_pickle(mc)
-
     async def read(self):
         return await self.read_contents()
 
@@ -240,6 +242,8 @@ class ReqDoc1(ReqDocBase):
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
 
+        if "_id" in d: raise Exception('shouldnt contain "_id". {d!r}')
+
     def __eq__(self, other):
         assert isinstance(self.d, dict)
         if not isinstance(other, ReqDoc1): return False
@@ -254,8 +258,8 @@ class ReqDoc1(ReqDocBase):
     async def output_mtime(self):
         return await pymake.doc_registry.registry.read_mtime(self.encoded)
 
-    def delete(self):
-        pymake.doc_registry.registry.delete(self.encoded)
+    async def delete(self):
+        await pymake.doc_registry.registry.delete(self.encoded)
 
     async def write_pickle(self, o):
         #logger.info("write pickle")
@@ -263,13 +267,16 @@ class ReqDoc1(ReqDocBase):
 
     async def write_contents(self, b):
         logger.debug(f"{self!r} write_contents")
+        assert not asyncio.iscoroutine(b)
         await pymake.doc_registry.registry.write(self.encoded, b)
 
     def read_contents(self, mc=None):
         return pymake.doc_registry.registry.read(self.encoded)
 
-    def read_pickle(self, mc=None):
-        return pymake.doc_registry.registry.read(self.encoded)
+    async def read_pickle(self, mc=None):
+        o = await pymake.doc_registry.registry.read(self.encoded)
+        assert not asyncio.iscoroutine(o)
+        return o
 
     async def write(self, b):
 
@@ -361,28 +368,31 @@ class ReqDoc2(ReqDocBase):
         #self.req0.write_contents(b)
         await self.req1.write_contents(b)
 
-    def write_pickle(self, o):
+    async def write_pickle(self, o):
         #self.req0.write_pickle(o)
-        self.req1.write_pickle(o)
+        await self.req1.write_pickle(o)
 
-    def read_pickle(self, mc=None):
-        if self.req1.output_exists():
-           return self.req1.read_pickle(mc)
-
-        if self.req0.output_exists():
-           o = self.req0.read_pickle(mc)
-           self.req1.write_pickle(o)
+    async def read_pickle(self, mc=None):
+        if await self.req1.output_exists():
+           o = await self.req1.read_pickle(mc)
+           assert not asyncio.iscoroutine(o)
            return o
 
-    def read_contents(self):
-        assert self.req1.output_exists()
-        return self.req1.read_contents()
+        if await self.req0.output_exists():
+           o = await self.req0.read_pickle(mc)
+           await self.req1.write_pickle(o)
+           assert not asyncio.iscoroutine(o)
+           return o
 
-        if self.req1.output_exists():
-           return self.req1.read_contents()
+    async def read_contents(self):
+        assert await self.req1.output_exists()
+        return await self.req1.read_contents()
 
-        if self.req0.output_exists():
-           return self.req1.read_contents()
+        if await self.req1.output_exists():
+           return await self.req1.read_contents()
+
+        if await self.req0.output_exists():
+           return await self.req1.read_contents()
         raise Exception()
 
 

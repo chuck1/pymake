@@ -183,8 +183,7 @@ class DocRegistry:
         logger.debug(f"read from {type(r)} {id(r)}")
 
         if r.doc is None:
-            a = pymake.doc_registry.address.Address(d)
-            raise Exception(f"Object not found: {d!r} {a.s!r} {a.h!r}")
+            raise Exception(f"Object not found: {d!r}")
 
         return r.doc.doc
 
@@ -195,6 +194,8 @@ class DocRegistry:
 
     @_lock
     async def write(self, d, doc):
+
+        assert not asyncio.iscoroutine(doc)
 
         r = self.get_subregistry(d)
         r_meta = self.get_subregistry_meta(d)

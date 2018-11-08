@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import datetime
 import enum
@@ -9,12 +10,13 @@ import os
 import logging
 import time
 import traceback
-import pymongo
-import bson
 import json
 import pprint
 
+import pymongo
+import bson
 import cached_property
+
 from mybuiltins import *
 from mybuiltins import ason
 
@@ -199,7 +201,7 @@ class Req:
             return True
         return False
 
-    def write_pickle(self, o):
+    async def write_pickle(self, o):
        
         self._stored = o
         
@@ -217,9 +219,9 @@ class Req:
             logger_pickle.info(f"pickle dump {p!r}")
             b = pickle.dumps(p)
 
-        self.write_binary(b)
+        await self.write_binary(b)
         
-    def read_pickle(self, mc=None):
+    async def read_pickle(self, mc=None):
 
         if hasattr(self, '_stored'):
             logger.warning(crayons.yellow(f'HAS STORED! {self!r}'))
@@ -227,7 +229,7 @@ class Req:
         #if mc is not None:
         #    await mc.make(self)
 
-        b = self.read_binary()
+        b = await self.read_binary()
 
         try:
             o = pickle.loads(b)
@@ -248,7 +250,6 @@ class Req:
 
             #await mc.make(self)
 
-            #b = self.read_binary()
             #o = pickle.loads(b)
             #logger_pickle.info(f"pickle load {o!r}")
 
@@ -263,6 +264,7 @@ class Req:
                 raise Exception('got FakePickle that is not in the archive')
 
         self._stored = o
+        assert not asyncio.iscoroutine(o)
         return o
 
     def read_csv(self):
@@ -279,8 +281,8 @@ class Req:
             for row in reader:
                 yield row
 
-    def copy_binary(self, filename):
-        b = self.read_binary()
+    async def copy_binary(self, filename):
+        b = await self.read_binary()
         pymake.utils.makedirs(os.path.dirname(filename))
         with open(filename, 'wb') as f:
             f.write(b)
@@ -346,7 +348,8 @@ class ReqFile(Req):
         with open(self.fn, 'w') as f:
             f.write(s)
 
-    def write_binary(self, b):
+    async def write_binary(self, b):
+        assert isinstance(b, bytes)
         pymake.util.makedirs(os.path.dirname(self.fn))
         with open(self.fn, 'wb') as f:
             f.write(b)
@@ -434,7 +437,7 @@ class OpenContext:
             await self.req.write_string(s)
         elif self.mode == 'wb':
             s = self.f.buf.getvalue()
-            self.req.write_binary(s)
+            await self.req.write_binary(s)
 
 class ReqTemp(Req):
     
@@ -444,27 +447,28 @@ class ReqTemp(Req):
     async def output_exists(self):
         return hasattr(self, 'b')
 
-    def write_pickle(self, b):
-        self.b = b
-
-    def read_pickle(self):
+    async def read_pickle(self):
+        assert not asyncio.iscoroutine(self.b)
         return self.b
 
-    def read_binary(self):
+    async def read_binary(self):
         return self.b
 
-    def read_string(self):
+    async def read_string(self):
         assert isinstance(self.b, str)
         return self.b
 
-    def write_binary(self, b):
+    async def write_pickle(self, b):
+        assert not asyncio.iscoroutine(b)
         self.b = b
 
-    def write_string(self, b):
+    async def write_binary(self, b):
+        assert isinstance(b, bytes)
         self.b = b
 
-    def read_text(self):
-        assert isinstance(self.b, str)
-        return self.b
+    async def write_string(self, b):
+        assert isinstance(b, str)
+        self.b = b
+
 
 

@@ -23,7 +23,7 @@ from .result import *
 
 logger = logging.getLogger(__name__)
 
-THREADED = True
+THREADED = False
 
 class ReqFuture:
     # the result of calling func(req)
@@ -46,8 +46,8 @@ class Rule_utilities:
         with open(file_out, 'wb') as f:
             pickle.dump(o, f)
 
-    def write_json(self, d):
-        self.req.write_json(d)
+    async def write_json(self, d):
+        await self.req.write_json(d)
 
 class _Rule(Rule_utilities):
     """
@@ -126,7 +126,7 @@ class _Rule(Rule_utilities):
     def output_mtime(self):
         return None
 
-    async def __requirements(self, makecall, test, requirements_function, threaded):
+    async def __requirements(self, makecall, test, requirements_function, threaded=False):
         """
         requirements that can be skipped if requirements_0 are up_to_date and the req
         has stored that it is up to date
@@ -590,31 +590,37 @@ class RuleDocSimple(RuleDoc):
         await m.main(makecall, av)
 
 
-def _copy(src, dst):
-    with src.open('r')as f0:
+async def _copy(src, dst):
+    async with src.open('r')as f0:
         s = f0.read()
 
-    with dst.open('w') as f1:
+    async with dst.open('w') as f1:
         f1.write(s)
 
-def _copy_binary(src, dst):
-    with src.open('rb')as f0:
+async def _copy_binary(src, dst):
+    async with src.open('rb')as f0:
         s = f0.read()
 
-    with dst.open('wb') as f1:
+    async with dst.open('wb') as f1:
         f1.write(s)
 
 class RuleDocCopy(RuleDoc):
     async def build(self, mc, _, _1):
-        _copy(await self.req_0(mc), self.req)
+        await _copy(await self.req_0(mc), self.req)
 
 class RuleDocCopyBinary(RuleDoc):
     async def build(self, mc, _, _1):
-        _copy_binary(await self.req0(mc), self.req)
+        await _copy_binary(await self.req0(mc), self.req)
 
 class RuleDocCopyObject(RuleDoc):
     async def build(self, mc, _, reqs):
-        self.req.write_pickle(reqs[0].read_pickle())
+        o = await reqs[0].read_pickle()
+        await self.req.write_pickle(o)
+
+
+
+
+
 
 
 
