@@ -10,7 +10,6 @@ import pymake.doc_registry.address
 
 logger = logging.getLogger(__name__)
 
-
 def get_subregistry(r, l, f=None):
 
     assert isinstance(l, list)
@@ -164,7 +163,8 @@ class DocRegistry:
             if _id not in self._db_meta: self._db_meta[_id] = SubRegistry()
             return self._db_meta[_id]
 
-    def exists(self, d):
+    @_lock
+    async def exists(self, d):
         r = self.get_subregistry_meta(d)
         if not hasattr(r, "doc"): return False
         if r.doc is None: return False
@@ -175,7 +175,8 @@ class DocRegistry:
 
         return True
 
-    def read(self, d):
+    @_lock
+    async def read(self, d):
 
         r = self.get_subregistry(d)
 
@@ -187,10 +188,9 @@ class DocRegistry:
 
         return r.doc.doc
 
-    def read_mtime(self, d):
-
+    @_lock
+    async def read_mtime(self, d):
         r = self.get_subregistry_meta(d)
-
         return r.doc.mtime
 
     @_lock

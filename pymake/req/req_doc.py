@@ -96,17 +96,17 @@ class ReqDocBase(pymake.req.Req):
         assert isinstance(b, str)
         await self.write_contents(b)
 
-    def read_json(self):
-        return self.read_contents()
+    async def read_json(self):
+        return await self.read_contents()
 
-    def read_string(self):
-        s = self.read_contents()
+    async def read_string(self):
+        s = await self.read_contents()
         if isinstance(s, bytes):
             s = s.decode()
         assert isinstance(s, str)
         return s
 
-    def read_binary(self):
+    async def read_binary(self):
         b = self.read_contents()
         assert isinstance(b, bytes)
         return b
@@ -177,7 +177,7 @@ class ReqDoc0(ReqDocBase):
         #if res.modified_count != 1:
         #    raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
-    def output_exists(self):
+    async def output_exists(self):
         d = pymake.client.client.find_one(self.encoded)
         if d is None: return False
         b = bool('_last_modified' in d)
@@ -198,7 +198,7 @@ class ReqDoc0(ReqDocBase):
 
         return b
 
-    def output_mtime(self):
+    async def output_mtime(self):
 
         if hasattr(self, '_mtime'):
             logger.debug(crayons.blue('USING SAVED MTIME'))
@@ -210,17 +210,17 @@ class ReqDoc0(ReqDocBase):
 
         return self._mtime
 
-    def read_pickle(self, mc=None):
+    async def read_pickle(self, mc=None):
  
         #logger.info(f"read pickle {self.encoded}")
    
-        return super().read_pickle(mc)
+        return await super().read_pickle(mc)
 
-    def read(self):
-        return self.read_contents()
+    async def read(self):
+        return await self.read_contents()
 
-    def read_contents(self):
-        assert self.output_exists()
+    async def read_contents(self):
+        assert await self.output_exists()
         d = pymake.client.client.find_one(self.encoded)
         #if "_contents" not in d:
         #    breakpoint()
@@ -248,11 +248,11 @@ class ReqDoc1(ReqDocBase):
     def __encode__(self):
         return {'/ReqDoc1': {'args': [ason.encode(self.d)]}}
 
-    def output_exists(self):
-        return pymake.doc_registry.registry.exists(self.encoded)
+    async def output_exists(self):
+        return await pymake.doc_registry.registry.exists(self.encoded)
     
-    def output_mtime(self):
-        return pymake.doc_registry.registry.read_mtime(self.encoded)
+    async def output_mtime(self):
+        return await pymake.doc_registry.registry.read_mtime(self.encoded)
 
     def delete(self):
         pymake.doc_registry.registry.delete(self.encoded)
@@ -311,32 +311,36 @@ class ReqDoc2(ReqDocBase):
     async def ainit(self):
 
         self.req1 = ReqDoc1(self.d, **self.kwargs)
+        
+        b1 = await self.req1.output_exists()
 
-        if not self.req1.output_exists():
+        if not b1:
             logger.debug(f"{self.req1!r} does not exist")
 
             self.req0 = ReqDoc0(self.d, **self.kwargs)
 
-            if self.req0.output_exists():
+            b0 = await self.req0.output_exists()
+
+            if b0:
                 try:
-                    b = self.req0.read()
+                    b = await self.req0.read()
                     await self.req1.write(b)
                 except pymake.util.PickleError as e:
-                    self.req0.delete()
+                    await self.req0.delete()
                     raise
 
-                assert self.req1.output_exists()
+                assert await self.req1.output_exists()
         else:
             logger.debug(f"{self.req1!r} does exist")
 
     def __encode__(self):
        return {'/ReqDoc2': {'args': [ason.encode(self.d)]}}
 
-    def output_exists(self):
-        if self.req1.output_exists():
+    async def output_exists(self):
+        if await self.req1.output_exists():
            return True
 
-        if self.req0.output_exists():
+        if await self.req0.output_exists():
            try:
                self.req1.write(self.req0.read())
                assert self.req1.output_exists()
@@ -346,12 +350,12 @@ class ReqDoc2(ReqDocBase):
 
         return False
 
-    def output_mtime(self):
-        if self.req1.output_exists():
-           return self.req1.output_mtime()
+    async def output_mtime(self):
+        if await self.req1.output_exists():
+           return await self.req1.output_mtime()
 
-        if self.req0.output_exists():
-           return self.req0.output_mtime()
+        if await self.req0.output_exists():
+           return await self.req0.output_mtime()
 
     async def write_contents(self, b):
         #self.req0.write_contents(b)

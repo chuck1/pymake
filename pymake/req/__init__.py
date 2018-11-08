@@ -110,10 +110,10 @@ class Req:
             if self not in req._on_build:
                 req._on_build.append(self)
 
-    def output_exists(self):
+    async def output_exists(self):
         return None
 
-    def output_mtime(self):
+    async def output_mtime(self):
         return None
 
     def print_long(self):
@@ -305,13 +305,13 @@ class ReqFile(Req):
 
         return self.fn == other.fn
 
-    def output_exists(self):
+    async def output_exists(self):
         """
         check if the file exists
         """
         return os.path.exists(self.fn)
 
-    def output_mtime(self):
+    async def output_mtime(self):
         """
         return the mtime of the file
         """
@@ -373,10 +373,10 @@ class ReqFake(Req):
     async def _make(self, mc, ancestor):
         return ResultNoBuild('is fake')
 
-    def output_exists(self):
+    async def output_exists(self):
         return None
 
-    def output_mtime(self):
+    async def output_mtime(self):
         return None
 
     def __repr__(self):
@@ -406,22 +406,24 @@ class FileR:
         return iter(self.buf)
 
 class OpenContext:
+
     def __init__(self, req, mode):
         self.req = req
         self.mode = mode
         
         assert mode in ('w', 'wb', 'r', 'rb')
 
+    async def __aenter__(self):
+
         if self.mode == 'w':
             self.f = FileW(io.StringIO())
         elif self.mode == 'wb':
             self.f = FileW(io.BytesIO())
         elif self.mode == 'r':
-            self.f = FileR(io.StringIO(self.req.read_string()))
+            self.f = FileR(io.StringIO(await self.req.read_string()))
         elif self.mode == 'rb':
-            self.f = FileR(io.BytesIO(self.req.read_binary()))
+            self.f = FileR(io.BytesIO(await self.req.read_binary()))
         
-    async def __aenter__(self):
         return self.f
 
     async def __aexit__(self, exc_type, _2, _3):
@@ -439,7 +441,7 @@ class ReqTemp(Req):
     async def _make(self, mc, ancestor):
         return ResultNoBuild('is temp')
 
-    def output_exists(self):
+    async def output_exists(self):
         return hasattr(self, 'b')
 
     def write_pickle(self, b):

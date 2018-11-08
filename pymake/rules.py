@@ -122,9 +122,6 @@ class _Rule(Rule_utilities):
         print(type(self))
         req.print_long()
 
-    def output_exists(self):
-        return False
-
     def output_mtime(self):
         return None
 
@@ -169,11 +166,11 @@ class _Rule(Rule_utilities):
 
         if makecall.args.force: return True, 'forced', reqs
 
-        b = self.output_exists()
+        b = await self.req.output_exists()
 
         if not b: return True, "output does not exist", reqs
 
-        mtime = self.output_mtime()
+        mtime = await self.output_mtime()
         
         if mtime is None:
             return True, '{} does not define mtime'.format(self.__class__.__name__), reqs
@@ -181,9 +178,9 @@ class _Rule(Rule_utilities):
         for f in reqs:
             logger.debug(f'check {f!r}')
 
-            b = f.output_exists()
+            b = await f.output_exists()
             if b:
-                mtime_in = f.output_mtime()
+                mtime_in = await f.output_mtime()
 
                 if mtime_in is None:
                     return True, 'input file {} does not define mtime'.format(repr(self)), reqs
@@ -340,9 +337,6 @@ class Rule(_Rule):
                 self.__class__.__module__,
                 self.__class__.__name__)
 
-    def output_exists(self):
-        return self.req.output_exists()
-   
     def output_mtime(self):
         return self.req.output_mtime()
 
@@ -409,9 +403,6 @@ class RuleRegex(_Rule):
 
         if m is None: return None
         return cls(req, m.groups())
-
-    def output_exists(self):
-        return os.path.exists(self.f_out)
 
     def output_mtime(self):
         return os.path.getmtime(self.f_out)
