@@ -107,9 +107,12 @@ def _lock(f):
         l = await self.get_lock(_id)
 
         #print('_lock', type(self), type(d), _id, l)
-
+ 
+        logger.debug('aquire lock')
         async with l:
+            logger.debug('lock aquired')
             return await f(self, d, *args)
+
     return wrapped
 
 METHOD = "ID"
@@ -126,6 +129,8 @@ class DocRegistry:
         self.__lock = asyncio.Lock()
 
     async def get_lock(self, _id):
+        logger.debug(f'_id = {_id!s}')
+
         async with self.__lock:
             if _id not in self._locks:
                 self._locks[_id] = asyncio.Lock()
@@ -165,6 +170,9 @@ class DocRegistry:
 
     @_lock
     async def exists(self, d):
+        return await self.__exists(d)
+
+    async def __exists(self, d):
         r = self.get_subregistry_meta(d)
         if not hasattr(r, "doc"): return False
         if r.doc is None: return False
@@ -177,6 +185,8 @@ class DocRegistry:
 
     @_lock
     async def read(self, d):
+
+        if not (await self.__exists(d)): raise Exception(f"Object not found: {d!r}")
 
         r = self.get_subregistry(d)
 

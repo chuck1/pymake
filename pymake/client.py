@@ -56,14 +56,16 @@ class Client:
         return d
 
     def find_one(self, q):
-        logger_mongo.debug(f"find_one {q!r}")
+        logger.debug(f"q = {q!r}")
 
-        if "type" in q:
-            if q["type"] in [
-                "node 90",
-                ]: raise Exception()
+        if "type" in q: 
+            if q["type"] in ["node 90",]: raise Exception()
 
-        return self._coll.find_one(q)
+        doc = self._coll.find_one(q)
+
+        logger.debug(f'doc = {doc!s:.32s}')
+
+        return doc
 
     def insert_one(self, q):
         try:

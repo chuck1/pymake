@@ -44,23 +44,23 @@ class MakeCall:
         loop = asyncio.new_event_loop()
         return loop.run_until_complete(self.make(*args, **kwargs))
 
-    async def make(self, req, test=None, ancestor=None, **kwargs):
+    async def make(self, req_0, test=None, ancestor=None, **kwargs):
         """
         this is the ONLY make function that should be called outside the pymake module
         """
 
         # validate
-        if req is None:
+        if req_0 is None:
             raise Exception("req is None")
 
-        if not isinstance(req, pymake.req.Req):
-            raise Exception(f"req should be a pymake.req.Req object, not {req!r}")
+        if not isinstance(req_0, pymake.req.Req):
+            raise Exception(f"req should be a pymake.req.Req object, not {req_0!r}")
 
-        if isinstance(req, pymake.req.ReqFake):
+        if isinstance(req_0, pymake.req.ReqFake):
             return pymake.result.ResultNoBuild("fake")
 
         # get equivalent req object from cache or add to cache
-        req = self.makefile.cache_get(req)
+        req = self.makefile.cache_get(req_0)
 
 
         logger.debug(repr(req))

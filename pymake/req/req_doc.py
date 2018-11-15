@@ -245,9 +245,10 @@ class ReqDoc1(ReqDocBase):
         if "_id" in d: raise Exception('shouldnt contain "_id". {d!r}')
 
     def __eq__(self, other):
-        assert isinstance(self.d, dict)
+        #assert isinstance(self.d, dict)
         if not isinstance(other, ReqDoc1): return False
-        return self.d == other.d
+        #return self.d == other.d
+        return self.encoded == other.encoded
 
     def __encode__(self):
         return {'/ReqDoc1': {'args': [ason.encode(self.d)]}}
