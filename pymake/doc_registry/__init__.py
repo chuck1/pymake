@@ -139,13 +139,16 @@ class DocRegistry:
 
     @_lock
     async def delete(self, d):
+        await self.__delete(d)
+
+    async def __delete(self, d):
         logger.warning(crayons.yellow("delete"))
 
-        r = self.get_subregistry(d)
+        r = await self.get_subregistry(d)
         
         r.doc = None
 
-    def get_subregistry(self, d, f=None):
+    async def get_subregistry(self, d, f=None):
         if METHOD == "ADDRESS":
             a = pymake.doc_registry.address.Address(d)
             r = self._registry
@@ -155,7 +158,14 @@ class DocRegistry:
             db = self._registry
             _id = get_id(d)
             if _id not in db: db[_id] = SubRegistry()
-            return db[_id]
+
+            try:
+                return db[_id]
+            except AttributeError as e:
+                # indicates problem with pickled object, need to delete it
+                logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
+                del db[_id]
+                raise
 
     def get_subregistry_meta(self, d, f=None):
         if METHOD == "ADDRESS":
@@ -177,7 +187,7 @@ class DocRegistry:
         if not hasattr(r, "doc"): return False
         if r.doc is None: return False
 
-        r1 = self.get_subregistry(d)
+        r1 = await self.get_subregistry(d)
         if not hasattr(r1, "doc"): return False
         if r1.doc is None: return False
 
@@ -188,7 +198,7 @@ class DocRegistry:
 
         if not (await self.__exists(d)): raise Exception(f"Object not found: {d!r}")
 
-        r = self.get_subregistry(d)
+        r = await self.get_subregistry(d)
 
         logger.debug(f"read from {type(r)} {id(r)}")
 
@@ -207,7 +217,7 @@ class DocRegistry:
 
         assert not asyncio.iscoroutine(doc)
 
-        r = self.get_subregistry(d)
+        r = await self.get_subregistry(d)
         r_meta = self.get_subregistry_meta(d)
 
         r.doc = Doc(doc, d=d)
@@ -245,7 +255,7 @@ class DocRegistry:
             self.test_pickle(l + [k], v)
 
        
-class Registry2:
+class DEPRegistry2:
     def __init__(self, db):
 
         self.address_book = db
