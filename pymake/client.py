@@ -55,6 +55,10 @@ class Client:
         d = dict((k, v) for k, v in d.items() if f(k))
         return d
 
+    def find(self, q):
+        doc = self._coll.find(q)
+        return doc
+
     def find_one(self, q):
         logger.debug(f"q = {q!r}")
 

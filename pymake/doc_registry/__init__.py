@@ -1,4 +1,5 @@
 import asyncio
+import collections
 import datetime
 import logging
 import os
@@ -9,6 +10,30 @@ import crayons
 import pymake.doc_registry.address
 
 logger = logging.getLogger(__name__)
+
+def _sort(a):
+    
+    keys = sorted(a.keys())
+
+    for k in keys:
+
+        if isinstance(a[k], dict):
+            yield k, sort(a[k])
+        else:
+            yield k, a[k]
+
+
+def sort(a):
+    assert isinstance(a, dict)
+
+    return collections.OrderedDict(list(_sort(a)))
+
+def clean(a):
+    b = dict(a)
+    keys = [k for k in a.keys() if k.startswith("_")]
+    for k in keys:
+        del b[k]
+    return sort(b)
 
 def get_subregistry(r, l, f=None):
 
@@ -89,6 +114,12 @@ class DocMeta:
         self.mtime = datetime.datetime.now().timestamp()
 
 def get_id(d):
+        d = clean(d)
+        
+        docs = pymake.client.client.find(d)
+        if len(list(docs)) > 1:
+            raise Exception("got multiple db records")
+
         doc = pymake.client.client.find_one(d)
 
         #self._mtime = self._read_mtime(d)
@@ -101,6 +132,7 @@ def get_id(d):
 
 def _lock(f):
     async def wrapped(self, d, *args):
+        d = clean(d)
 
         _id = get_id(d)
 
@@ -139,16 +171,21 @@ class DocRegistry:
 
     @_lock
     async def delete(self, d):
+        d = clean(d)
         await self.__delete(d)
 
     async def __delete(self, d):
         logger.warning(crayons.yellow("delete"))
+
+        d = clean(d)
 
         r = await self.get_subregistry(d)
         
         r.doc = None
 
     async def get_subregistry(self, d, f=None):
+        d = clean(d)
+
         if METHOD == "ADDRESS":
             a = pymake.doc_registry.address.Address(d)
             r = self._registry
@@ -157,7 +194,8 @@ class DocRegistry:
         else:
             db = self._registry
             _id = get_id(d)
-            if _id not in db: db[_id] = SubRegistry()
+            if _id not in db:
+                db[_id] = SubRegistry()
 
             try:
                 return db[_id]
@@ -168,6 +206,8 @@ class DocRegistry:
                 raise
 
     def get_subregistry_meta(self, d, f=None):
+        d = clean(d)
+
         if METHOD == "ADDRESS":
             a = pymake.doc_registry.address.Address(d)
             r = self._db_meta
@@ -175,14 +215,19 @@ class DocRegistry:
             return r
         else:
             _id = get_id(d)
-            if _id not in self._db_meta: self._db_meta[_id] = SubRegistry()
+            
+            if _id not in self._db_meta:
+                self._db_meta[_id] = SubRegistry()
+
             return self._db_meta[_id]
 
     @_lock
     async def exists(self, d):
+        d = clean(d)
         return await self.__exists(d)
 
     async def __exists(self, d):
+        d = clean(d)
         r = self.get_subregistry_meta(d)
         if not hasattr(r, "doc"): return False
         if r.doc is None: return False
@@ -195,6 +240,11 @@ class DocRegistry:
 
     @_lock
     async def read(self, d):
+        d = clean(d)
+
+        _id = get_id(d)
+
+        logger.info(f"read {_id} {d}")
 
         if not (await self.__exists(d)): raise Exception(f"Object not found: {d!r}")
 
@@ -209,11 +259,17 @@ class DocRegistry:
 
     @_lock
     async def read_mtime(self, d):
+        d = clean(d)
         r = self.get_subregistry_meta(d)
         return r.doc.mtime
 
     @_lock
     async def write(self, d, doc):
+        d = clean(d)
+
+        _id = get_id(d)
+
+        logger.info(f"write {_id} {d}")
 
         assert not asyncio.iscoroutine(doc)
 
