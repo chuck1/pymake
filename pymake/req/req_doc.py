@@ -228,7 +228,7 @@ class ReqDoc0(ReqDocBase):
         #    breakpoint()
         return d["_contents"]
 
-    def write_contents(self, b):
+    async def write_contents(self, b):
         # make sure is compatible
         #bson.json_util.dumps(b)
         t = pymake.client.client.update_one(self.encoded, {'$set': {'_contents': b}})

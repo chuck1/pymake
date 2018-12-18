@@ -244,7 +244,7 @@ class DocRegistry:
 
         _id = get_id(d)
 
-        logger.info(f"read {_id} {d}")
+        logger.debug(f"read {_id} {d}")
 
         if not (await self.__exists(d)): raise Exception(f"Object not found: {d!r}")
 
@@ -269,7 +269,7 @@ class DocRegistry:
 
         _id = get_id(d)
 
-        logger.info(f"write {_id} {d}")
+        logger.debug(f"write {_id} {d}")
 
         assert not asyncio.iscoroutine(doc)
 

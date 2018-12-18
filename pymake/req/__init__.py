@@ -361,7 +361,7 @@ class ReqFile(Req):
         with open(self.fn, 'r') as f:
             return f.read()
 
-    def read_binary(self):
+    async def read_binary(self):
         with open(self.fn, 'rb') as f:
             return f.read()
 

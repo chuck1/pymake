@@ -23,14 +23,14 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
-@contextlib.contextmanager
+#@contextlib.contextmanager
 class render_graph_on_exit:
     def __init__(self, mc):
         self.mc = mc
     def __enter__(self):
         return
     def __exit__(self, *args):
-        mc.render_graph()
+        self.mc.makefile.render_graph()
 
 class Makefile:
 
