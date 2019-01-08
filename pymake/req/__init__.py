@@ -125,6 +125,8 @@ class Req:
         return OpenContext(self, mode)
 
     async def get_rule(self, mc):
+        logger.debug(f"{self}")
+
         rules = await mc.makefile.rules_sorted(mc, self)
 
         if len(rules) == 0:

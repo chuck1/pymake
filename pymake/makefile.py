@@ -196,7 +196,9 @@ class Makefile:
 
 
     async def rules_sorted(self, mc, target):
-            
+        
+        logger.debug(f"{target}")
+
         rules = await alist(self.find_rule(mc, target))
 
         if len(rules) > 1:
