@@ -246,7 +246,8 @@ class DocRegistry:
 
         logger.debug(f"read {_id} {d}")
 
-        if not (await self.__exists(d)): raise Exception(f"Object not found: {d!r}")
+        if not (await self.__exists(d)): 
+            raise Exception(f"Object not found: {d!r}")
 
         r = await self.get_subregistry(d)
 

@@ -250,9 +250,9 @@ class _Rule(Rule_utilities):
         req.create_triggers_1(makecall.makefile, reqs_1)
 
         if b_0:
-            logger.info(f'{self.__class__!r}. b_0 = True. s_0 = {s_0!r}')
+            logger.debug(f'{self.__class__!r}. b_0 = True. s_0 = {s_0!r}')
             for r in reqs_0:
-                logger.info(f'  {r!r}')
+                logger.debug(f'  {r!r}')
 
         logger.debug(f'checking requirements_1 for {req!r}. b_0 = {b_0}. up_to_date_1 = {req.up_to_date_1}')
         for r in reqs_1:
@@ -351,10 +351,9 @@ class _Rule(Rule_utilities):
             yield from r.rules(makecall)
 
     async def _build(self, makecall, req, *args):
-        for line in lines(
-                lambda: print(f'Build force={makecall.args.force}'),
-                functools.partial(self.print_long, self.req)):
-            logger.info(crayons.yellow(line, bold=True))
+        logger.info(crayons.yellow(f'Build {req}', bold=True))
+        for line in lines(functools.partial(self.print_long, self.req)):
+            logger.debug(crayons.yellow(line, bold=True))
                
         await self.build(makecall, *args)
         
