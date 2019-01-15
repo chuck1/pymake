@@ -118,7 +118,7 @@ def get_id(d):
         
         docs = pymake.client.client.find(d)
         if len(list(docs)) > 1:
-            raise Exception("got multiple db records")
+            raise Exception(f"got multiple db records for {d!r}")
 
         doc = pymake.client.client.find_one(d)
 
