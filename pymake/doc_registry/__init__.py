@@ -123,8 +123,6 @@ def _lock(f):
 
     return wrapped
 
-METHOD = "ID"
-
 class DocRegistry:
 
     def __init__(self, db, db_meta):
