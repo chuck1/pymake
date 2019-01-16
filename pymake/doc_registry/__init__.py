@@ -94,12 +94,12 @@ def get_id(d):
         d = clean(d)
         
         docs = pymake.client.client.find(d)
+
         if len(list(docs)) > 1:
             raise Exception(f"got multiple db records for {d!r}")
 
         doc = pymake.client.client.find_one(d)
 
-        #self._mtime = self._read_mtime(d)
 
         if doc is None:
             res = pymake.client.client.insert_one(d)
@@ -115,7 +115,6 @@ def _lock(f):
 
         l = await self.get_lock(_id)
 
-        #print('_lock', type(self), type(d), _id, l)
  
         logger.debug('aquire lock')
         async with l:
