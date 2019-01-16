@@ -92,17 +92,20 @@ class DocMeta:
 
 def get_id(d):
         d = clean(d)
-        
-        docs = pymake.client.client.find(d)
+ 
+        #d_1 = d
+        d_1 = {"doc": d}
+
+        docs = pymake.client.client.find(d_1)
 
         if len(list(docs)) > 1:
             raise Exception(f"got multiple db records for {d!r}")
 
-        doc = pymake.client.client.find_one(d)
+        doc = pymake.client.client.find_one(d_1)
 
 
         if doc is None:
-            res = pymake.client.client.insert_one(d)
+            res = pymake.client.client.insert_one(d_1)
             return str(res.inserted_id)
 
         return str(doc["_id"])

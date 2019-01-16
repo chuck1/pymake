@@ -37,7 +37,45 @@ async def test_0(db, db_meta):
     print()
     print(r._registry)
     print()
+
+@pytest.mark.asyncio
+async def test_1(db, db_meta):
+
+    r = pymake.doc_registry.DocRegistry(db, db_meta)
+
+    d = {
+            "a": 1,
+            "b": 2,
+            }
+
+    doc = Foo()
+
+    await r.write(d, doc)
+
+    assert (await r.read(d)) is doc
     
+    d = {
+            "a": 1,
+            "b": 3,
+            }
+
+    doc = Foo()
+
+    await r.write(d, doc)
+
+    assert (await r.read(d)) is doc
+    
+    d = {
+            "a": 1,
+            }
+
+    doc = Foo()
+
+    await r.write(d, doc)
+
+    assert (await r.read(d)) is doc
+
+ 
 
 
 
