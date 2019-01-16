@@ -162,40 +162,28 @@ class DocRegistry:
     async def get_subregistry(self, d, f=None):
         d = clean(d)
 
-        if METHOD == "ADDRESS":
-            a = pymake.doc_registry.address.Address(d)
-            r = self._registry
-            r = get_subregistry(r, a.l, f=f)
-            return r
-        else:
-            db = self._registry
-            _id = get_id(d)
-            if _id not in db:
-                db[_id] = SubRegistry()
+        db = self._registry
+        _id = get_id(d)
+        if _id not in db:
+            db[_id] = SubRegistry()
 
-            try:
-                return db[_id]
-            except AttributeError as e:
-                # indicates problem with pickled object, need to delete it
-                logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
-                del db[_id]
-                raise
+        try:
+            return db[_id]
+        except AttributeError as e:
+            # indicates problem with pickled object, need to delete it
+            logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
+            del db[_id]
+            raise
 
     def get_subregistry_meta(self, d, f=None):
         d = clean(d)
 
-        if METHOD == "ADDRESS":
-            a = pymake.doc_registry.address.Address(d)
-            r = self._db_meta
-            r = get_subregistry(r, a.l, f=f)
-            return r
-        else:
-            _id = get_id(d)
-            
-            if _id not in self._db_meta:
-                self._db_meta[_id] = SubRegistry()
+        _id = get_id(d)
+        
+        if _id not in self._db_meta:
+            self._db_meta[_id] = SubRegistry()
 
-            return self._db_meta[_id]
+        return self._db_meta[_id]
 
     @_lock
     async def exists(self, d):
