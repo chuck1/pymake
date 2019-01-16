@@ -1,10 +1,12 @@
 import pprint
+import pytest
 import pymake.doc_registry
 
 class Foo:
     pass
 
-def test_0(db, db_meta):
+@pytest.mark.asyncio
+async def test_0(db, db_meta):
 
     r = pymake.doc_registry.DocRegistry(db, db_meta)
 
@@ -28,9 +30,9 @@ def test_0(db, db_meta):
 
     doc = Foo()
 
-    r.write(d, doc)
+    await r.write(d, doc)
 
-    assert r.read(d) is doc
+    assert (await r.read(d)) is doc
 
     print()
     print(r._registry)

@@ -17,35 +17,35 @@ def _test_req():
                 ],
             }
     
-    req = pymake.req.req_doc.ReqDoc0(d)
+    req = pymake.req.req_doc.ReqDoc1(d)
 
     return req
 
 @pytest.mark.asyncio
-async def test_string():
+async def test_string(makefile):
 
     req = _test_req()
 
     s = "hello"
 
-    req.write_string(s)
+    await req.write_string(s)
 
-    assert req.read_string() == s
+    assert (await req.read_string()) == s
 
     
 @pytest.mark.asyncio
-async def test_binary():
+async def test_binary(makefile):
 
     req = _test_req()
 
     s = b"hello"
 
-    req.write_binary(s)
+    await req.write_binary(s)
 
-    assert req.read_binary() == s
+    assert (await req.read_binary()) == s
 
 @pytest.mark.asyncio
-async def test_object():
+async def test_object(makefile):
 
     req = _test_req()
 
@@ -53,12 +53,12 @@ async def test_object():
 
     s = Foo()
 
-    req.write_pickle(s)
+    await req.write_pickle(s)
 
-    assert req.read_pickle() == s
+    assert (await req.read_pickle()) == s
 
 @pytest.mark.asyncio
-async def test_json():
+async def test_json(makefile):
 
     req = _test_req()
 
@@ -66,9 +66,9 @@ async def test_json():
 
     s = dict()
 
-    req.write_json(s)
+    await req.write_json(s)
 
-    assert req.read_json() == s
+    assert (await req.read_json()) == s
 
 
 

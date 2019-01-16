@@ -115,9 +115,9 @@ class ReqDocBase(pymake.req.Req):
         b = await self.read_contents()
         if not isinstance(b, bytes):
             print(f'{self!r} should be bytes but is {type(b)}')
-            if input('delete?') == 'Y':
-                await self.delete()
-            raise TypeError(f'{self!r} is not bytes')
+            #if input('delete?') == 'Y':
+            #    await self.delete()
+            raise TypeError(f'{self!r} {b!r} is not bytes')
         return b
 
     @cached_property.cached_property
