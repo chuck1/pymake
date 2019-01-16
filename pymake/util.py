@@ -1,4 +1,5 @@
 import contextlib
+import collections
 import functools
 import inspect
 import re
@@ -107,6 +108,33 @@ def _isinstance(v, cls):
     if v is cls: return False
     return True
 
+def _sort(a):
+    """
+    yield the key-value pairs of dict-like `a` with keys in order
+    """
+
+    keys = sorted(a.keys())
+
+    for k in keys:
+
+        if isinstance(a[k], dict):
+            yield k, sort(a[k])
+        else:
+            yield k, a[k]
+
+
+def sort(a):
+    assert isinstance(a, dict)
+
+    return collections.OrderedDict(list(_sort(a)))
+
+
+def clean(a):
+    b = dict(a)
+    keys = [k for k in a.keys() if k.startswith("_")]
+    for k in keys:
+        del b[k]
+    return sort(b)
 
 
 

@@ -8,32 +8,9 @@ import shelve
 
 import crayons
 import pymake.doc_registry.address
+from pymake.util import clean
 
 logger = logging.getLogger(__name__)
-
-def _sort(a):
-    
-    keys = sorted(a.keys())
-
-    for k in keys:
-
-        if isinstance(a[k], dict):
-            yield k, sort(a[k])
-        else:
-            yield k, a[k]
-
-
-def sort(a):
-    assert isinstance(a, dict)
-
-    return collections.OrderedDict(list(_sort(a)))
-
-def clean(a):
-    b = dict(a)
-    keys = [k for k in a.keys() if k.startswith("_")]
-    for k in keys:
-        del b[k]
-    return sort(b)
 
 def get_subregistry(r, l, f=None):
 
