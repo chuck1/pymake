@@ -308,6 +308,9 @@ class Rule(_Rule):
 
         determine if this rule builds ``req``
         """
+        if not isinstance(self.req, ReqFile):
+            print('req:', repr(self.req))
+        assert isinstance(self.req, ReqFile)
         if not isinstance(req, ReqFile): return None
         if self.req.fn == req.fn:
             return self

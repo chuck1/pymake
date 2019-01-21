@@ -169,7 +169,7 @@ class Makefile:
         #print(crayons.magenta(str(target), bold=True))
         
         if isinstance(req, Rule):
-            return await req.make(mc, None)
+            return await req._make(mc, None)
         
         # at this point target should be a string representing a file (since we arent set up for DocAttr yet)
 
