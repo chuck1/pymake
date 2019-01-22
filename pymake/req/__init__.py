@@ -432,7 +432,8 @@ class OpenContext:
         return self.f
 
     async def __aexit__(self, exc_type, _2, _3):
-        if exc_type is not None: return
+        if exc_type is not None:
+            return
 
         if self.mode == 'w':
             s = self.f.buf.getvalue()

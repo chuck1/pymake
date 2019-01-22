@@ -152,7 +152,7 @@ class DocRegistry:
         await self.__delete(d)
 
     async def __delete(self, d):
-        logger.warning(crayons.yellow("delete"))
+        logger.warning(crayons.yellow(f"delete {d}"))
 
         d = clean(d)
 
