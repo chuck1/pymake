@@ -148,7 +148,8 @@ class _Rule(Rule_utilities):
 
         async def func(req):
             assert req is not None
-            assert isinstance(req, pymake.req.Req)
+            if not isinstance(req, pymake.req.Req):
+                raise TypeError(f'expected Req not {type(req)}')
 
             makecall2 = makecall.copy(test=test, force=False)
 
