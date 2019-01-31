@@ -28,6 +28,9 @@ class ReqDocBase(pymake.req.Req):
         super().__init__(**kwargs)
 
         if not isinstance(d, dict):
+            d = ason.encode(d)
+
+        if not isinstance(d, dict):
             raise Exception(f'expected dict, not {type(d)} {d!r}')
 
         if 'type' not in d:
@@ -242,7 +245,7 @@ class ReqDoc1(ReqDocBase):
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
 
-        if "_id" in d: raise Exception('shouldnt contain "_id". {d!r}')
+        if "_id" in self.d: raise Exception('shouldnt contain "_id". {d!r}')
 
     def __eq__(self, other):
         #assert isinstance(self.d, dict)
