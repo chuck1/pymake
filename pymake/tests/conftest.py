@@ -4,7 +4,7 @@ import pytest
 import pymake.find_rules
 import pymake.makefile
 import pymake.tests.rules
-from mybuiltins import ason
+import ason
 
 @pytest.fixture()
 def db():
