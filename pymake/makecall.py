@@ -84,5 +84,9 @@ class MakeCall:
             
             return ret
 
+    async def decode(self, a):
+        return await self.makefile.decoder.decode(a, (self.copy(force=False),))
+
+
 
 

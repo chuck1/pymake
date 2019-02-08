@@ -504,7 +504,7 @@ class RuleDoc(Rule):
     @classmethod
     def descriptor_keys_required(cls):
         if hasattr(cls, "_keys_required"):
-            return cls._keys_required
+            raise Exception()
         
         l = []
 
@@ -516,9 +516,9 @@ class RuleDoc(Rule):
 
         l = set(l)
 
-        cls._keys_required = l
+        if 'type_' in l: l.remove('type_')
 
-        return cls._keys_required
+        return l
 
     @classmethod
     async def test(cls, mc, req):
@@ -527,34 +527,53 @@ class RuleDoc(Rule):
         # a - this descriptor
         # b - req descriptor
 
+       
+        a = cls.descriptor_pattern()
+
+        if not 'type_' in a:
+            raise Exception(repr(cls))
+
+        b = dict(req.d._kwargs)
+
+        type_a = a['type_']
+        type_b = req.type_
+
+        logger.debug(crayons.blue(f'pat type={type_a}'))
+
+        if type_a != type_b:
+            logger.debug(f'type a ({type_a!r}) != type b ({type_b!r})')
+            return
+
+        
         ks0 = cls.descriptor_keys_required()
         ks1 = req.key_set
-        
-        pat = cls.descriptor_pattern()
+
 
         if bool(ks0 - ks1):
-            if pat['type'] == req.d['type']:
+            if type_a == type_b:
                 logger.debug(f'ks0 = {ks0}')
                 logger.debug(f'ks1 = {ks1}')
+            logger.debug(f'(ks0 - ks1) is not empty: {ks0 - ks1!r}. cls = {cls}')
             return
 
 
-        a = pat
-        b = dict(req.d)
        
-        if 'type' in pat:
-            logger.debug(crayons.blue(f'pat type={pat["type"]}'))
 
-        logger.debug(f'pat={pat}')
+        logger.debug(f'pat={a}')
         logger.debug(f'dsc={req.d}')
 
         try:
-            b1 = await mc.decoder.decode(b, mc.copy(force=False))
+            b1 = await mc.decoder.decode(b, (mc.copy(force=False),))
         except:
             logger.error(crayons.red("failed to decode:"))
             pprint.pprint(b)
             raise
-    
+
+        if 'type_' in a:
+            del a['type_']
+        if 'type_' in b1:
+            del b1['type_']
+
         if not match_dict(a, b1): return
 
         return cls(req, b1)

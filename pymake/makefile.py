@@ -38,9 +38,14 @@ class Makefile:
     """
     manages the building of targets
     """
-    def __init__(self, req_cache=None):
+    def __init__(self, 
+            req_cache=None,
+            decoder=None):
         self.rules = []
         self._rules_doc = {}
+
+        assert decoder is not None
+        self.decoder = decoder
 
         # cache req files
         # when a req is made, the req and its requirements be stored here
@@ -85,12 +90,12 @@ class Makefile:
 
         def _rules_to_check():
             if isinstance(target, pymake.req.req_doc.ReqDocBase):
-                if target.d['type'] not in self._rules_doc:
+                if target.type_ not in self._rules_doc:
                     #print_lines(logging.error, target.print_long)
                     #raise Exception(f"no rules to make {target!r}")
                     return
 
-                for r in self._rules_doc[target.d['type']]:
+                for r in self._rules_doc[target.type_]:
                     assert pymake.util._isinstance(r, pymake.rules._Rule)
                     yield r
             else:
@@ -130,10 +135,13 @@ class Makefile:
             if pymake.rules.RuleDoc in mro:
                 pat = r.descriptor_pattern()
 
-                if pat['type'] not in self._rules_doc:
-                    self._rules_doc[pat['type']] = []
+                # TODO only all 'type' are switched to 'type_', remove this
+                type_ = pat['type_'] if 'type_' in pat else pat['type']
 
-                self._rules_doc[pat['type']].append(r)
+                if type_ not in self._rules_doc:
+                    self._rules_doc[type_] = []
+
+                self._rules_doc[type_].append(r)
             else:
                 self.rules.append(r)
 

@@ -28,14 +28,11 @@ class ReqDocBase(pymake.req.Req):
         """
         super().__init__(**kwargs)
 
-        if not isinstance(d, dict):
-            d = ason.encode(d)
-
-        if not isinstance(d, dict):
-            raise Exception(f'expected dict, not {type(d)} {d!r}')
-
-        if 'type' not in d:
-            raise Exception(f'"type" not in {d!r}')
+        if not isinstance(d, pymake.desc.Desc):
+            if isinstance(d, dict):
+                d = pymake.desc.Desc(**d)
+            else:
+                raise Exception(f'expected dict or Desc, not {type(d)} {d!r}')
 
         self.d = copy.deepcopy(d)
 
@@ -54,11 +51,13 @@ class ReqDocBase(pymake.req.Req):
     async def get_rule(self, mc):
         return await mc.makefile.find_one(mc, self)
 
+    @property
+    def type_(self):
+        return self.d.type_
+
     def __repr__(self):
-        if 'type' not in self.d:
-            print(self.d)
-            breakpoint()
-        d = {"type":self.d["type"]}
+        
+        d = {"type_": self.type_}
 
         if "condition" in self.d:
             d["condition"] = self.d["condition"]
@@ -79,8 +78,8 @@ class ReqDocBase(pymake.req.Req):
 
     @cached_property.cached_property
     def encoded(self):
-        _ = ason.encode(self.d)
-        return _
+        assert isinstance(self.d, pymake.desc.Desc)
+        return self.d.encoded()
 
     def _read_mtime(self, d):
         if d is None: return 0
@@ -145,7 +144,10 @@ class ReqDoc0(ReqDocBase):
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
 
-        if d["type"] in [
+        if isinstance(d, dict):
+            d = pymake.desc.Desc(**d)
+
+        if d.type_ in [
             "node 0", 
             "node 1", 
             "node 20", 
@@ -153,10 +155,8 @@ class ReqDoc0(ReqDocBase):
             raise Exception(f'invalid type for ReqDoc0: {d["type"]}')
 
     def __repr__(self):
-        if 'type' not in self.d:
-            print(self.d)
-            breakpoint()
-        d = {"type":self.d["type"]}
+
+        d = {"type": self.d.type_}
         return f'{self.__class__.__name__}(id={self._id}, {d!r})'
 
     def print_long(self):
@@ -315,7 +315,10 @@ class ReqDoc2(ReqDocBase):
         self.kwargs = kwargs
         #logger.info(repr(self))
 
-        if d["type"] in [
+        if isinstance(d, dict):
+            d = pymake.desc.Desc(**d)
+
+        if d.type_ in [
             #"node 1", 
             #"node 20", 
             "node 90"]: raise Exception()
