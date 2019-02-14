@@ -38,10 +38,11 @@ class ReqDocBase(pymake.req.Req):
 
         self.build = build
 
-    def copy(self, d0):
-        d1 = copy.deepcopy(self.d)
-        d1.update(d0)
-        return self.__class__(d1)
+    def copy(self, kw2):
+        kw1 = copy.deepcopy(self.d._kwargs)
+        kw1.update(kw2)
+        d = self.d.__class__(**kw1)
+        return self.__class__(d)
 
     def __deepcopy__(self, memo):
         #print(f"{self.__class__.__name__} deepcopy")
