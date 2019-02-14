@@ -248,7 +248,7 @@ class DocRegistry:
 
         _id = get_id(d)
 
-        logger.debug(f"write {_id} {d}")
+        logger.debug(f"write {_id!r} {d!r} {doc!r}")
 
         assert not asyncio.iscoroutine(doc)
 
