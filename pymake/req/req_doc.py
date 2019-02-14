@@ -126,15 +126,7 @@ class ReqDocBase(pymake.req.Req):
 
     @cached_property.cached_property
     def _id(self):
-        d = pymake.client.client.find_one(self.encoded)
-
-        #self._mtime = self._read_mtime(d)
-
-        if d is None:
-            res = pymake.client.client.insert_one(self.encoded)
-            return res.inserted_id
-
-        return str(d["_id"])
+        return pymake.doc_registry.get_id(self.encoded)
 
 class ReqDoc0(ReqDocBase):
     """
@@ -236,7 +228,7 @@ class ReqDoc0(ReqDocBase):
     async def write_contents(self, b):
         # make sure is compatible
         #bson.json_util.dumps(b)
-        t = pymake.client.client.update_one(self.encoded, {'$set': {'_contents': b}})
+        t = pymake.client.client.update_one({"_id": self._id}, {'$set': {'_contents': b}})
         self._mtime = t.timestamp()
 
 class ReqDoc1(ReqDocBase):

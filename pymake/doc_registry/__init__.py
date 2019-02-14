@@ -4,7 +4,9 @@ import datetime
 import logging
 import os
 import pickle
+import pprint
 import shelve
+import json
 
 import crayons
 import pymake.doc_registry.address
@@ -96,19 +98,30 @@ def get_id(d):
         #d_1 = d
         d_1 = {"doc": d}
 
-        docs = pymake.client.client.find(d_1)
+        docs = list(pymake.client.client.find(d_1))
 
-        if len(list(docs)) > 1:
-            raise Exception(f"got multiple db records for {d!r}")
+        if len(docs) > 1:
+
+            print()
+
+            for d in docs:
+                print('doc:')
+                print()
+                pprint.pprint(d)
+                print()
+    
+            print()
+
+            raise Exception(f"got multiple db records for {json.dumps(d_1)!r}")
 
         doc = pymake.client.client.find_one(d_1)
 
-
         if doc is None:
+            logger.info(f'did not find {d_1}. inserting')
             res = pymake.client.client.insert_one(d_1)
-            return str(res.inserted_id)
+            return res.inserted_id
 
-        return str(doc["_id"])
+        return doc["_id"]
 
 def _lock(f):
     async def wrapped(self, d, *args):
@@ -165,15 +178,15 @@ class DocRegistry:
 
         db = self._registry
         _id = get_id(d)
-        if _id not in db:
-            db[_id] = SubRegistry()
+        if str(_id) not in db:
+            db[str(_id)] = SubRegistry()
 
         try:
-            return db[_id]
+            return db[str(_id)]
         except AttributeError as e:
             # indicates problem with pickled object, need to delete it
             logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
-            del db[_id]
+            del db[str(_id)]
             raise
 
     def get_subregistry_meta(self, d, f=None):
@@ -181,10 +194,10 @@ class DocRegistry:
 
         _id = get_id(d)
         
-        if _id not in self._db_meta:
-            self._db_meta[_id] = SubRegistry()
+        if str(_id) not in self._db_meta:
+            self._db_meta[str(_id)] = SubRegistry()
 
-        return self._db_meta[_id]
+        return self._db_meta[str(_id)]
 
     @_lock
     async def exists(self, d):

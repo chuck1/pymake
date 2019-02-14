@@ -100,6 +100,18 @@ class Client:
         
         return t
 
+    def resolve(self, q):
+        docs = list(self._coll.find(q))
+        if len(docs) < 2: return
+
+        for i, d in zip(range(len(docs)), docs):
+            self._coll.update_one({"_id": d["_id"]}, {"$set": {"RESOLVE": i}})
+
+
 client = Client()
+
+
+
+
 
 
