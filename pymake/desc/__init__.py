@@ -38,7 +38,10 @@ class Desc:
         #return self._kwargs['type_']
 
     def __encode__(self):
-        return {'Desc': ason.encode(self._kwargs)}
+        a = dict(self._kwargs)
+        a["type_"] = self.type_
+        a = ason.encode(a)
+        return {'Desc': a}
 
     def __deepcopy__(self, memo):
         return self.__class__(**copy.deepcopy(self._kwargs, memo))

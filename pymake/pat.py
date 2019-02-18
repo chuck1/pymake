@@ -9,6 +9,18 @@ logger = logging.getLogger(__name__)
 class Pat:
     pass
 
+class PatOr(Pat):
+    def __init__(self, *patterns):
+        for _ in patterns:
+            assert isinstance(_, Pat)
+
+        self.patterns = patterns
+
+    def match(self, s):
+        for pattern in self.patterns:
+            if pattern.match(s): return True
+        return False
+
 class PatAny(Pat):
     def match(self, s):
         return True
