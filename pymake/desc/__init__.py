@@ -7,7 +7,7 @@ class Desc:
     _keys = tuple()
 
     @classmethod
-    async def decode(cls, decoder, kwargs):
+    async def decode(cls, decoder, kwargs, **kwargs1):
         kwargs = await decoder.decode(kwargs)
         return cls(**kwargs)
 
