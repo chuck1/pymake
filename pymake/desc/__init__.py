@@ -1,8 +1,9 @@
+
 import copy
 from mybuiltins import *
-import ason
+import jelly
 
-class Desc:
+class Desc(jelly.Serializable):
 
     _keys = tuple()
 
@@ -20,12 +21,9 @@ class Desc:
 
         assert ('type' in self._kwargs) or ('type_' in self._kwargs) or hasattr(self, 'type_')
 
-        #if 'type_' not in self._kwargs:
-        #    self._kwargs['type_'] = self.type_
 
-        for k, v in self._kwargs.items():
-            #if k == 'type_': continue
-            setattr(self, k, v)
+        #for k, v in self._kwargs.items():
+        #    setattr(self, k, v)
 
         if not hasattr(self, 'type_'):
             if 'type_' in self._kwargs:
@@ -37,11 +35,11 @@ class Desc:
         #    def type_(self):
         #return self._kwargs['type_']
 
-    def __encode__(self):
-        a = dict(self._kwargs)
-        a["type_"] = self.type_
-        a = ason.encode(a)
-        return {'Desc': a}
+    #def __encode__(self, encode):
+    #    a = dict(self._kwargs)
+    #    a["type_"] = self.type_
+    #    a = ason.encode(a)
+    #    return {'Desc': a}
 
     def __deepcopy__(self, memo):
         return self.__class__(**copy.deepcopy(self._kwargs, memo))
@@ -56,6 +54,6 @@ class Desc:
         return self._kwargs.keys()
 
     def encoded(self):
-        return ason.encode(self._kwargs)
+        return jelly.encode(self._kwargs)
 
 

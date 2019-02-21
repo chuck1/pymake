@@ -30,6 +30,7 @@ class ReqDocBase(pymake.req.Req):
 
         if not isinstance(d, pymake.desc.Desc):
             if isinstance(d, dict):
+                assert 'type' not in d
                 d = pymake.desc.Desc(**d)
             else:
                 raise Exception(f'expected dict or Desc, not {type(d)} {d!r}')
@@ -82,7 +83,12 @@ class ReqDocBase(pymake.req.Req):
     @cached_property.cached_property
     def encoded(self):
         assert isinstance(self.d, pymake.desc.Desc)
-        return self.d.encoded()
+        ret = self.d.encoded()
+
+        # check
+        bson.json_util.dumps(ret)
+
+        return ret
 
     def _read_mtime(self, d):
         if d is None: return 0

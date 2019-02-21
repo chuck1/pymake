@@ -563,7 +563,7 @@ class RuleDoc(Rule):
         logger.debug(f'dsc={req.d}')
 
         try:
-            b1 = await mc.decoder.decode(b, (mc.copy(force=False),))
+            b1 = await mc.decoder.adecode(b)
         except:
             logger.error(crayons.red("failed to decode:"))
             pprint.pprint(b)
