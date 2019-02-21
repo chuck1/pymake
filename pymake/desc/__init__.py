@@ -7,10 +7,10 @@ class Desc(jelly.Serializable):
 
     _keys = tuple()
 
-    @classmethod
-    async def decode(cls, decoder, kwargs, **kwargs1):
-        kwargs = await decoder.decode(kwargs)
-        return cls(**kwargs)
+    #@classmethod
+    #async def decode(cls, decoder, kwargs, **kwargs1):
+    #    kwargs = await decoder.decode(kwargs)
+    #    return cls(**kwargs)
 
     def __init__(self, **kwargs):
         self._kwargs = kwargs
@@ -55,5 +55,7 @@ class Desc(jelly.Serializable):
 
     def encoded(self):
         return jelly.encode(self._kwargs)
+
+    
 
 
