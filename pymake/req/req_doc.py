@@ -255,9 +255,6 @@ class ReqDoc1(ReqDocBase):
         #return self.d == other.d
         return self.encoded == other.encoded
 
-    def __encode__(self):
-        return {'/ReqDoc1': {'args': [ason.encode(self.d)]}}
-
     async def output_exists(self):
         return await pymake.doc_registry.registry.exists(self.encoded)
     
@@ -348,9 +345,6 @@ class ReqDoc2(ReqDocBase):
                 assert await self.req1.output_exists()
         else:
             logger.debug(f"{self.req1!r} does exist")
-
-    def __encode__(self):
-       return {'/ReqDoc2': {'args': [ason.encode(self.d)]}}
 
     async def output_exists(self):
         if await self.req1.output_exists():

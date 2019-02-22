@@ -17,6 +17,7 @@ import pymongo
 import bson
 import cached_property
 
+import jelly
 from mybuiltins import *
 
 from pymake.exceptions import *
@@ -41,7 +42,7 @@ class Datatype(enum.Enum):
     BYTES = 1
     OBJECT = 2
 
-class Req:
+class Req(jelly.Serializable):
 
     build = True
 
@@ -298,9 +299,6 @@ class ReqFile(Req):
         super().__init__()
         assert isinstance(fn, str)
         self.fn = fn
-
-    def __encode__(self):
-        return {'/ReqFile': {'args': [self.fn]}}
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
