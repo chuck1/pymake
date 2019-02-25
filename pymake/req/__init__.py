@@ -367,6 +367,11 @@ class ReqFile(Req):
     def delete(self):
         os.remove(self.fn)
 
+    async def read_pickle(self, mc=None):
+        if self.fn.endswith('.csv'):
+            raise Exception()
+        await super().read_pickle(mc=mc)
+
 class ReqFake(Req):
     def __init__(self, fn=None):
         super().__init__()
