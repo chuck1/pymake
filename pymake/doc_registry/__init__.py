@@ -12,6 +12,8 @@ import crayons
 import pymake.doc_registry.address
 from pymake.util import clean
 
+def breakpoint(): import pdb; pdb.set_trace()
+
 logger = logging.getLogger(__name__)
 
 def get_subregistry(r, l, f=None):
@@ -187,6 +189,15 @@ class DocRegistry:
             # indicates problem with pickled object, need to delete it
             logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
             del db[str(_id)]
+            raise
+        except RuntimeError as exc:
+
+            if exc.args[0] == "input stream error":
+                logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
+                del db[str(_id)]
+
+            #breakpoint()
+            #
             raise
 
     def get_subregistry_meta(self, d, f=None):
