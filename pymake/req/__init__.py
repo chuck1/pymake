@@ -57,6 +57,11 @@ class Req(jelly.Serializable):
 
         self._on_build = []
 
+    def __jellygetstate__(self, encoder):
+        keys = ('d',)
+        dct = dict(((k, self.__dict__[k]) for k in keys))
+        return dct
+
     def __getstate__(self):
         state = dict(self.__dict__)
         if "_Req__up_to_date_0" in state:
