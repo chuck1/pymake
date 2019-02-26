@@ -305,6 +305,11 @@ class ReqFile(Req):
         assert isinstance(fn, str)
         self.fn = fn
 
+    def __jellygetstate__(self, encoder):
+        keys = ('fn',)
+        dct = dict(((k, self.__dict__[k]) for k in keys))
+        return dct
+
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
