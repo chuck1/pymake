@@ -69,33 +69,42 @@ class Req(jelly.Serializable):
 
     def __getstate__(self):
         state = dict(self.__dict__)
-        if "_Req__up_to_date_0" in state:
-            del state["_Req__up_to_date_0"]
+        
+        #if "_Req__up_to_date_0" in state:
+        #    del state["_Req__up_to_date_0"]
+
         return state
 
     def __setstate__(self, state):
-        if "_Req__up_to_date_0" not in state:
-            state["_Req__up_to_date_0"] = False
-        if "_Req__up_to_date_1" not in state:
-            state["_Req__up_to_date_1"] = False
+        #if "_Req__up_to_date_0" not in state:
+        #    state["_Req__up_to_date_0"] = False
+        #if "_Req__up_to_date_1" not in state:
+        #    state["_Req__up_to_date_1"] = False
+
         self.__dict__ = dict(state)
     
     @property
     def up_to_date_0(self):
         if not hasattr(self, '__up_to_date_0'): self.__up_to_date_0 = False
-        return self.__up_to_date_0
+        value = self.__up_to_date_0
+        logger.debug(f'{id(self)!r} {self!r} {value}')
+        return value
 
     @property
     def up_to_date_1(self):
         if not hasattr(self, '__up_to_date_1'): self.__up_to_date_1 = False
-        return self.__up_to_date_1
+        value = self.__up_to_date_1
+        logger.debug(f'{id(self)!r} {self!r} {value}')
+        return value
 
     def set_up_to_date_0(self, value):
         assert isinstance(value, bool)
+        logger.debug(f'{id(self)!r} {self!r} {value}')
         self.__up_to_date_0 = value
 
     def set_up_to_date_1(self, value):
         assert isinstance(value, bool)
+        logger.debug(f'{id(self)!r} {self!r} {value}')
         self.__up_to_date_1 = value
 
     def create_triggers_0(self, makefile, reqs):
@@ -176,11 +185,14 @@ class Req(jelly.Serializable):
         rule = await self.get_rule(mc)
 
         if rule is None:
-
             if not self.require_rule:
                 if await self.output_exists():
+
+                    # should we set up_to_date to True?
+
                     return pymake.result.ResultNoRuleFileExists()
-                
+
+            # error
             for line in lines(self.print_long): logger.error(crayons.red(line))
             raise Exception(f"no rule to make {self!r}")
 

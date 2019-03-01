@@ -67,6 +67,9 @@ class ReqDocBase(pymake.req.Req):
         if "condition" in self.d:
             d["condition"] = self.d["condition"]
 
+        if "id" in self.d:
+            d["id"] = self.d["id"]
+
         return f'{self.__class__.__name__}({d!r})'
 
     def print_long(self):
