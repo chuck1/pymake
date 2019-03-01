@@ -63,12 +63,9 @@ class ReqDocBase(pymake.req.Req):
     def __repr__(self):
         
         d = {"type_": self.type_}
-
-        if "condition" in self.d:
-            d["condition"] = self.d["condition"]
-
-        if "id" in self.d:
-            d["id"] = self.d["id"]
+        
+        for k in ("id", "condition", "coil"):
+            d[k] = self.d[k]
 
         return f'{self.__class__.__name__}({d!r})'
 

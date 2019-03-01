@@ -183,7 +183,7 @@ class _Rule(Rule_utilities):
                 if not isinstance(req, Req):
                     raise Exception(f'{self!r} should return Req objects, not {req!r}')
 
-                logger.info(repr(req))
+                logger.debug(repr(req))
 
                 yield req
 
@@ -240,7 +240,7 @@ class _Rule(Rule_utilities):
     async def __check(self, makecall, req=None, test=False):
 
         if req.up_to_date_0:
-            logger.info(crayons.green('up to date'))
+            logger.debug(crayons.green('up to date'))
             return False, "up_to_date_0", None
 
         logger.debug('check requirements 0')
@@ -251,7 +251,7 @@ class _Rule(Rule_utilities):
 
         if not b_0:
             if req.up_to_date_1: 
-                logger.info(crayons.green('up to date'))
+                logger.debug(crayons.green('up to date'))
                 return False, "up_to_date_1", None
         
         logger.debug('check requirements 1')

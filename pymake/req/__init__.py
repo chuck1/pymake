@@ -52,8 +52,15 @@ class Req(jelly.Serializable):
         self.require_rule = require_rule
 
         # volatile
-        self.__up_to_date_0 = False
-        self.__up_to_date_1 = False
+        # bool
+        # requirements_0 are all up_to_date
+        # cannot be pickled 
+        self._up_to_date_0 = False
+
+        # bool
+        # requirements_1 are all up_to_date
+        # can be pickled
+        self._up_to_date_1 = False
 
         self.__on_build = []
 
@@ -70,8 +77,10 @@ class Req(jelly.Serializable):
     def __getstate__(self):
         state = dict(self.__dict__)
         
-        #if "_Req__up_to_date_0" in state:
-        #    del state["_Req__up_to_date_0"]
+        # the nature of up_to_date_0 is that it 
+
+        if "_up_to_date_0" in state:
+            del state["_up_to_date_0"]
 
         return state
 
@@ -85,27 +94,31 @@ class Req(jelly.Serializable):
     
     @property
     def up_to_date_0(self):
-        if not hasattr(self, '__up_to_date_0'): self.__up_to_date_0 = False
-        value = self.__up_to_date_0
+        if not hasattr(self, '_up_to_date_0'): self._up_to_date_0 = False
+        value = self._up_to_date_0
         logger.debug(f'{id(self)!r} {self!r} {value}')
+        assert hasattr(self, '_up_to_date_0')
         return value
 
     @property
     def up_to_date_1(self):
-        if not hasattr(self, '__up_to_date_1'): self.__up_to_date_1 = False
-        value = self.__up_to_date_1
+        if not hasattr(self, '_up_to_date_1'): self._up_to_date_1 = False
+        value = self._up_to_date_1
         logger.debug(f'{id(self)!r} {self!r} {value}')
+        assert hasattr(self, '_up_to_date_1')
         return value
 
     def set_up_to_date_0(self, value):
         assert isinstance(value, bool)
         logger.debug(f'{id(self)!r} {self!r} {value}')
-        self.__up_to_date_0 = value
+        self._up_to_date_0 = value
+        assert hasattr(self, '_up_to_date_0')
 
     def set_up_to_date_1(self, value):
         assert isinstance(value, bool)
         logger.debug(f'{id(self)!r} {self!r} {value}')
-        self.__up_to_date_1 = value
+        self._up_to_date_1 = value
+        assert hasattr(self, '_up_to_date_1')
 
     def create_triggers_0(self, makefile, reqs):
         # do not skip this is self.reqs is already set.
@@ -187,9 +200,6 @@ class Req(jelly.Serializable):
         if rule is None:
             if not self.require_rule:
                 if await self.output_exists():
-
-                    # should we set up_to_date to True?
-
                     return pymake.result.ResultNoRuleFileExists()
 
             # error
