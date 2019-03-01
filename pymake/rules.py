@@ -127,6 +127,34 @@ class _Rule(Rule_utilities):
         return None
 
 
+    def __requirements_threaded_(mc, req):
+            
+        loop = asyncio.new_event_loop()
+
+        coro = mc.make(req, ancestor=self.req_out)
+
+        ret = loop.run_until_complete(coro)
+
+        assert isinstance(ret, Result)
+
+        return req
+
+    async def __requirements_func(self, req, makecall=None, test=None, threaded=None):
+        assert req is not None
+
+        if not isinstance(req, pymake.req.Req):
+            raise TypeError(f'expected Req not {type(req)}')
+
+        makecall2 = makecall.copy(test=test, force=False)
+
+        if threaded:
+            makecall2.thread_depth = makecall.thread_depth + 1
+            task = loop.run_in_executor(None, functools.partial(threaded_, makecall2, req))
+            return task
+        else:
+            r = await makecall2.make(req, ancestor=self.req_out)
+            assert isinstance(r, Result)
+            return req
 
     async def __requirements(self, makecall, test, requirements_function, threaded=False):
         """
@@ -134,40 +162,12 @@ class _Rule(Rule_utilities):
         has stored that it is up to date
         """
 
-        def threaded_(mc, req):
-            
-            loop = asyncio.new_event_loop()
-
-            coro = mc.make(req, ancestor=self.req_out)
-
-            ret = loop.run_until_complete(coro)
-
-            assert isinstance(ret, Result)
-
-            return req
-
         loop = asyncio.get_event_loop()
-
-        async def func(req):
-            assert req is not None
-            if not isinstance(req, pymake.req.Req):
-                raise TypeError(f'expected Req not {type(req)}')
-
-            makecall2 = makecall.copy(test=test, force=False)
-
-            if threaded:
-                makecall2.thread_depth = makecall.thread_depth + 1
-                task = loop.run_in_executor(None, functools.partial(threaded_, makecall2, req))
-                return task
-            else:
-                r = await makecall2.make(req, ancestor=self.req_out)
-                assert isinstance(r, Result)
-                return req
-
-        logger.debug(crayons.red(self))
 
         # the build_requirements function yields the results of calling func on Req objects
         # and func returns those Req objects
+
+        func = functools.partial(self.__requirements_func, test=test, makecall=makecall, threaded=threaded)
 
         async for req in requirements_function(makecall, func):
             
@@ -240,6 +240,8 @@ class _Rule(Rule_utilities):
         if req.up_to_date_0: 
             return False, "up_to_date_0", None
 
+        logger.debug('check requirements 0')
+
         b_0, s_0, reqs_0 = await self.__check_requirements(makecall, self.requirements_0, req=req, test=test)
 
         req.create_triggers_0(makecall.makefile, reqs_0)
@@ -248,6 +250,8 @@ class _Rule(Rule_utilities):
             if req.up_to_date_1: 
                 return False, "up_to_date_1", None
         
+        logger.debug('check requirements 1')
+
         b_1, s_1, reqs_1 = await self.__check_requirements(makecall, self.requirements_1, req=req, test=test)
 
         req.create_triggers_1(makecall.makefile, reqs_1)
