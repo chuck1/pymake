@@ -55,7 +55,12 @@ class Req(jelly.Serializable):
         self.__up_to_date_0 = False
         self.__up_to_date_1 = False
 
-        self._on_build = []
+        self.__on_build = []
+
+    @property
+    def _on_build(self):
+        if not hasattr(self, "__on_build"): self.__on_build = []
+        return self.__on_build
 
     def __jellygetstate__(self, encoder):
         keys = ('d',)
@@ -77,10 +82,12 @@ class Req(jelly.Serializable):
     
     @property
     def up_to_date_0(self):
+        if not hasattr(self, '__up_to_date_0'): self.__up_to_date_0 = False
         return self.__up_to_date_0
 
     @property
     def up_to_date_1(self):
+        if not hasattr(self, '__up_to_date_1'): self.__up_to_date_1 = False
         return self.__up_to_date_1
 
     def set_up_to_date_0(self, value):
