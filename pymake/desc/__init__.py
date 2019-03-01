@@ -56,6 +56,20 @@ class Desc(jelly.Serializable):
     def encoded(self):
         return jelly.encode(self._kwargs)
 
-    
+    def _print(self):
+        print(Indent.s() + str(self))
+        with Indent() as indent:
+            for k, v in self._kwargs.items():
+                if isinstance(v, Desc):
+                    print(str(indent) + f'{k!s}:')
+
+                    with Indent():
+                        v._print()
+
+                else:
+                    print(str(indent) + f'{k!s}: {v!r}')
+
+
+
 
 

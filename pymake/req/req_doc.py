@@ -50,6 +50,9 @@ class ReqDocBase(pymake.req.Req):
         return self
         #return self.__class__(copy.deepcopy(self.d, memo))
 
+    def print_info(self):
+        self.d._print()
+
     async def get_rule(self, mc):
         return await mc.makefile.find_one(mc, self)
 
