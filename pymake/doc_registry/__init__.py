@@ -119,7 +119,7 @@ def get_id(d):
         doc = pymake.client.client.find_one(d_1)
 
         if doc is None:
-            logger.info(f'did not find {d_1}. inserting')
+            logger.debug(f'did not find {d_1}. inserting')
             res = pymake.client.client.insert_one(d_1)
             return res.inserted_id
 

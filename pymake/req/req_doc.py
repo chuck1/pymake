@@ -50,7 +50,7 @@ class ReqDocBase(pymake.req.Req):
         return self
         #return self.__class__(copy.deepcopy(self.d, memo))
 
-    def print_info(self):
+    def _print(self):
         self.d._print()
 
     async def get_rule(self, mc):
@@ -65,7 +65,8 @@ class ReqDocBase(pymake.req.Req):
         d = {"type_": self.type_}
         
         for k in ("id", "condition", "coil"):
-            d[k] = self.d[k]
+            if k in self.d:
+                d[k] = self.d[k]
 
         return f'{self.__class__.__name__}({d!r})'
 
