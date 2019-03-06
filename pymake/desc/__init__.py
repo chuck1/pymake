@@ -54,7 +54,10 @@ class Desc(jelly.Serializable):
         return self._kwargs.keys()
 
     def encoded(self):
-        return jelly.encode(self._kwargs)
+        dct = jelly.encode(self._kwargs)
+        if 'type_' not in dct:
+            dct['type_'] = self.type_
+        return dct
 
     def _print(self):
         print(Indent.s() + str(self))

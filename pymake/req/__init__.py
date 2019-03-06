@@ -64,6 +64,9 @@ class Req(jelly.Serializable):
 
         self.__on_build = []
 
+    def _print(self):
+        print(repr(self))
+
     @property
     def _on_build(self):
         if not hasattr(self, "__on_build"): self.__on_build = []

@@ -95,6 +95,9 @@ class DocMeta:
         self.mtime = datetime.datetime.now().timestamp()
 
 def get_id(d):
+
+        assert isinstance(d, dict)
+
         d = clean(d)
  
         #d_1 = d
