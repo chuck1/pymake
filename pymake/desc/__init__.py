@@ -4,23 +4,36 @@ from mybuiltins import *
 import jelly
 
 class Desc(jelly.Serializable):
+    """
+    This class conforms to the following model.
+    The data passed to the constructor shall be the data that will be stored by the object and
+    needed to characterize it.
+    It shall be all the data needed to recreate the object by pickling.
+    """
 
-    _keys = tuple()
+    _keys = None
 
-    #@classmethod
-    #async def decode(cls, decoder, kwargs, **kwargs1):
-    #    kwargs = await decoder.decode(kwargs)
-    #    return cls(**kwargs)
+    # additional keys that should be part of return of encoded()
+    # which is used by pymake. not for serialization
+    _keys_encode = tuple()
 
     def __init__(self, **kwargs):
-        self._kwargs = kwargs
 
-        for key in self._keys:
-            if key not in self._kwargs:
-                self._kwargs[key] = None
+        self._kwargs = copy.deepcopy(kwargs)
+
+        # only keys in _keys should appears in kwargs
+        if self._keys is not None:
+            for k in kwargs:
+                if k not in self._keys:
+                    raise Exception(f'invalid kwarg {k!r}')
+
+        # because I dont want to type out all parameters in constructor
+        if self._keys is not None:
+            for key in self._keys:
+                if key not in self._kwargs:
+                    self._kwargs[key] = None
 
         assert ('type' in self._kwargs) or ('type_' in self._kwargs) or hasattr(self, 'type_')
-
 
         #for k, v in self._kwargs.items():
         #    setattr(self, k, v)
@@ -31,21 +44,15 @@ class Desc(jelly.Serializable):
             else:
                 self.type_ = self._kwargs['type']
             
-
-        #    def type_(self):
-        #return self._kwargs['type_']
-
-    #def __encode__(self, encode):
-    #    a = dict(self._kwargs)
-    #    a["type_"] = self.type_
-    #    a = ason.encode(a)
-    #    return {'Desc': a}
+    def __getattribute__(self, name):
+        if name.startswith('_'):
+            return super().__getattribute__(name)
+        if name in self._kwargs:
+            return self._kwargs[name]
+        return super().__getattribute__(name)
 
     def __deepcopy__(self, memo):
         return self.__class__(**copy.deepcopy(self._kwargs, memo))
-
-    def __getitem__(self, key):
-        return self._kwargs[key]
 
     def __contains__(self, key):
         return (key in self._kwargs)
@@ -55,8 +62,11 @@ class Desc(jelly.Serializable):
 
     def encoded(self):
         dct = jelly.encode(self._kwargs)
-        if 'type_' not in dct:
-            dct['type_'] = self.type_
+
+        for key in self._keys_encode:
+            if key not in dct:
+                dct[key] = getattr(self, key)
+
         return dct
 
     def _print(self):

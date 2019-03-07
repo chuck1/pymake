@@ -543,7 +543,8 @@ class RuleDoc(Rule):
         if not 'type_' in a:
             raise Exception(repr(cls))
 
-        b = dict(req.d._kwargs)
+        b = req.d.encoded()
+        #b = dict(req.d._kwargs)
 
         type_a = a['type_']
         type_b = req.type_

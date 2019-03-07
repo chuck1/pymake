@@ -80,8 +80,8 @@ class ReqDocBase(pymake.req.Req):
 
     @cached_property.cached_property
     def key_set(self):
-        ret = set(self.d._kwargs.keys())
-        ret.add('type_')
+        #ret = set(self.d._kwargs.keys())
+        ret = set(self.d.encoded().keys())
         return ret
 
     @cached_property.cached_property
