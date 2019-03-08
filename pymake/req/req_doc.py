@@ -65,8 +65,8 @@ class ReqDocBase(pymake.req.Req):
         d = {"type_": self.type_}
         
         for k in ("id", "condition", "coil"):
-            if k in self.d:
-                d[k] = self.d[k]
+            if k in self.d._kwargs:
+                d[k] = getattr(self.d, k)
 
         return f'{self.__class__.__name__}({d!r})'
 

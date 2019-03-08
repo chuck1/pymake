@@ -94,6 +94,26 @@ class Req(jelly.Serializable):
         #    state["_Req__up_to_date_1"] = False
 
         self.__dict__ = dict(state)
+        
+        # validate
+        if not hasattr(self, 'require_rule'): 
+            logger.error('no attr \'require_rule\'')
+            self.require_rule = False
+        self.require_rule
+
+    def __jellysetstate__(self, state):
+        #if "_Req__up_to_date_0" not in state:
+        #    state["_Req__up_to_date_0"] = False
+        #if "_Req__up_to_date_1" not in state:
+        #    state["_Req__up_to_date_1"] = False
+
+        self.__dict__ = dict(state)
+        
+        # validate
+        if not hasattr(self, 'require_rule'): 
+            logger.error('no attr \'require_rule\'')
+            self.require_rule = False
+        self.require_rule
     
     @property
     def up_to_date_0(self):
@@ -487,7 +507,11 @@ class OpenContext:
             await self.req.write_binary(s)
 
 class ReqTemp(Req):
-    
+   
+    def __init__(self, b=None):
+        super().__init__()
+        self.b = b
+
     async def _make(self, mc, ancestor):
         return ResultNoBuild('is temp')
 

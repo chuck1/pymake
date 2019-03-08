@@ -188,11 +188,12 @@ class DocRegistry:
 
         try:
             return db[str(_id)]
-        except AttributeError as e:
+        except (AttributeError, ModuleNotFoundError) as e:
             # indicates problem with pickled object, need to delete it
             logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
             del db[str(_id)]
             raise
+        
         except RuntimeError as exc:
 
             if exc.args[0] == "input stream error":
