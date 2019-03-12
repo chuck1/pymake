@@ -15,7 +15,6 @@ import pprint
 import pymake
 from cached_property import cached_property
 from mybuiltins import *
-from mybuiltins import ason
 from .exceptions import *
 from .util import *
 from .result import *
