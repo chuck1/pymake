@@ -112,10 +112,21 @@ def get_id(d):
             for d in docs:
                 print('doc:')
                 print()
-                pprint.pprint(d)
+                for k, v in d['doc'].items():
+                    print(k, repr(v))
                 print()
     
             print()
+
+            if docs[0]['doc']['type_'] in (
+                    'data_file',
+                    'data file builder',
+                    'fin surface',
+                    'fin surface input',
+                    ):
+                print(crayons.red("delete"))
+                pymake.client.client._coll.delete_many(d_1)
+                
 
             raise Exception(f"got multiple db records for {json.dumps(d_1)!r}")
 
