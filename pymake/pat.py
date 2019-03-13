@@ -87,6 +87,21 @@ class PatFloat(Pat):
         except:
             return False
 
+class PatTuple(Pat):
+    def __init__(self, tup):
+        self.tup = tup
+
+    def match(self, x):
+        if not isinstance(x, tuple): return False
+
+        for a, b in zip(self.tup, x):
+            if isinstance(a, Pat):
+                if not a.match(b): return False
+            else:
+                if not isinstance(b, a): return False
+
+        return True
+
 class PatDict(Pat):
     def __init__(self, _pat=None):
         self._pat = _pat
