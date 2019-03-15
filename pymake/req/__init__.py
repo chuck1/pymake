@@ -221,7 +221,9 @@ class Req(jelly.Serializable):
         rule = await self.get_rule(mc)
 
         if rule is None:
-            if not self.require_rule:
+            if self.require_rule:
+                logger.warning(crayons.yellow("no rule and require_rule is True"))
+            else:
                 if await self.output_exists():
                     return pymake.result.ResultNoRuleFileExists()
 

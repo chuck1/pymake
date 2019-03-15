@@ -15,7 +15,7 @@ class Desc(jelly.Serializable):
 
     # additional keys that should be part of return of encoded()
     # which is used by pymake. not for serialization
-    _keys_encode = tuple()
+    _keys_encode = ("type_",)
 
     def __init__(self, **kwargs):
 

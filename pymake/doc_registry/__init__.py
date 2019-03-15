@@ -232,13 +232,20 @@ class DocRegistry:
 
     async def __exists(self, d):
         d = clean(d)
+
         r = self.get_subregistry_meta(d)
-        if not hasattr(r, "doc"): return False
-        if r.doc is None: return False
+
+        if not hasattr(r, "doc"): 
+            return False
+        if r.doc is None: 
+            return False
 
         r1 = await self.get_subregistry(d)
-        if not hasattr(r1, "doc"): return False
-        if r1.doc is None: return False
+
+        if not hasattr(r1, "doc"): 
+            return False
+        if r1.doc is None: 
+            return False
 
         return True
 

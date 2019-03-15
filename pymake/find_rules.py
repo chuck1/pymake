@@ -21,7 +21,12 @@ def _search(root_path, m, cls, _rules, searched):
 
     #root_path = 'coil_testing/rules'
 
-    if not os.path.relpath(m.__file__).startswith(root_path): return _rules
+    module_path = m.__file__
+    if isinstance(module_path, list):
+        assert len(module_path) == 1
+        module_path = module_path[0]
+
+    if not os.path.relpath(module_path).startswith(root_path): return _rules
 
     for k, v in m.__dict__.items():
         if isinstance(v, types.ModuleType):
