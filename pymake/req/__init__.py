@@ -111,8 +111,9 @@ class Req(jelly.Serializable):
         
         # validate
         if not hasattr(self, 'require_rule'): 
-            logger.error('no attr \'require_rule\'')
+            logger.debug('no attr \'require_rule\'')
             self.require_rule = False
+
         self.require_rule
     
     @property
@@ -164,8 +165,10 @@ class Req(jelly.Serializable):
     def create_triggers_1(self, makefile, reqs):
 
         self.reqs_1 = reqs
-
+        
         for req in reqs:
+            if req is None:
+                continue
             if self not in req._on_build:
                 req._on_build.append(self)
 

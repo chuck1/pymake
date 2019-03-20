@@ -51,7 +51,7 @@ class MakeCall:
 
         # validate
         if req_0 is None:
-            raise Exception("req is None")
+            return pymake.result.ResultNoBuild("req is None")
 
         if not isinstance(req_0, pymake.req.Req):
             raise Exception(f"req should be a pymake.req.Req object, not {req_0!r}")

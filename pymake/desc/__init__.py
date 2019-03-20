@@ -51,6 +51,13 @@ class Desc(jelly.Serializable):
             return self._kwargs[name]
         return super().__getattribute__(name)
 
+    def __setattr__(self, name, value):
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+            return
+
+        self._kwargs[name] = value
+
     def __deepcopy__(self, memo):
         return self.__class__(**copy.deepcopy(self._kwargs, memo))
 

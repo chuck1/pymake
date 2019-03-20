@@ -140,7 +140,8 @@ class _Rule(Rule_utilities):
         return req
 
     async def __requirements_func(self, req, makecall=None, test=None, threaded=None):
-        assert req is not None
+        if req is None:
+            return
 
         if not isinstance(req, pymake.req.Req):
             raise TypeError(f'expected Req not {type(req)}')
@@ -180,8 +181,9 @@ class _Rule(Rule_utilities):
 
                 if __debug__ and asyncio.iscoroutine(req): raise Exception(f'{self!r}')
 
-                if not isinstance(req, Req):
-                    raise Exception(f'{self!r} should return Req objects, not {req!r}')
+                if req is not None: 
+                    if not isinstance(req, Req):
+                        raise Exception(f'{self!r} should return Req objects, not {req!r}')
 
                 logger.debug(repr(req))
 
