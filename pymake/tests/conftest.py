@@ -4,7 +4,6 @@ import pytest
 import pymake.find_rules
 import pymake.makefile
 import pymake.tests.rules
-import ason
 
 @pytest.fixture()
 def db():
