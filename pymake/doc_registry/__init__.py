@@ -8,6 +8,7 @@ import pprint
 import shelve
 import json
 
+import bson
 import crayons
 import pymake.doc_registry.address
 from pymake.util import clean
@@ -96,6 +97,8 @@ class DocMeta:
 
 def get_id(d):
 
+        #logger.info(f'{d!r}')
+
         assert isinstance(d, dict)
 
         d = clean(d)
@@ -140,10 +143,12 @@ def get_id(d):
         return doc["_id"]
 
 def _lock(f):
-    async def wrapped(self, d, *args):
-        d = clean(d)
+    async def wrapped(self, _id, d, *args):
+        #d = clean(d)
 
-        _id = get_id(d)
+
+        assert isinstance(_id, bson.objectid.ObjectId)
+
 
         l = await self.get_lock(_id)
 
@@ -151,7 +156,7 @@ def _lock(f):
         logger.debug('aquire lock')
         async with l:
             logger.debug('lock aquired')
-            return await f(self, d, *args)
+            return await f(self, _id, d, *args)
 
     return wrapped
 
@@ -176,7 +181,8 @@ class DocRegistry:
             return self._locks[_id]
 
     @_lock
-    async def delete(self, d):
+    async def delete(self, _id, d):
+        assert isinstance(_id, bson.objectid.ObjectId)
         d = clean(d)
         await self.__delete(d)
 
@@ -189,11 +195,11 @@ class DocRegistry:
         
         r.doc = None
 
-    async def get_subregistry(self, d, f=None):
+    async def get_subregistry(self, _id, d, f=None):
         d = clean(d)
 
         db = self._registry
-        _id = get_id(d)
+        
         if str(_id) not in db:
             db[str(_id)] = SubRegistry()
 
@@ -215,32 +221,31 @@ class DocRegistry:
             #
             raise
 
-    def get_subregistry_meta(self, d, f=None):
+    def get_subregistry_meta(self, _id, d, f=None):
         d = clean(d)
 
-        _id = get_id(d)
-        
         if str(_id) not in self._db_meta:
             self._db_meta[str(_id)] = SubRegistry()
 
         return self._db_meta[str(_id)]
 
     @_lock
-    async def exists(self, d):
+    async def exists(self, _id, d):
+        assert isinstance(_id, bson.objectid.ObjectId)
         d = clean(d)
-        return await self.__exists(d)
+        return await self.__exists(_id, d)
 
-    async def __exists(self, d):
+    async def __exists(self, _id, d):
         d = clean(d)
 
-        r = self.get_subregistry_meta(d)
+        r = self.get_subregistry_meta(_id, d)
 
         if not hasattr(r, "doc"): 
             return False
         if r.doc is None: 
             return False
 
-        r1 = await self.get_subregistry(d)
+        r1 = await self.get_subregistry(_id, d)
 
         if not hasattr(r1, "doc"): 
             return False
@@ -250,17 +255,16 @@ class DocRegistry:
         return True
 
     @_lock
-    async def read(self, d):
+    async def read(self, _id, d):
+        assert isinstance(_id, bson.objectid.ObjectId)
         d = clean(d)
-
-        _id = get_id(d)
 
         logger.debug(f"read {_id} {d}")
 
-        if not (await self.__exists(d)): 
+        if not (await self.__exists(_id, d)): 
             raise Exception(f"Object not found: {d!r}")
 
-        r = await self.get_subregistry(d)
+        r = await self.get_subregistry(_id, d)
 
         logger.debug(f"read from {type(r)} {id(r)}")
 
@@ -270,23 +274,24 @@ class DocRegistry:
         return r.doc.doc
 
     @_lock
-    async def read_mtime(self, d):
+    async def read_mtime(self, _id, d):
+        assert isinstance(_id, bson.objectid.ObjectId)
         d = clean(d)
-        r = self.get_subregistry_meta(d)
+        r = self.get_subregistry_meta(_id, d)
         return r.doc.mtime
 
     @_lock
-    async def write(self, d, doc):
+    async def write(self, _id, d, doc):
+        assert isinstance(_id, bson.objectid.ObjectId)
         d = clean(d)
 
-        _id = get_id(d)
 
         logger.debug(f"write {_id!r} {d!r} {doc!r}")
 
         assert not asyncio.iscoroutine(doc)
 
-        r = await self.get_subregistry(d)
-        r_meta = self.get_subregistry_meta(d)
+        r = await self.get_subregistry(_id, d)
+        r_meta = self.get_subregistry_meta(_id, d)
 
         r.doc = Doc(doc, d=d)
         r_meta.doc = DocMeta(d=d)

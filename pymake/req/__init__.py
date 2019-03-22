@@ -368,10 +368,14 @@ class ReqFile(Req):
         return dct
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
+        if not isinstance(other, ReqFile):
             return False
 
-        return self.fn == other.fn
+        if self.fn == other.fn:
+            return True
+
+        #logger.info(f'{self.fn!r} != {other.fn!r}')
+        return False
 
     async def output_exists(self):
         """

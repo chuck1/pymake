@@ -34,7 +34,6 @@ class render_graph_on_exit:
 
 class Makefile:
 
-
     """
     manages the building of targets
     """
@@ -56,24 +55,23 @@ class Makefile:
         # both are stored in the cache
         # req A stores a bool that says its up to date and creates a signal for req B that will be called if
         # req B gets updated with the program is still running
-        self.reqs = []
-        #self.reqs = req_cache
+        self.__reqs = []
 
         self.graph = {}
 
     def cache_contains(self, req):
-        for req1 in self.reqs:
+        for req1 in self.__reqs:
             if req1 == req:
                 return True
         return False
 
     def cache_get(self, req):
-        for req1 in self.reqs:
+        for req1 in self.__reqs:
             if req1 == req:
                 logger.debug(crayons.green(f"cached req found {req!r} up_to_date_0={req1.up_to_date_0} up_to_date_1={req1.up_to_date_1}"))
                 return req1
 
-        self.reqs.append(req)
+        self.__reqs.append(req)
         return req
 
 

@@ -59,11 +59,16 @@ class MakeCall:
         if isinstance(req_0, pymake.req.ReqFake):
             return pymake.result.ResultNoBuild("fake")
 
+        # debug
+        if isinstance(req_0, pymake.req.ReqFile):
+            if 'node_20' in req_0.fn:
+                #breakpoint()
+                pass
+
         # get equivalent req object from cache or add to cache
         req = self.makefile.cache_get(req_0)
 
-
-        logger.debug(repr(req))
+        logger.debug(f'makefile: {id(self.makefile)} req: {id(req)} {req!r}')
 
         # added this because needed to make a file when test was True
         if test is None: test = self.args.test
