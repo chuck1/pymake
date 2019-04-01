@@ -427,7 +427,7 @@ class ReqFile(Req):
     def graph_string(self):
         return self.fn
 
-    def read_string(self):
+    async def read_string(self):
         with open(self.fn, 'r') as f:
             return f.read()
 
