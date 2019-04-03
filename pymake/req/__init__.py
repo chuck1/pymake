@@ -433,7 +433,8 @@ class ReqFile(Req):
 
     async def read_binary(self):
         with open(self.fn, 'rb') as f:
-            return f.read()
+            ret = f.read()
+            return ret
 
     def delete(self):
         os.remove(self.fn)
