@@ -303,6 +303,7 @@ class Req(jelly.Serializable):
             logger.error(crayons.red('pickle error'))
             logger.error(crayons.red(repr(e)))
             logger.error(crayons.red(f'delete {self!r}'))
+            breakpoint()
             #logger.error(b)
             
             #self.delete()
