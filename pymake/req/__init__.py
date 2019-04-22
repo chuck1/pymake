@@ -64,6 +64,10 @@ class Req(jelly.Serializable):
 
         self.__on_build = []
 
+        # manually specify requirements in addition to those that a rule will specify
+        self.requirements_0 = []
+        self.requirements_1 = []
+
     def _print(self):
         print(repr(self))
 
@@ -99,6 +103,15 @@ class Req(jelly.Serializable):
         if not hasattr(self, 'require_rule'): 
             logger.error('no attr \'require_rule\'')
             self.require_rule = False
+
+        for s in [
+                'requirements_0',
+                'requirements_1',
+                ]:
+            if not hasattr(self, s): 
+                #logger.error(f'no attr {s!r}')
+                setattr(self, s, [])
+
         self.require_rule
 
     def __jellysetstate__(self, state):
@@ -113,6 +126,14 @@ class Req(jelly.Serializable):
         if not hasattr(self, 'require_rule'): 
             logger.debug('no attr \'require_rule\'')
             self.require_rule = False
+
+        for s in [
+                'requirements_0',
+                'requirements_1',
+                ]:
+            if not hasattr(self, s): 
+                #logger.error(f'no attr {s!r}')
+                setattr(self, s, [])
 
         self.require_rule
     

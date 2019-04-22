@@ -157,8 +157,14 @@ class _Rule(Rule_utilities):
             assert isinstance(r, Result)
             return req
 
-    async def __requirements(self, makecall, test, requirements_function, threaded=False):
+    async def __requirements(self, makecall, test, requirements_function, 
+            threaded=False, 
+            req_requirements=[],
+            ):
         """
+
+        :param req_requirements: list of reqs that was stored in the self.req object
+
         requirements that can be skipped if requirements_0 are up_to_date and the req
         has stored that it is up to date
         """
@@ -170,7 +176,15 @@ class _Rule(Rule_utilities):
 
         func = functools.partial(self.__requirements_func, test=test, makecall=makecall, threaded=threaded)
 
-        async for req in requirements_function(makecall, func):
+        async def _chain():
+
+            for req in req_requirements:
+                yield await func(req)
+
+            async for req in requirements_function(makecall, func):
+                yield req
+
+        async for req in _chain():
             
             logger.debug(repr(req))
 
@@ -189,7 +203,9 @@ class _Rule(Rule_utilities):
 
                 yield req
 
-    async def __check_requirements(self, makecall, requirements_function, req=None, test=False):
+    async def __check_requirements(self, makecall, requirements_function, req=None, test=False,
+            req_requirements=[],
+            ):
 
         threaded = THREADED
         if makecall.thread_depth > 2:
@@ -210,7 +226,7 @@ class _Rule(Rule_utilities):
             else:
                 reqs = list()
         else:
-            reqs = [r async for r in self.__requirements(makecall, test, requirements_function)]
+            reqs = [r async for r in self.__requirements(makecall, test, requirements_function, req_requirements=req_requirements)]
 
 
         if makecall.args.force: return True, 'forced', reqs
@@ -247,7 +263,9 @@ class _Rule(Rule_utilities):
 
         logger.debug('check requirements 0')
 
-        b_0, s_0, reqs_0 = await self.__check_requirements(makecall, self.requirements_0, req=req, test=test)
+        b_0, s_0, reqs_0 = await self.__check_requirements(makecall, self.requirements_0, req=req, test=test,
+                req_requirements=self.req.requirements_0,
+                )
 
         req.create_triggers_0(makecall.makefile, reqs_0)
 
@@ -258,7 +276,9 @@ class _Rule(Rule_utilities):
         
         logger.debug('check requirements 1')
 
-        b_1, s_1, reqs_1 = await self.__check_requirements(makecall, self.requirements_1, req=req, test=test)
+        b_1, s_1, reqs_1 = await self.__check_requirements(makecall, self.requirements_1, req=req, test=test,
+                req_requirements=self.req.requirements_1,
+                )
 
         req.create_triggers_1(makecall.makefile, reqs_1)
 
