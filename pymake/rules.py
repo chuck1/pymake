@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 logger_check = logging.getLogger(__name__+"-check")
 
 THREADED = False
+USE_TASKS = True
 
 class ReqFuture:
     # the result of calling func(req)
@@ -141,6 +142,7 @@ class _Rule(Rule_utilities):
         return req
 
     async def __requirements_func(self, req, makecall=None, test=None, threaded=None):
+
         if req is None:
             return
 
@@ -154,9 +156,19 @@ class _Rule(Rule_utilities):
             task = loop.run_in_executor(None, functools.partial(threaded_, makecall2, req))
             return task
         else:
-            r = await makecall2.make(req, ancestor=self.req_out)
-            assert isinstance(r, Result)
-            return req
+            
+            if USE_TASKS:
+
+                # use task
+
+                task = asyncio.create_task(makecall2.make(req, ancestor=self.req_out))
+                return task
+
+            else:
+                r = await makecall2.make(req, ancestor=self.req_out)
+                assert isinstance(r, Result)
+                return req
+
 
     async def __requirements(self, makecall, test, requirements_function, 
             threaded=False, 
@@ -180,12 +192,25 @@ class _Rule(Rule_utilities):
         async def _chain():
 
             for req in req_requirements:
-                yield await func(req)
+
+                if USE_TASKS:
+                    task = asyncio.create_task(func(req))
+                    yield task
+                else:
+                    yield await func(req)
 
             async for req in requirements_function(makecall, func):
                 yield req
 
-        async for req in _chain():
+        if USE_TASKS:
+            tasks = [_ async for _ in _chain()]
+            done, pending = await asyncio.wait(tasks)
+            lst = [task.result() for task in tasks]
+        else:
+            lst = [_ async for _ in _chain()]
+
+
+        async for req in lst:
             
             logger.debug(repr(req))
 
@@ -204,9 +229,24 @@ class _Rule(Rule_utilities):
 
                 yield req
 
-    async def __check_requirements(self, makecall, requirements_function, req=None, test=False,
+    async def __check_requirements_get_reqs(self, mc, test, requirements_function, req_requirements):
+    
+        lst = [r async for r in self.__requirements(mc, test, requirements_function, req_requirements=req_requirements)]
+
+        return lst
+
+
+    async def __check_requirements(
+            self, 
+            makecall, 
+            requirements_function, 
+            req=None, 
+            test=False,
             req_requirements=[],
             ):
+        """
+        :param req_requirements: requirements stored in the req object
+        """
 
         threaded = THREADED
         if makecall.thread_depth > 2:
@@ -227,8 +267,7 @@ class _Rule(Rule_utilities):
             else:
                 reqs = list()
         else:
-            reqs = [r async for r in self.__requirements(makecall, test, requirements_function, req_requirements=req_requirements)]
-
+            reqs = await self.__check_requirements_get_reqs(makecall, test, requirements_function, req_requirements)
 
         if makecall.args.force: return True, 'forced', reqs
 
@@ -240,6 +279,8 @@ class _Rule(Rule_utilities):
         
         if mtime is None:
             return True, '{} does not define mtime'.format(self.__class__.__name__), reqs
+
+    
 
         for f in reqs:
             logger.debug(f'check {f!r}')
