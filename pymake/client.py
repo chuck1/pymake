@@ -14,6 +14,7 @@ import bson
 import json
 import pprint
 
+import motor.motor_asyncio
 import cached_property
 from mybuiltins import *
 
@@ -31,7 +32,8 @@ logger_mongo  = logging.getLogger(__name__ + '-mongo')
 
 class Client:
     def __init__(self):
-        client = pymongo.MongoClient()
+        #client = pymongo.MongoClient()
+        client = motor.motor_asyncio.AsyncIOMotorClient()
         db = client.coiltest
         self._coll = db.test
 
@@ -58,31 +60,31 @@ class Client:
         doc = self._coll.find(q)
         return doc
 
-    def find_one(self, q):
+    async def find_one(self, q):
         logger.debug(f"q = {q!r}")
 
         if "type" in q: 
             if q["type"] in ["node 90",]: raise Exception()
 
-        doc = self._coll.find_one(q)
+        doc = await self._coll.find_one(q)
 
         logger.debug(f'doc = {doc!s:.32s}')
 
         return doc
 
-    def insert_one(self, q):
+    async def insert_one(self, q):
         try:
-            return self._coll.insert_one(q)
+            return await self._coll.insert_one(q)
         except:
             logger.error(crayons.red('error in mongo insert'))
             pprint.pprint(q)
             raise
 
-    def update_one(self, q, u):
+    async def update_one(self, q, u):
         if '$set' not in u:
             u['$set'] = {}
 
-        d = self._coll.find_one(q)
+        d = await self._coll.find_one(q)
 
         if d is None:
             res = self._coll.insert_one(q)
@@ -96,11 +98,13 @@ class Client:
 
         u['$set']['_last_modified'] = t
         
-        self._coll.update_one({"_id": _id}, u)
+        await self._coll.update_one({"_id": _id}, u)
         
         return t
 
     def resolve(self, q):
+        raise Exception()
+
         docs = list(self._coll.find(q))
         if len(docs) < 2: return
 

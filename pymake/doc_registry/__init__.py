@@ -16,6 +16,7 @@ from pymake.util import clean
 def breakpoint(): import pdb; pdb.set_trace()
 
 logger = logging.getLogger(__name__)
+logger_get_id = logging.getLogger(__name__+"-get-id")
 
 def get_subregistry(r, l, f=None):
 
@@ -95,9 +96,9 @@ class DocMeta:
         self.d = d
         self.mtime = datetime.datetime.now().timestamp()
 
-def get_id(d):
+async def get_id(d):
 
-        #logger.info(f'{d!r}')
+        logger_get_id.debug(f'{d!r}')
 
         assert isinstance(d, dict)
 
@@ -106,7 +107,7 @@ def get_id(d):
         #d_1 = d
         d_1 = {"doc": d}
 
-        docs = list(pymake.client.client.find(d_1))
+        docs = await pymake.client.client.find(d_1).to_list(2)
 
         if len(docs) > 1:
 
@@ -133,11 +134,11 @@ def get_id(d):
 
             raise Exception(f"got multiple db records for {json.dumps(d_1)!r}")
 
-        doc = pymake.client.client.find_one(d_1)
+        doc = await pymake.client.client.find_one(d_1)
 
         if doc is None:
             logger.debug(f'did not find {d_1}. inserting')
-            res = pymake.client.client.insert_one(d_1)
+            res = await pymake.client.client.insert_one(d_1)
             return res.inserted_id
 
         return doc["_id"]
@@ -146,12 +147,9 @@ def _lock(f):
     async def wrapped(self, _id, d, *args):
         #d = clean(d)
 
-
         assert isinstance(_id, bson.objectid.ObjectId)
 
-
         l = await self.get_lock(_id)
-
  
         logger.debug('aquire lock')
         async with l:

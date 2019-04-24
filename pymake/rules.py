@@ -22,6 +22,7 @@ from .util import *
 from .result import *
 
 logger = logging.getLogger(__name__)
+logger_check = logging.getLogger(__name__+"-check")
 
 THREADED = False
 
@@ -199,7 +200,7 @@ class _Rule(Rule_utilities):
                     if not isinstance(req, Req):
                         raise Exception(f'{self!r} should return Req objects, not {req!r}')
 
-                logger.debug(repr(req))
+                logger_check.debug(repr(req))
 
                 yield req
 
