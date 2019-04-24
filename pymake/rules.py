@@ -161,7 +161,12 @@ class _Rule(Rule_utilities):
 
                 # use task
 
-                task = asyncio.create_task(makecall2.make(req, ancestor=self.req_out))
+                async def _f():
+                    await makecall2.make(req, ancestor=self.req_out)
+                    return req
+
+                task = asyncio.ensure_future(_f())
+                assert isinstance(task, asyncio.Task)
                 return task
 
             else:
@@ -200,17 +205,22 @@ class _Rule(Rule_utilities):
                     yield await func(req)
 
             async for req in requirements_function(makecall, func):
+                
+                if USE_TASKS:
+                    assert isinstance(req, asyncio.Task)
+
                 yield req
 
         if USE_TASKS:
             tasks = [_ async for _ in _chain()]
-            done, pending = await asyncio.wait(tasks)
+            if tasks:
+                done, pending = await asyncio.wait(tasks)
             lst = [task.result() for task in tasks]
         else:
             lst = [_ async for _ in _chain()]
 
 
-        async for req in lst:
+        for req in lst:
             
             logger.debug(repr(req))
 
