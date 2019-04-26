@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 logger_check = logging.getLogger(__name__+"-check")
 
 THREADED = False
-USE_TASKS = True
+USE_TASKS = False
 
 class ReqFuture:
     # the result of calling func(req)
@@ -198,24 +198,38 @@ class _Rule(Rule_utilities):
 
             for req in req_requirements:
 
+                ret = await func(req)
+
                 if USE_TASKS:
-                    task = asyncio.create_task(func(req))
-                    yield task
-                else:
-                    yield await func(req)
+                    if not isinstance(ret, asyncio.Task):
+                        raise Exception()
+
+                yield ret
 
             async for req in requirements_function(makecall, func):
                 
                 if USE_TASKS:
-                    assert isinstance(req, asyncio.Task)
+                    if not isinstance(req, asyncio.Task):
+                        raise Exception()
 
                 yield req
 
         if USE_TASKS:
             tasks = [_ async for _ in _chain()]
+
             if tasks:
                 done, pending = await asyncio.wait(tasks)
+            
+            for task in tasks:
+                e = task.exception()
+                if e:
+                    raise e
+
             lst = [task.result() for task in tasks]
+
+            for e in lst:
+                if not isinstance(e, pymake.req.Req):
+                    raise Exception("task should return Req")
         else:
             lst = [_ async for _ in _chain()]
 
@@ -229,11 +243,15 @@ class _Rule(Rule_utilities):
                 yield req
             else:
 
-                if __debug__ and asyncio.iscoroutine(req): raise Exception(f'{self!r}')
+                if __debug__ and asyncio.iscoroutine(req): 
+                    raise Exception(f'{self!r}')
 
                 if req is not None: 
-                    if not isinstance(req, Req):
-                        raise Exception(f'{self!r} should return Req objects, not {req!r}')
+                    if USE_TASKS:
+                        pass
+                    else:
+                        if not isinstance(req, Req):
+                            raise Exception(f'{self!r} should return Req objects, not {req!r}')
 
                 logger_check.debug(repr(req))
 
@@ -278,6 +296,7 @@ class _Rule(Rule_utilities):
                 reqs = list()
         else:
             reqs = await self.__check_requirements_get_reqs(makecall, test, requirements_function, req_requirements)
+
 
         if makecall.args.force: return True, 'forced', reqs
 
