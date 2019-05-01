@@ -30,10 +30,27 @@ logger = logging.getLogger(__name__)
 logger_pickle = logging.getLogger(__name__ + '-pickle')
 logger_mongo  = logging.getLogger(__name__ + '-mongo')
 
+USE_ASYNC = True
+
+class Cursor:
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    async def to_list(self, n):
+        lst = []
+        for e, i in zip(self.cursor, range(n)):
+            lst.append(e)
+        return lst
+
 class Client:
     def __init__(self):
-        #client = pymongo.MongoClient()
-        client = motor.motor_asyncio.AsyncIOMotorClient()
+
+        if USE_ASYNC:
+            client = motor.motor_asyncio.AsyncIOMotorClient()
+        else:
+            client = pymongo.MongoClient()
+
+
         db = client.coiltest
         self._coll = db.test
 
@@ -57,8 +74,10 @@ class Client:
         return d
 
     def find(self, q):
-        doc = self._coll.find(q)
-        return doc
+        if USE_ASYNC:
+            return self._coll.find(q)
+        else:
+            return Cursor(self._coll.find(q))
 
     async def find_one(self, q):
         logger.debug(f"q = {q!r}")
@@ -66,7 +85,10 @@ class Client:
         if "type" in q: 
             if q["type"] in ["node 90",]: raise Exception()
 
-        doc = await self._coll.find_one(q)
+        if USE_ASYNC:
+            doc = await self._coll.find_one(q)
+        else:
+            doc = self._coll.find_one(q)
 
         logger.debug(f'doc = {doc!s:.32s}')
 

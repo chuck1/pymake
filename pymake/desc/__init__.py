@@ -65,7 +65,16 @@ class Desc(jelly.Serializable):
         return (key in self._kwargs)
 
     def keys(self):
-        return self._kwargs.keys()
+        """
+        keys that this will have when encoded
+        """
+        lst = self._kwargs.keys()
+        yield from lst
+        
+        for k in self._keys_encode:
+            if k in lst:
+                continue
+            yield k
 
     def encoded(self):
         dct = jelly.encode(self._kwargs)

@@ -455,9 +455,12 @@ class _Rule(Rule_utilities):
             yield from r.rules(makecall)
 
     async def _build(self, makecall, req, *args):
+
         logger.info(crayons.yellow(f'Build {req}', bold=True))
-        for line in lines(functools.partial(self.print_long, self.req)):
-            logger.debug(crayons.yellow(line, bold=True))
+
+        if False:
+            for line in lines(functools.partial(self.print_long, self.req)):
+                logger.debug(crayons.yellow(line, bold=True))
                
         await self.build(makecall, *args)
         

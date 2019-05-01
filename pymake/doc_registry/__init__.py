@@ -107,7 +107,9 @@ async def get_id(d):
         #d_1 = d
         d_1 = {"doc": d}
 
+
         docs = await pymake.client.client.find(d_1).to_list(2)
+
 
         if len(docs) > 1:
 
@@ -115,9 +117,9 @@ async def get_id(d):
 
             for d in docs:
                 print('doc:')
-                print()
+                print(f'  id: {d["_id"]}')
                 for k, v in d['doc'].items():
-                    print(k, repr(v))
+                    print(f'    {k!r} {v!r}')
                 print()
     
             print()
@@ -127,6 +129,8 @@ async def get_id(d):
                     'data file builder',
                     'fin surface',
                     'fin surface input',
+                    'csv row',
+                    'coil, csv',
                     ):
                 print(crayons.red("delete"))
                 pymake.client.client._coll.delete_many(d_1)

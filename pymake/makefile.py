@@ -66,6 +66,9 @@ class Makefile:
         return False
 
     def cache_get(self, req):
+
+        logger.info(f'reqs in cache: {len(self.__reqs)}')
+
         for req1 in self.__reqs:
             if req1 == req:
                 logger.debug(crayons.green(f"cached req found {req!r} up_to_date_0={req1.up_to_date_0} up_to_date_1={req1.up_to_date_1}"))

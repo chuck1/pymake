@@ -89,10 +89,12 @@ class ReqDocBase(pymake.req.Req):
     @cached_property.cached_property
     def encoded(self):
         assert isinstance(self.d, pymake.desc.Desc)
+
         ret = self.d.encoded()
 
         # check
-        bson.json_util.dumps(ret)
+        #if __debug__:
+        #    bson.json_util.dumps(ret)
 
         return ret
 
@@ -102,7 +104,8 @@ class ReqDocBase(pymake.req.Req):
         return d['_last_modified'].timestamp()
 
     def graph_string(self):
-        return bson.json_util.dumps(self.encoded, indent=2)
+        return self.d.type_
+        #return bson.json_util.dumps(self.encoded, indent=2)
 
     def would_touch(self, mc):
         return False
@@ -264,9 +267,28 @@ class ReqDoc1(ReqDocBase):
         if "_id" in self.d: raise Exception('shouldnt contain "_id". {d!r}')
 
     def __eq__(self, other):
+
         #assert isinstance(self.d, dict)
         if not isinstance(other, ReqDoc1): return False
         #return self.d == other.d
+
+
+        for k0 in self.d.keys():
+
+            assert hasattr(self.d, k0)
+
+            if not hasattr(other.d, k0):
+                return False
+
+            if getattr(self.d, k0) != getattr(other.d, k0):
+                return False
+
+
+        if self.d.type_ != other.d.type_:
+            return False
+
+        #logger.info(f'{self} {other}')
+
         return self.encoded == other.encoded
 
     async def output_exists(self):
