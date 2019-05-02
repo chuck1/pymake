@@ -32,6 +32,43 @@ class render_graph_on_exit:
     def __exit__(self, *args):
         self.mc.makefile.render_graph()
 
+class CacheReq:
+    def __init__(self):
+        self.__cache = {}
+        self.__cache_1 = []
+
+    def _find_in_list(self, req, lst):
+        for req1 in lst:
+            if req1 == req:
+                logger.debug(crayons.green(f"cached req found {req!r} up_to_date_0={req1.up_to_date_0} up_to_date_1={req1.up_to_date_1}"))
+                return req1
+
+        lst.append(req)
+        return req
+
+    def find(self, req):
+
+    
+
+        if not isinstance(req, pymake.req.req_doc.ReqDocBase):
+            return self._find_in_list(req, self.__cache_1)
+
+        def _hash_func(req):
+            #return req.d.type_
+            return req.hash
+
+        h = _hash_func(req)
+
+        if h not in self.__cache:
+            self.__cache[h] = []
+            return req
+
+        subCache = self.__cache[h]
+
+        logger.info(f'subCache len: {len(subCache):4} h: {h:32}')
+
+        return self._find_in_list(req, subCache)
+
 class Makefile:
 
     """
@@ -55,7 +92,7 @@ class Makefile:
         # both are stored in the cache
         # req A stores a bool that says its up to date and creates a signal for req B that will be called if
         # req B gets updated with the program is still running
-        self.__reqs = []
+        self.__cache = CacheReq()
 
         self.graph = {}
 
@@ -66,17 +103,7 @@ class Makefile:
         return False
 
     def cache_get(self, req):
-
-        logger.info(f'reqs in cache: {len(self.__reqs)}')
-
-        for req1 in self.__reqs:
-            if req1 == req:
-                logger.debug(crayons.green(f"cached req found {req!r} up_to_date_0={req1.up_to_date_0} up_to_date_1={req1.up_to_date_1}"))
-                return req1
-
-        self.__reqs.append(req)
-        return req
-
+        return self.__cache.find(req)
 
     async def find_one(self, mc, target):
         async for r in self.find_rule(mc, target):

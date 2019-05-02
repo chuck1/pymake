@@ -9,7 +9,8 @@ import crayons
 import bson
 import bson.json_util
 from mybuiltins import *
-
+from mybuiltins import hash1
+import jelly
 import pymake.req
 import pymake.doc_registry
 import pymake.util
@@ -148,7 +149,37 @@ class ReqDocBase(pymake.req.Req):
             self._id_CACHED = await pymake.doc_registry.get_id(self.encoded)
 
         return self._id_CACHED
-        
+
+    @cached_property.cached_property
+    def hash(self):
+        keys = list(self.d.keys())
+        keys = list(sorted(keys))
+
+        def _hash_keys():
+            for k in [
+                    "type_",
+                    "coil",
+                    ]:
+                if k in keys:
+                    yield k
+
+            yield from keys
+
+        h = hash1.Hash()
+
+        for k in take(_hash_keys(), 3):
+
+            logger.info(f'hashing {k!r}')
+
+            h.append(k)
+
+            v = getattr(self.d, k)
+
+            v = jelly.encode(v)
+
+            h.append(v)
+
+        return h.a
 
 class ReqDoc0(ReqDocBase):
     """
