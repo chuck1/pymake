@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import copy
 import functools
 import hashlib
 import inspect
@@ -21,9 +22,16 @@ import pymake.rules
 logger = logging.getLogger(__name__)
 
 class MakeCall:
-    def __init__(self, makefile, args={}, stack=[], thread_depth=0):
+    def __init__(self, makefile, args={}, stack=[], thread_depth=0, 
+            decoder=None,
+            ):
+        assert decoder is not None
+
         self.makefile = makefile
-        self.decoder = makefile.decoder
+
+        self.decoder = decoder
+        self.decoder.mc = self
+
 
         self.args = pymake.args.Args(**args)
 
@@ -38,7 +46,9 @@ class MakeCall:
     def copy(self, **kwargs):
         args1 = dict(self.args._args)
         args1.update(kwargs)
-        return MakeCall(self.makefile, args1, self.stack)
+        return MakeCall(self.makefile, args1, self.stack, 
+                decoder=copy.deepcopy(self.decoder),
+                )
 
     def make_threadsafe(self, *args, **kwargs):
         loop = asyncio.new_event_loop()

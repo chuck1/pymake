@@ -65,7 +65,7 @@ class CacheReq:
 
         subCache = self.__cache[h]
 
-        logger.info(f'subCache len: {len(subCache):4} h: {h:32}')
+        logger.debug(f'subCache len: {len(subCache):4} h: {h:32}')
 
         return self._find_in_list(req, subCache)
 
@@ -80,8 +80,8 @@ class Makefile:
         self.rules = []
         self._rules_doc = {}
 
-        assert decoder is not None
-        self.decoder = decoder
+        #assert decoder is not None
+        #self.decoder = decoder
 
         # cache req files
         # when a req is made, the req and its requirements be stored here

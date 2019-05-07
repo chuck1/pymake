@@ -169,7 +169,7 @@ class ReqDocBase(pymake.req.Req):
 
         for k in take(_hash_keys(), 3):
 
-            logger.info(f'hashing {k!r}')
+            logger.debug(f'hashing {k!r}')
 
             h.append(k)
 
@@ -237,7 +237,7 @@ class ReqDoc0(ReqDocBase):
         #    raise Exception(f"document: {self.d!r}. modified count should be 1 but is {res.modified_count}")
 
     async def output_exists(self):
-        d = pymake.client.client.find_one(self.encoded)
+        d = await pymake.client.client.find_one(self.encoded)
         if d is None: return False
         b = bool('_last_modified' in d)
         

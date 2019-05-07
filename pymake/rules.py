@@ -314,6 +314,9 @@ class _Rule(Rule_utilities):
         for f in reqs:
             logger.debug(f'check {f!r}')
 
+            # allow None in reqs
+            if f is None: continue
+
             b = await f.output_exists()
             if b:
                 mtime_in = await f.output_mtime()
@@ -673,7 +676,7 @@ class RuleDoc(Rule):
             b1 = await mc.decoder.adecode(b)
         except:
             logger.error(crayons.red("failed to decode:"))
-            pprint.pprint(b)
+            logger.error(str(b)[:1000])
             raise
 
         if 'type_' in a:

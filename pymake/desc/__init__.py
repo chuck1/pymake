@@ -10,7 +10,8 @@ class Desc(jelly.Serializable):
     needed to characterize it.
     It shall be all the data needed to recreate the object by pickling.
     """
-
+    
+    # required keys
     _keys = None
 
     # additional keys that should be part of return of encoded()
