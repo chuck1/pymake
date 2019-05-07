@@ -243,15 +243,21 @@ class DocRegistry:
         r = self.get_subregistry_meta(_id, d)
 
         if not hasattr(r, "doc"): 
+            logger.info('subregistry_meta does not have "doc" attribute')
             return False
+
         if r.doc is None: 
+            logger.info('subregistry_meta "doc" is None')
             return False
 
         r1 = await self.get_subregistry(_id, d)
 
         if not hasattr(r1, "doc"): 
+            logger.info('subregistry does not have "doc" attribute')
             return False
+
         if r1.doc is None: 
+            logger.info('subregistry "doc" is None')
             return False
 
         return True

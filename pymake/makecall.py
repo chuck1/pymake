@@ -12,6 +12,7 @@ import json
 
 import crayons
 import pygraphviz as gv
+import cached_property
 
 from mybuiltins import *
 from .util import *
@@ -22,22 +23,31 @@ import pymake.rules
 logger = logging.getLogger(__name__)
 
 class MakeCall:
-    def __init__(self, makefile, args={}, stack=[], thread_depth=0, 
-            decoder=None,
+    def __init__(
+            self, 
+            makefile, 
+            args={}, 
+            stack=[], 
+            thread_depth=0, 
+            classDecoder=None,
             ):
-        assert decoder is not None
+        assert classDecoder is not None
 
         self.makefile = makefile
 
-        self.decoder = decoder
-        self.decoder.mc = self
-
+        self.classDecoder = classDecoder
 
         self.args = pymake.args.Args(**args)
 
         self.stack = stack
 
         self.thread_depth = thread_depth
+
+    @cached_property.cached_property
+    def decoder(self):
+        d = self.classDecoder()
+        d.mc = self
+        return d
 
     @property
     def show_plot(self):
@@ -46,8 +56,11 @@ class MakeCall:
     def copy(self, **kwargs):
         args1 = dict(self.args._args)
         args1.update(kwargs)
-        return MakeCall(self.makefile, args1, self.stack, 
-                decoder=copy.deepcopy(self.decoder),
+        return MakeCall(
+                self.makefile, 
+                args1, 
+                self.stack, 
+                classDecoder=self.classDecoder,
                 )
 
     def make_threadsafe(self, *args, **kwargs):

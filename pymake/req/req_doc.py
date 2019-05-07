@@ -187,6 +187,9 @@ class ReqDoc0(ReqDocBase):
     """
 
     def __init__(self, d, **kwargs):
+    
+        raise Exception()
+
         super().__init__(d, **kwargs)
         logger.debug(repr(self))
 
@@ -238,10 +241,16 @@ class ReqDoc0(ReqDocBase):
 
     async def output_exists(self):
         d = await pymake.client.client.find_one(self.encoded)
-        if d is None: return False
-        b = bool('_last_modified' in d)
         
+        if d is None:
+            logger.info('db record not found')
+            return False
+
+        b = bool('_last_modified' in d)
+
+
         if b:
+
             # look for FakePickle object
 
             s = d["_contents"] #self.read_contents()
@@ -254,6 +263,9 @@ class ReqDoc0(ReqDocBase):
                 if isinstance(o, FakePickle):
                     if not pymake.fakepickle.fake_pickle_archive.contains(o):
                         return False
+
+        else:
+            logger.info("db record does not have _last_modified attribute")
 
         return b
 

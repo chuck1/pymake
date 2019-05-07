@@ -302,7 +302,8 @@ class _Rule(Rule_utilities):
 
         b = await self.req.output_exists()
 
-        if not b: return True, "output does not exist", reqs
+        if not b: 
+            return True, "output does not exist", reqs
 
         mtime = await self.output_mtime()
         
@@ -372,9 +373,11 @@ class _Rule(Rule_utilities):
         # next time we try to build this req, ...
 
         if b_0:
+            logger.info(f'build {req!r} because {s_0!r}')
             return True, s_0, reqs
 
         if b_1:
+            logger.info(f'build {req!r} because {s_1!r}')
             return True, s_1, reqs
 
         return False, "up_to_date", None
