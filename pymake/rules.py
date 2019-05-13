@@ -151,6 +151,11 @@ class _Rule(Rule_utilities):
 
         makecall2 = makecall.copy(test=test, force=False)
 
+        if makecall2.args.force:
+            breakpoint()
+            makecall.copy(test=test, force=False)
+            raise Exception()
+
         if threaded:
             makecall2.thread_depth = makecall.thread_depth + 1
             task = loop.run_in_executor(None, functools.partial(threaded_, makecall2, req))
@@ -332,9 +337,11 @@ class _Rule(Rule_utilities):
 
     async def __check(self, makecall, req=None, test=False):
 
+
         if req.up_to_date_0:
-            logger.debug(crayons.green('up to date'))
-            return False, "up_to_date_0", None
+            if not makecall.args.force:
+                logger.debug(crayons.green('up to date'))
+                return False, "up_to_date_0", None
 
         logger.debug('check requirements 0')
 
@@ -346,8 +353,9 @@ class _Rule(Rule_utilities):
 
         if not b_0:
             if req.up_to_date_1: 
-                logger.debug(crayons.green('up to date'))
-                return False, "up_to_date_1", None
+                if not makecall.args.force:
+                    logger.debug(crayons.green('up to date'))
+                    return False, "up_to_date_1", None
         
         logger.debug('check requirements 1')
 
@@ -368,6 +376,10 @@ class _Rule(Rule_utilities):
 
 
         reqs = reqs_0 + reqs_1
+
+        if makecall.args.force:
+            logger.warning(crayons.yellow("forced"))
+            return True, "forced", reqs
 
         # these reqs will become triggers for this req.
         # next time we try to build this req, ...
@@ -395,6 +407,9 @@ class _Rule(Rule_utilities):
     async def _make(self, makecall, req):
         logger.debug(f'test = {makecall.args.test}')
         logger.debug(f'make {req!r}')
+
+        if makecall.args.force:
+            logger.warning(crayons.yellow("forced"))
 
         # touch
         # TODO not sure if compatible with req_cache

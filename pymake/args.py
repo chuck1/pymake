@@ -1,3 +1,4 @@
+from mybuiltins import *
 
 class ReadOnlyArg:
 
@@ -6,10 +7,7 @@ class ReadOnlyArg:
         self.default = default
 
     def __get__(self, instance, owner):
-        if not hasattr(self, 'value'):
-            self.value = instance._args.get(self.key, self.default)
-
-        return self.value
+        return instance._args.get(self.key, self.default)
 
     def __set__(self, instance, value):
         raise Exception('readonly')

@@ -106,6 +106,9 @@ class MakeCall:
                     logger.info(f"make {req} result = {ret}")
                     return ret
 
+            if makecall.args.force:
+                logger.warning(crayons.yellow("forced"))
+
             ret = await req._make(makecall, ancestor)
 
             logger.debug(f"make {req} result = {ret}")
