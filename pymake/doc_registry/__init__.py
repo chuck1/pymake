@@ -107,8 +107,9 @@ async def get_id(d):
         #d_1 = d
         d_1 = {"doc": d}
 
-
-        docs = await pymake.client.client.find(d_1).to_list(2)
+        c = pymake.client.client.find(d_1)
+        coro = c.to_list(2)
+        docs = await coro
 
 
         if len(docs) > 1:

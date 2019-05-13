@@ -11,7 +11,9 @@ import bson.json_util
 from mybuiltins import *
 from mybuiltins import hash1
 import jelly
+
 import pymake.req
+import pymake.desc
 import pymake.doc_registry
 import pymake.util
 import pymake.fakepickle

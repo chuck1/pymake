@@ -6,7 +6,7 @@ import pymake.makefile
 import pymake.tests.rules
 
 @pytest.fixture()
-def db():
+def db(event_loop):
     s = "build/doc_registry.db"
 
     if os.path.exists(s):
@@ -16,7 +16,7 @@ def db():
         yield db
 
 @pytest.fixture()
-def db_meta():
+def db_meta(event_loop):
     s = "build/doc_registry_meta.db"
     
     if os.path.exists(s):
@@ -27,7 +27,7 @@ def db_meta():
 
 
 @pytest.fixture()
-def makefile(db, db_meta):
+def makefile(event_loop, db, db_meta):
 
     req_cache = None
 

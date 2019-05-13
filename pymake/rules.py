@@ -131,7 +131,7 @@ class _Rule(Rule_utilities):
 
     def __requirements_threaded_(mc, req):
             
-        loop = asyncio.new_event_loop()
+        #oop = asyncio.new_event_oop()
 
         coro = mc.make(req, ancestor=self.req_out)
 
@@ -187,7 +187,8 @@ class _Rule(Rule_utilities):
         has stored that it is up to date
         """
 
-        loop = asyncio.get_event_loop()
+        
+        #oop = asyncio.get_event_oop()
 
         # the build_requirements function yields the results of calling func on Req objects
         # and func returns those Req objects
