@@ -6,7 +6,7 @@ import pymake.req.req_doc
 def _test_req():
 
     d = {
-            "type": "test",
+            "type_": "test",
             "a":    0,
             "b":    "hello",
             "c": {
@@ -24,6 +24,9 @@ def _test_req():
 @pytest.mark.asyncio
 async def test_string(makefile):
 
+    pymake.client.USE_ASYNC = False
+    pymake.client.client = pymake.client.Client()
+
     req = _test_req()
 
     s = "hello"
@@ -35,6 +38,9 @@ async def test_string(makefile):
     
 @pytest.mark.asyncio
 async def test_binary(makefile):
+
+    pymake.client.USE_ASYNC = False
+    pymake.client.client = pymake.client.Client()
 
     req = _test_req()
 

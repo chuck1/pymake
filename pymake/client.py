@@ -43,16 +43,19 @@ class Cursor:
         return lst
 
 class Client:
-    def __init__(self):
+    def __init__(self, loop, dbName):
 
         if USE_ASYNC:
-            client = motor.motor_asyncio.AsyncIOMotorClient()
+            self.client = motor.motor_asyncio.AsyncIOMotorClient(io_loop=loop)
         else:
-            client = pymongo.MongoClient()
+            self.client = pymongo.MongoClient()
+    
+        self._db = self.client[dbName]
+        self._coll = self._db.test
 
+    async def drop_database(self):
 
-        db = client.coiltest
-        self._coll = db.test
+        await self.client.drop_database(self._db)
 
     def exists(self, q):
         c = self.coll.find(q).limit(1)
@@ -96,7 +99,11 @@ class Client:
 
     async def insert_one(self, q):
         try:
-            return await self._coll.insert_one(q)
+            if USE_ASYNC:
+                return await self._coll.insert_one(q)
+            else:
+                return self._coll.insert_one(q)
+
         except:
             logger.error(crayons.red('error in mongo insert'))
             pprint.pprint(q)
@@ -134,7 +141,7 @@ class Client:
             self._coll.update_one({"_id": d["_id"]}, {"$set": {"RESOLVE": i}})
 
 
-client = Client()
+#client = Client()
 
 
 

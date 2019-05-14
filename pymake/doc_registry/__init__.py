@@ -96,24 +96,38 @@ class DocMeta:
         self.d = d
         self.mtime = datetime.datetime.now().timestamp()
 
-async def get_id(d):
 
-        logger_get_id.debug(f'{d!r}')
 
-        assert isinstance(d, dict)
+def _lock(f):
+    async def wrapped(self, _id, d, *args):
+        #d = clean(d)
 
-        d = clean(d)
+        assert isinstance(_id, bson.objectid.ObjectId)
+
+        l = await self.get_lock(_id)
  
-        #d_1 = d
-        d_1 = {"doc": d}
+        logger.debug('aquire lock')
+        async with l:
+            logger.debug('lock aquired')
+            return await f(self, _id, d, *args)
 
-        c = pymake.client.client.find(d_1)
-        coro = c.to_list(2)
-        docs = await coro
+    return wrapped
 
+class DocRegistry:
 
-        if len(docs) > 1:
+    def __init__(self, db, db_meta, client):
 
+        self._registry = db
+        self._db_meta = db_meta
+        self.client = client
+
+        self._locks = {}
+
+        self.__lock = asyncio.Lock()
+
+        self._lock_get_id = asyncio.Lock()
+
+    def handle_multiple(self, docs):
             print()
 
             for d in docs:
@@ -139,40 +153,34 @@ async def get_id(d):
 
             raise Exception(f"got multiple db records for {json.dumps(d_1)!r}")
 
-        doc = await pymake.client.client.find_one(d_1)
+    async def get_id(self, d):
 
-        if doc is None:
-            logger.debug(f'did not find {d_1}. inserting')
-            res = await pymake.client.client.insert_one(d_1)
-            return res.inserted_id
+        logger_get_id.debug(f'{d!r}')
 
-        return doc["_id"]
+        assert isinstance(d, dict)
 
-def _lock(f):
-    async def wrapped(self, _id, d, *args):
-        #d = clean(d)
-
-        assert isinstance(_id, bson.objectid.ObjectId)
-
-        l = await self.get_lock(_id)
+        d = clean(d)
  
-        logger.debug('aquire lock')
-        async with l:
-            logger.debug('lock aquired')
-            return await f(self, _id, d, *args)
+        #d_1 = d
+        d_1 = {"doc": d}
 
-    return wrapped
+        async with self._lock_get_id:
 
-class DocRegistry:
+            c = self.client.find(d_1)
+            coro = c.to_list(2)
+            docs = await coro
 
-    def __init__(self, db, db_meta):
+            if len(docs) > 1:
+                self.handle_multiple(docs)
 
-        self._registry = db
-        self._db_meta = db_meta
+            doc = await self.client.find_one(d_1)
 
-        self._locks = {}
+            if doc is None:
+                logger.debug(f'did not find {d_1}. inserting')
+                res = await self.client.insert_one(d_1)
+                return res.inserted_id
 
-        self.__lock = asyncio.Lock()
+            return doc["_id"]
 
     async def get_lock(self, _id):
         logger.debug(f'_id = {_id!s}')

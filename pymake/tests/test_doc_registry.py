@@ -6,11 +6,9 @@ class Foo:
     pass
 
 @pytest.mark.asyncio
-async def test_0(db, db_meta):
+async def test_0(db, db_meta, client):
 
-    pymake.client.USE_ASYNC = False
-
-    r = pymake.doc_registry.DocRegistry(db, db_meta)
+    r = pymake.doc_registry.DocRegistry(db, db_meta, client)
 
     d = {
             "type_":"A",
@@ -35,18 +33,18 @@ async def test_0(db, db_meta):
 
     doc = Foo()
 
-    await r.write(await req._id(), req.encoded, doc)
+    await r.write(await req._id(mc), req.encoded, doc)
 
-    assert (await r.read(d)) is doc
+    assert (await r.read(await req._id(), d)) is doc
 
     print()
     print(r._registry)
     print()
 
 @pytest.mark.asyncio
-async def test_1(db, db_meta):
+async def test_1(db, db_meta, client):
 
-    r = pymake.doc_registry.DocRegistry(db, db_meta)
+    r = pymake.doc_registry.DocRegistry(db, db_meta, client)
 
     d = {
             "type_":"A",
@@ -54,34 +52,44 @@ async def test_1(db, db_meta):
             "b": 2,
             }
 
+    req = pymake.req.req_doc.ReqDoc1(d)
+
     doc = Foo()
 
-    await r.write(d, doc)
+    await r.write(await req._id(), d, doc)
 
-    assert (await r.read(d)) is doc
-    
+    assert (await r.read(await req._id(), d)) is doc
+
+    ############################
+
     d = {
             "type_":"A",
             "a": 1,
             "b": 3,
             }
 
+    req = pymake.req.req_doc.ReqDoc1(d)
+
     doc = Foo()
 
-    await r.write(d, doc)
+    await r.write(await req._id(), d, doc)
 
-    assert (await r.read(d)) is doc
+    assert (await r.read(await req._id(), d)) is doc
     
     d = {
             "type_":"A",
             "a": 1,
             }
 
+    ############################
+
+    req = pymake.req.req_doc.ReqDoc1(d)
+
     doc = Foo()
 
-    await r.write(d, doc)
+    await r.write(await req._id(), d, doc)
 
-    assert (await r.read(d)) is doc
+    assert (await r.read(await req._id(), d)) is doc
 
  
 

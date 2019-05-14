@@ -68,28 +68,7 @@ class C(pymake.rules.RuleDoc):
         pass
 
 
-@pytest.mark.asyncio
-async def test_parallel_0(event_loop, makefile):
-
-    pymake.client.USE_ASYNC = True
-    pymake.client.client = pymake.client.Client(event_loop)
-
-    makefile.add_rules([A, B, C])
-
-    pymake.rules.USE_TASKS = True
-
-    mc = pymake.makecall.MakeCall(makefile, classDecoder=jelly.Decoder)
-
-
-    r_0 = pymake.req.req_doc.ReqDoc1({"type_":"parallel C"})
-
-    await mc.make(r_0)
-
-@pytest.mark.asyncio
-async def test_parallel_1(event_loop, makefile):
-
-    pymake.client.USE_ASYNC = True
-    pymake.client.client = pymake.client.Client(event_loop)
+async def _test_get_id():
 
     n = 20
 
@@ -101,11 +80,8 @@ async def test_parallel_1(event_loop, makefile):
 
     
     def get_tasks():
-
         for req in reqs:
-
             yield asyncio.ensure_future(f(req))
-
 
     tasks = list(get_tasks())
 
@@ -116,6 +92,11 @@ async def test_parallel_1(event_loop, makefile):
 
 
 
+@pytest.mark.asyncio
+async def test_parallel_1(event_loop, makefile):
+
+    await _test_get_id()
+    await _test_get_id()
 
 
 

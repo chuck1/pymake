@@ -146,9 +146,9 @@ class ReqDocBase(pymake.req.Req):
             raise TypeError(f'{self!r} {b!r} is not bytes')
         return b
 
-    async def _id(self):
+    async def _id(self, mc):
         if not hasattr(self, "_id_CACHED"):
-            self._id_CACHED = await pymake.doc_registry.get_id(self.encoded)
+            self._id_CACHED = await pymake.doc_registry.registry.get_id(self.encoded)
 
         return self._id_CACHED
 
