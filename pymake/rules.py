@@ -12,7 +12,6 @@ import time
 import traceback
 import subprocess
 
-from mybuiltins import *
 from cached_property import cached_property
 
 import pymake
@@ -133,7 +132,6 @@ class _Rule(Rule_utilities):
             return True, 'forced'
 
         if not bool(f_in):
-            breakpoint()
             raise Exception()
         
         b = self.output_exists()
@@ -273,10 +271,13 @@ class _Rule(Rule_utilities):
             yield from r.rules(makecall)
 
     async def _build(self, makecall, *args):
-        lines(
-                lambda s: logger.info(crayons.yellow(s, bold=True)),
-                lambda: print(f'Build force={makecall.args.get("force", False)}'),
-                functools.partial(self.print_long, self.req))
+
+        logger.info(crayons.yellow(f'Build force={makecall.args.get("force", False)}', bold=True))
+
+        #lines(
+        #        lambda s: logger.info(crayons.yellow(s, bold=True)),
+        #        lambda: print(f'Build force={makecall.args.get("force", False)}'),
+        #        functools.partial(self.print_long, self.req))
 
         await self.build(makecall, *args)
 

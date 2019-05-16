@@ -7,7 +7,6 @@ import logging
 import traceback
 from pprint import pprint
 import sys
-import bson
 import numpy
 
 from .rules import *
@@ -146,7 +145,7 @@ class Makefile:
 
     async def rules_sorted(self, mc, target):
             
-        rules = await alist(self.find_rule(mc, target))
+        rules = [_ async for _ in self.find_rule(mc, target)]
 
         if len(rules) > 1:
             if all([isinstance(r, RuleRegex) for r in rules]):

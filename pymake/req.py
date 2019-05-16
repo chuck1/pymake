@@ -7,14 +7,11 @@ import re
 import os
 import logging
 import traceback
-import pymongo
-import bson
 import json
 import pprint
 
 import pymake
 from cached_property import cached_property
-from mybuiltins import *
 from .exceptions import *
 from .util import *
 from .result import *
@@ -70,7 +67,6 @@ class Client:
         
         self.coll.update_one({"_id": _id}, u)
 
-client = Client()
 
 def touch(fname, times=None):
     with open(fname, 'a'):

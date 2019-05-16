@@ -11,7 +11,6 @@ import json
 import crayons
 import pygraphviz as gv
 
-from mybuiltins import *
 from .util import *
 
 logger = logging.getLogger(__name__)
