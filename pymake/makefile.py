@@ -169,6 +169,8 @@ class Makefile:
                 if type_ not in self._rules_doc:
                     self._rules_doc[type_] = []
 
+                logger.debug(f'add rule: {r!r}')
+
                 self._rules_doc[type_].append(r)
             else:
                 self.rules.append(r)
