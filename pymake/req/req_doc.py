@@ -4,6 +4,7 @@ import logging
 import pickle
 import pprint
 
+import myhash
 import cached_property
 import crayons
 import bson
@@ -149,9 +150,39 @@ class ReqDocBase(pymake.req.Req):
             raise TypeError(f'{self!r} {b!r} is not bytes')
         return b
 
+    def _hash(self):
+        hasher = myhash.Hasher(depth_stop=4)
+        hasher(self.encoded)
+        return hasher.hash()
+
+    async def _get_id(self):
+
+        # try hash
+   
+        USE_HASH = False
+            
+        h = self._hash()
+
+        if USE_HASH:
+
+            c = pymake.client.client.find({"hash": h})
+            docs = await c.to_list(2)
+    
+            if len(docs) == 1:
+                #logger.info(crayons.green("found id by hash"))
+                return docs[0]["_id"]
+    
+            elif len(docs) > 1:
+    
+                raise Exception()
+    
+        return await pymake.doc_registry.get_id(self.encoded, h)
+
     async def _id(self):
+
         if not hasattr(self, "_id_CACHED"):
-            self._id_CACHED = await pymake.doc_registry.get_id(self.encoded)
+
+            self._id_CACHED = await self._get_id()
 
         return self._id_CACHED
 

@@ -64,14 +64,15 @@ class SubRegistry:
     def __getitem__(self, key):
         return self.d[key]
 
-    def __str__(self):
-        return str(self.d)
+    #def __str__(self):
+    #    return str(self)
 
     def __repr__(self):
-        if self.doc is not None:
-            return f"Sub({self.d}, doc={self.doc})"
-        else:
-            return f"Sub({self.d})"
+        if hasattr(self, "doc"):
+            if self.doc is not None:
+                return f"Sub({self.d}, doc={self.doc})"
+            
+        return f"Sub({self.d})"
 
     def __getstate__(self):
         state = dict(self.__dict__)
@@ -96,7 +97,7 @@ class DocMeta:
         self.d = d
         self.mtime = datetime.datetime.now().timestamp()
 
-async def get_id(d):
+async def get_id(d, h):
 
         logger_get_id.debug(f'{d!r}')
 
@@ -104,12 +105,10 @@ async def get_id(d):
 
         d = clean(d)
  
-        #d_1 = d
         d_1 = {"doc": d}
-
+        d_2 = {"doc": d, "hash": h}
 
         docs = await pymake.client.client.find(d_1).to_list(2)
-
 
         if len(docs) > 1:
 
@@ -142,8 +141,21 @@ async def get_id(d):
 
         if doc is None:
             logger.debug(f'did not find {d_1}. inserting')
-            res = await pymake.client.client.insert_one(d_1)
+            res = await pymake.client.client.insert_one(d_2)
             return res.inserted_id
+
+        if "hash" not in doc:
+            logger.info(crayons.yellow("hash not in mongo"))
+            await pymake.client.client.update_one({"_id": doc["_id"]}, {"$set": {"hash": h}})
+        else:
+
+            if h != doc["hash"]:
+                logger.info(crayons.yellow("hash in mongo is different"))
+                await pymake.client.client.update_one({"_id": doc["_id"]}, {"$set": {"hash": h}})
+            else:
+                logger.info(crayons.green("hash in mongo is the same"))
+
+
 
         return doc["_id"]
 
@@ -290,6 +302,11 @@ class DocRegistry:
 
     @_lock
     async def write(self, _id, d, doc):
+        """
+        :param _id: unique id for address
+        :param d: dict describing address
+        :param doc: contents to save
+        """
         assert isinstance(_id, bson.objectid.ObjectId)
         d = clean(d)
 
