@@ -10,7 +10,7 @@ import json
 
 import bson
 import crayons
-import pymake.doc_registry.address
+import pymake.registry.r1.address
 from pymake.util import clean
 
 def breakpoint(): import pdb; pdb.set_trace()
@@ -63,9 +63,6 @@ class SubRegistry:
 
     def __getitem__(self, key):
         return self.d[key]
-
-    #def __str__(self):
-    #    return str(self)
 
     def __repr__(self):
         if hasattr(self, "doc"):
@@ -160,10 +157,12 @@ async def get_id(d, h):
         return doc["_id"]
 
 def _lock(f):
-    async def wrapped(self, _id, d, *args):
+    async def wrapped(self, req, *args):
         #d = clean(d)
 
-        assert isinstance(_id, bson.objectid.ObjectId)
+        assert isinstance(req, pymake.req.req_doc.ReqDocBase)
+
+        _id = self.get_id_cached(req)
 
         l = await self.get_lock(_id)
  
@@ -174,16 +173,48 @@ def _lock(f):
 
     return wrapped
 
-class DocRegistry:
+class Registry:
 
-    def __init__(self, db, db_meta):
+    def __init__(self, filename, filename_meta):
 
-        self._registry = db
-        self._db_meta = db_meta
+        self._db = shelve.open(filename, writeback=True)
+        self._db_meta = shelve.open(filename_meta, writeback=True)
 
         self._locks = {}
 
         self.__lock = asyncio.Lock()
+
+
+    async def get_id_cached(self, req):
+
+        if not hasattr(req, "_id_CACHED"):
+
+            req._id_CACHED = await self.get_id(req)
+
+        return req._id_CACHED
+
+    async def get_id(self, req):
+
+        # try hash
+   
+        USE_HASH = False
+            
+        h = req.hash
+
+        if USE_HASH:
+
+            c = pymake.client.client.find({"hash": h})
+            docs = await c.to_list(2)
+    
+            if len(docs) == 1:
+                #logger.info(crayons.green("found id by hash"))
+                return docs[0]["_id"]
+    
+            elif len(docs) > 1:
+    
+                raise Exception()
+    
+        return await self.get_id(req.encoded, h)
 
     async def get_lock(self, _id):
         logger.debug(f'_id = {_id!s}')

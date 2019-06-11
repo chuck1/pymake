@@ -48,13 +48,10 @@ class CacheReq:
 
     def find(self, req):
 
-    
-
         if not isinstance(req, pymake.req.req_doc.ReqDocBase):
             return self._find_in_list(req, self.__cache_1)
 
         def _hash_func(req):
-            #return req.d.type_
             return req.hash
 
         h = _hash_func(req)
@@ -65,7 +62,7 @@ class CacheReq:
 
         subCache = self.__cache[h]
 
-        logger.debug(f'subCache len: {len(subCache):4} h: {h:32}')
+        logger.debug(f'subCache len: {len(subCache):4} h: {h!s:32}')
 
         return self._find_in_list(req, subCache)
 
@@ -75,6 +72,7 @@ class Makefile:
     manages the building of targets
     """
     def __init__(self, 
+            registry=None,
             req_cache=None,
             decoder=None):
         self.rules = []
@@ -93,6 +91,8 @@ class Makefile:
         # req A stores a bool that says its up to date and creates a signal for req B that will be called if
         # req B gets updated with the program is still running
         self.__cache = CacheReq()
+
+        self.registry = registry
 
         self.graph = {}
 

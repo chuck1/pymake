@@ -43,6 +43,8 @@ class MakeCall:
 
         self.thread_depth = thread_depth
 
+        self.registry = makefile.registry
+
     @cached_property.cached_property
     def decoder(self):
         d = self.classDecoder()
