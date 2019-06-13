@@ -10,6 +10,8 @@ import json
 
 import bson
 import crayons
+
+import pymake.registry
 import pymake.registry.r1.address
 from pymake.util import clean
 
@@ -47,54 +49,8 @@ def get_subregistry(r, l, f=None):
 
     return r
  
-class SubRegistry:
-    def __init__(self):
-        self.d = {}
-        self.doc = None
 
-    def items(self):
-        return self.d.items()
-
-    def __iter__(self):
-        return iter(self.d)
-
-    def __setitem__(self, key, value):
-        self.d[key] = value
-
-    def __getitem__(self, key):
-        return self.d[key]
-
-    def __repr__(self):
-        if hasattr(self, "doc"):
-            if self.doc is not None:
-                return f"Sub({self.d}, doc={self.doc})"
-            
-        return f"Sub({self.d})"
-
-    def __getstate__(self):
-        state = dict(self.__dict__)
-        if "doc" in state:
-            if state["doc"] is not None:
-                try:
-                    pickle.dumps(state["doc"])
-                except Exception as e:
-                    logger.warning(crayons.yellow(f'error pickling {state["doc"]} {e!r}'))
-                    #logger.warning(crayons.yellow(repr(e)))
-                    del state["doc"]
-        return state
-
-class Doc:
-    def __init__(self, doc, d=None):
-        self.doc = doc
-        self.d = d
-        self.mtime = datetime.datetime.now().timestamp()
-
-class DocMeta:
-    def __init__(self, d=None):
-        self.d = d
-        self.mtime = datetime.datetime.now().timestamp()
-
-async def get_id(d, h):
+async def get_id(d):
 
         logger_get_id.debug(f'{d!r}')
 
@@ -103,7 +59,6 @@ async def get_id(d, h):
         d = clean(d)
  
         d_1 = {"doc": d}
-        d_2 = {"doc": d, "hash": h}
 
         docs = await pymake.client.client.find(d_1).to_list(2)
 
@@ -138,52 +93,18 @@ async def get_id(d, h):
 
         if doc is None:
             logger.debug(f'did not find {d_1}. inserting')
-            res = await pymake.client.client.insert_one(d_2)
+            res = await pymake.client.client.insert_one(d_1)
             return res.inserted_id
-
-        if "hash" not in doc:
-            logger.info(crayons.yellow("hash not in mongo"))
-            await pymake.client.client.update_one({"_id": doc["_id"]}, {"$set": {"hash": h}})
-        else:
-
-            if h != doc["hash"]:
-                logger.info(crayons.yellow("hash in mongo is different"))
-                await pymake.client.client.update_one({"_id": doc["_id"]}, {"$set": {"hash": h}})
-            else:
-                logger.info(crayons.green("hash in mongo is the same"))
-
-
 
         return doc["_id"]
 
-def _lock(f):
-    async def wrapped(self, req, *args):
-        #d = clean(d)
-
-        assert isinstance(req, pymake.req.req_doc.ReqDocBase)
-
-        _id = self.get_id_cached(req)
-
-        l = await self.get_lock(_id)
- 
-        logger.debug('aquire lock')
-        async with l:
-            logger.debug('lock aquired')
-            return await f(self, _id, d, *args)
-
-    return wrapped
-
-class Registry:
+class Registry(pymake.registry.Registry):
 
     def __init__(self, filename, filename_meta):
+        super().__init__()
 
         self._db = shelve.open(filename, writeback=True)
         self._db_meta = shelve.open(filename_meta, writeback=True)
-
-        self._locks = {}
-
-        self.__lock = asyncio.Lock()
-
 
     async def get_id_cached(self, req):
 
@@ -195,28 +116,12 @@ class Registry:
 
     async def get_id(self, req):
 
-        # try hash
-   
-        USE_HASH = False
-            
-        h = req.hash
+        return await get_id(req.encoded)
 
-        if USE_HASH:
+    async def get_lock(self, req):
 
-            c = pymake.client.client.find({"hash": h})
-            docs = await c.to_list(2)
-    
-            if len(docs) == 1:
-                #logger.info(crayons.green("found id by hash"))
-                return docs[0]["_id"]
-    
-            elif len(docs) > 1:
-    
-                raise Exception()
-    
-        return await self.get_id(req.encoded, h)
+        _id = await self.get_id_cached(req)
 
-    async def get_lock(self, _id):
         logger.debug(f'_id = {_id!s}')
 
         async with self.__lock:
@@ -225,131 +130,66 @@ class Registry:
 
             return self._locks[_id]
 
-    @_lock
-    async def delete(self, _id, d):
-        assert isinstance(_id, bson.objectid.ObjectId)
-        d = clean(d)
-        await self.__delete(d)
 
-    async def __delete(self, d):
-        logger.warning(crayons.yellow(f"delete {d}"))
+    async def get_subregistry(self, req, f=None):
 
-        d = clean(d)
+        d = clean(req.encoded)
+        _id = await self.get_id_cached(req)
 
-        r = await self.get_subregistry(d)
-        
-        r.doc = None
+        logger.debug(f'req: {req}')
+        logger.debug(f'_id: {_id!s}')
 
-    async def get_subregistry(self, _id, d, f=None):
-        d = clean(d)
 
-        db = self._registry
-        
-        if str(_id) not in db:
-            db[str(_id)] = SubRegistry()
+        if str(_id) not in self._db:
+            self._db[str(_id)] = pymake.registry.SubRegistry()
 
         try:
-            return db[str(_id)]
+            return self._db[str(_id)]
         except (AttributeError, ModuleNotFoundError) as e:
             # indicates problem with pickled object, need to delete it
             logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
-            del db[str(_id)]
+            breakpoint()
+            del self._db[str(_id)]
             raise
         
         except RuntimeError as exc:
 
             if exc.args[0] == "input stream error":
                 logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
+                breakpoint()
                 del db[str(_id)]
 
             #breakpoint()
             #
             raise
 
-    def get_subregistry_meta(self, _id, d, f=None):
-        d = clean(d)
+    async def get_subregistry_meta(self, req, f=None):
 
-        if str(_id) not in self._db_meta:
-            self._db_meta[str(_id)] = SubRegistry()
+        #d = clean(req.encoded)
+        _id = await self.get_id_cached(req)
 
-        return self._db_meta[str(_id)]
+        logger.debug(f'req: {req}')
+        logger.debug(f'_id: {_id!s}')
 
-    @_lock
-    async def exists(self, _id, d):
-        assert isinstance(_id, bson.objectid.ObjectId)
-        d = clean(d)
-        return await self.__exists(_id, d)
+        i = str(_id)
 
-    async def __exists(self, _id, d):
-        d = clean(d)
+        if i not in self._db_meta:
+            logger.info(f'new subregistry for {req}')
+            self._db_meta[i] = pymake.doc_registry.SubRegistry()
 
-        r = self.get_subregistry_meta(_id, d)
+        try:
+            return self._db_meta[str(_id)]
 
-        if not hasattr(r, "doc"): 
-            logger.info('subregistry_meta does not have "doc" attribute')
-            return False
+        except ModuleNotFoundError as exc:
 
-        if r.doc is None: 
-            logger.info('subregistry_meta "doc" is None')
-            return False
+            breakpoint()
 
-        r1 = await self.get_subregistry(_id, d)
-
-        if not hasattr(r1, "doc"): 
-            logger.info('subregistry does not have "doc" attribute')
-            return False
-
-        if r1.doc is None: 
-            logger.info('subregistry "doc" is None')
-            return False
-
-        return True
-
-    @_lock
-    async def read(self, _id, d):
-        assert isinstance(_id, bson.objectid.ObjectId)
-        d = clean(d)
-
-        logger.debug(f"read {_id} {d}")
-
-        if not (await self.__exists(_id, d)): 
-            raise Exception(f"Object not found: {repr(d)[:1000]}")
-
-        r = await self.get_subregistry(_id, d)
-
-        logger.debug(f"read from {type(r)} {id(r)}")
-
-        if r.doc is None:
-            raise Exception(f"Object not found: {d!r}")
-
-        return r.doc.doc
-
-    @_lock
-    async def read_mtime(self, _id, d):
-        assert isinstance(_id, bson.objectid.ObjectId)
-        d = clean(d)
-        r = self.get_subregistry_meta(_id, d)
-        return r.doc.mtime
-
-    @_lock
-    async def write(self, _id, d, doc):
-        """
-        :param _id: unique id for address
-        :param d: dict describing address
-        :param doc: contents to save
-        """
-        assert isinstance(_id, bson.objectid.ObjectId)
-        d = clean(d)
+            raise
 
 
-        logger.debug(f"write {_id!r} {d!r} {doc!r}")
-
-        assert not asyncio.iscoroutine(doc)
-
-        r = await self.get_subregistry(_id, d)
-        r_meta = self.get_subregistry_meta(_id, d)
-
-        r.doc = Doc(doc, d=d)
-        r_meta.doc = DocMeta(d=d)
+    def close(self):
+        logger.info(crayons.blue("close registry"))
+        self._db.close()
+        self._db_meta.close()
 
 

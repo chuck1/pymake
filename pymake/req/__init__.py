@@ -193,10 +193,10 @@ class Req(jelly.Serializable):
             if self not in req._on_build:
                 req._on_build.append(self)
 
-    async def output_exists(self):
+    async def output_exists(self, mc):
         return None
 
-    async def output_mtime(self):
+    async def output_mtime(self, mc):
         return None
 
     def print_long(self):
@@ -212,7 +212,7 @@ class Req(jelly.Serializable):
 
         if len(rules) == 0:
             logger.debug(f'no rules to make {self!r}')
-            b = await self.output_exists()
+            b = await self.output_exists(mc)
             if b:
                 return
             else:
@@ -251,7 +251,7 @@ class Req(jelly.Serializable):
             if self.require_rule:
                 logger.warning(crayons.yellow("no rule and require_rule is True"))
             else:
-                if await self.output_exists():
+                if await self.output_exists(mc):
                     return pymake.result.ResultNoRuleFileExists()
 
             # error
@@ -309,7 +309,7 @@ class Req(jelly.Serializable):
 
         await self.write_binary(b)
         
-    async def read_pickle(self, mc=None):
+    async def read_pickle(self, mc):
 
         if hasattr(self, '_stored'):
             logger.warning(crayons.yellow(f'HAS STORED! {self!r}'))
@@ -402,13 +402,13 @@ class ReqFile(Req):
         #logger.info(f'{self.fn!r} != {other.fn!r}')
         return False
 
-    async def output_exists(self):
+    async def output_exists(self, mc):
         """
         check if the file exists
         """
         return os.path.exists(self.fn)
 
-    async def output_mtime(self):
+    async def output_mtime(self, mc):
         """
         return the mtime of the file
         """
@@ -425,7 +425,7 @@ class ReqFile(Req):
             logger.error(f'error loading: {self!r} {self.fn!r}')
             raise
 
-    def read_json(self):
+    def read_json(self, mc):
         with open(self.fn, 'r') as f:
             s = f.read()
             
@@ -477,10 +477,10 @@ class ReqFake(Req):
     async def _make(self, mc, ancestor):
         return ResultNoBuild('is fake')
 
-    async def output_exists(self):
+    async def output_exists(self, mc):
         return None
 
-    async def output_mtime(self):
+    async def output_mtime(self, mc):
         return None
 
     def __repr__(self):
@@ -550,10 +550,10 @@ class ReqTemp(Req):
     async def _make(self, mc, ancestor):
         return ResultNoBuild('is temp')
 
-    async def output_exists(self):
+    async def output_exists(self, mc):
         return hasattr(self, 'b')
 
-    async def read_pickle(self):
+    async def read_pickle(self, mc):
         assert not asyncio.iscoroutine(self.b)
         return self.b
 

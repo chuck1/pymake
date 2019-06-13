@@ -52,7 +52,7 @@ class CacheReq:
             return self._find_in_list(req, self.__cache_1)
 
         def _hash_func(req):
-            return req.hash
+            return req.hash2
 
         h = _hash_func(req)
 

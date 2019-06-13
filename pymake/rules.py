@@ -48,8 +48,8 @@ class Rule_utilities:
         with open(file_out, 'wb') as f:
             pickle.dump(o, f)
 
-    async def write_json(self, d):
-        await self.req.write_json(d)
+    async def write_json(self, mc, d):
+        await self.req.write_json(mc, d)
 
 class _Rule(Rule_utilities):
     """
@@ -180,7 +180,7 @@ class _Rule(Rule_utilities):
                 return req
 
 
-    async def __requirements(self, makecall, test, requirements_function, 
+    async def __requirements(self, mc, test, requirements_function, 
             threaded=False, 
             req_requirements=[],
             ):
@@ -197,7 +197,7 @@ class _Rule(Rule_utilities):
         # the build_requirements function yields the results of calling func on Req objects
         # and func returns those Req objects
 
-        func = functools.partial(self.__requirements_func, test=test, makecall=makecall, threaded=threaded)
+        func = functools.partial(self.__requirements_func, test=test, makecall=mc, threaded=threaded)
 
         async def _chain():
 
@@ -211,7 +211,7 @@ class _Rule(Rule_utilities):
 
                 yield ret
 
-            async for req in requirements_function(makecall, func):
+            async for req in requirements_function(mc, func):
                 
                 if USE_TASKS:
                     if not isinstance(req, asyncio.Task):
@@ -305,12 +305,12 @@ class _Rule(Rule_utilities):
 
         if makecall.args.force: return True, 'forced', reqs
 
-        b = await self.req.output_exists()
+        b = await self.req.output_exists(makecall)
 
         if not b: 
             return True, "output does not exist", reqs
 
-        mtime = await self.output_mtime()
+        mtime = await self.output_mtime(makecall)
         
         if mtime is None:
             return True, '{} does not define mtime'.format(self.__class__.__name__), reqs
@@ -323,9 +323,9 @@ class _Rule(Rule_utilities):
             # allow None in reqs
             if f is None: continue
 
-            b = await f.output_exists()
+            b = await f.output_exists(makecall)
             if b:
-                mtime_in = await f.output_mtime()
+                mtime_in = await f.output_mtime(makecall)
 
                 if mtime_in is None:
                     return True, 'input file {} does not define mtime'.format(repr(self)), reqs
@@ -506,8 +506,8 @@ class Rule(_Rule):
                 self.__class__.__module__,
                 self.__class__.__name__)
 
-    def output_mtime(self):
-        return self.req.output_mtime()
+    def output_mtime(self, mc):
+        return self.req.output_mtime(mc)
 
     async def test(self, mc, req):
         """
@@ -761,8 +761,8 @@ class RuleDocCopyBinary(RuleDoc):
 
 class RuleDocCopyObject(RuleDoc):
     async def build(self, mc, _, reqs):
-        o = await (await self.req_0(mc)).read_pickle()
-        await self.req.write_pickle(o)
+        o = await (await self.req_0(mc)).read_pickle(mc)
+        await self.req.write_pickle(mc, o)
 
 
 

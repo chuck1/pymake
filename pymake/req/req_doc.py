@@ -120,9 +120,9 @@ class ReqDocBase(pymake.req.Req):
         assert isinstance(b, bytes)
         await self.write_contents(b)
 
-    async def write_json(self, b):
+    async def write_json(self, mc, b):
         assert not asyncio.iscoroutine(b)
-        await self.write_contents(b)
+        await self.write_contents(mc, b)
 
     async def write_string(self, b):
         assert isinstance(b, str)
@@ -140,8 +140,8 @@ class ReqDocBase(pymake.req.Req):
         assert isinstance(s, str)
         return s
 
-    async def read_binary(self):
-        b = await self.read_contents()
+    async def read_binary(self, mc):
+        b = await self.read_contents(mc)
         if not isinstance(b, bytes):
             print(f'{self!r} should be bytes but is {type(b)}')
             #if input('delete?') == 'Y':
@@ -150,10 +150,16 @@ class ReqDocBase(pymake.req.Req):
         return b
 
     @cached_property.cached_property
-    def hash(self):
+    def hash1(self):
         hasher = myhash.Hasher(depth_stop=4)
         hasher(self.encoded)
-        return hasher.hash()
+        return hasher.hexhash()
+
+    @cached_property.cached_property
+    def hash2(self):
+        hasher = myhash.Hasher()
+        hasher(self.encoded)
+        return hasher.hexhash()
 
     async def _get_id(self, mc):
 
@@ -210,30 +216,30 @@ class ReqDoc1(ReqDocBase):
 
         return self.encoded == other.encoded
 
-    async def output_exists(self):
-        return await pymake.doc_registry.registry.exists(await self._id(), self.encoded)
+    async def output_exists(self, mc):
+        return await mc.registry.exists(self)
     
-    async def output_mtime(self):
-        return await pymake.doc_registry.registry.read_mtime(await self._id(), self.encoded)
+    async def output_mtime(self, mc):
+        return await mc.registry.read_mtime(self)
 
-    async def delete(self):
-        await pymake.doc_registry.registry.delete(await self._id(), self.encoded)
+    async def delete(self, mc):
+        await mc.registry.delete(self)
 
-    async def write_pickle(self, o):
-        await pymake.doc_registry.registry.write(await self._id(), self.encoded, o)
+    async def write_pickle(self, mc, o):
+        await mc.registry.write(self, o)
 
-    async def write_contents(self, b):
+    async def write_contents(self, mc, b):
         logger.debug(f"{self!r} write_contents")
         assert not asyncio.iscoroutine(b)
-        await pymake.doc_registry.registry.write(await self._id(), self.encoded, b)
+        await mc.registry.write(self, b)
 
     async def read_contents(self, mc):
         ret = await mc.registry.read(self)#await self._id(), self.encoded)
         assert not asyncio.iscoroutine(ret)
         return ret
 
-    async def read_pickle(self, mc=None):
-        o = await pymake.doc_registry.registry.read(await self._id(), self.encoded)
+    async def read_pickle(self, mc):
+        o = await mc.registry.read(self)
         assert not asyncio.iscoroutine(o)
         return o
 
