@@ -116,9 +116,9 @@ class ReqDocBase(pymake.req.Req):
     def would_touch(self, mc):
         return False
 
-    async def write_binary(self, b):
+    async def write_binary(self, mc, b):
         assert isinstance(b, bytes)
-        await self.write_contents(b)
+        await self.write_contents(mc, b)
 
     async def write_json(self, mc, b):
         assert not asyncio.iscoroutine(b)
