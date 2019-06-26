@@ -50,7 +50,19 @@ def get_subregistry(r, l, f=None):
     return r
  
 
-async def get_id(d):
+
+class Registry(pymake.registry.Registry):
+
+    def __init__(self, db_name, filename, filename_meta):
+        super().__init__()
+
+        self._db = shelve.open(filename, writeback=True)
+        self._db_meta = shelve.open(filename_meta, writeback=True)
+
+        self.client = pymake.client.Client(db_name)
+
+
+    async def _get_id(self, d):
 
         logger_get_id.debug(f'{d!r}')
 
@@ -60,7 +72,7 @@ async def get_id(d):
  
         d_1 = {"doc": d}
 
-        docs = await pymake.client.client.find(d_1).to_list(2)
+        docs = await self.client.find(d_1).to_list(2)
 
         if len(docs) > 1:
 
@@ -89,7 +101,7 @@ async def get_id(d):
 
             raise Exception(f"got multiple db records for {json.dumps(d_1)!r}")
 
-        doc = await pymake.client.client.find_one(d_1)
+        doc = await self.client.find_one(d_1)
 
         if doc is None:
             logger.debug(f'did not find {d_1}. inserting')
@@ -98,13 +110,8 @@ async def get_id(d):
 
         return doc["_id"]
 
-class Registry(pymake.registry.Registry):
 
-    def __init__(self, filename, filename_meta):
-        super().__init__()
 
-        self._db = shelve.open(filename, writeback=True)
-        self._db_meta = shelve.open(filename_meta, writeback=True)
 
     async def get_id_cached(self, req):
 
@@ -116,7 +123,7 @@ class Registry(pymake.registry.Registry):
 
     async def get_id(self, req):
 
-        return await get_id(req.encoded)
+        return await self._get_id(req.encoded)
 
     async def get_lock(self, req):
 

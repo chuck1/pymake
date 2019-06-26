@@ -43,15 +43,14 @@ class Cursor:
         return lst
 
 class Client:
-    def __init__(self):
+    def __init__(self, dbname):
 
         if USE_ASYNC:
             client = motor.motor_asyncio.AsyncIOMotorClient()
         else:
             client = pymongo.MongoClient()
 
-
-        db = client.coiltest
+        db = client[dbname]
         self._coll = db.test
 
     def exists(self, q):
@@ -132,9 +131,6 @@ class Client:
 
         for i, d in zip(range(len(docs)), docs):
             self._coll.update_one({"_id": d["_id"]}, {"$set": {"RESOLVE": i}})
-
-
-client = Client()
 
 
 
