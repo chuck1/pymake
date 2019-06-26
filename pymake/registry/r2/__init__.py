@@ -44,7 +44,7 @@ class Registry(pymake.registry.Registry):
         h2 = req.hash2
         
         if h1 not in self._db:
-            self._db[h1] = SubRegistry()
+            self._db[h1] = pymake.registry.SubRegistry()
 
         try:
 
@@ -67,7 +67,8 @@ class Registry(pymake.registry.Registry):
 
             raise
 
-    def get_subregistry_meta(self, req, f=None):
+    async def get_subregistry_meta(self, req, f=None):
+
         h1 = req.hash1
         h2 = req.hash2
 
