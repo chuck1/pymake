@@ -121,6 +121,7 @@ class Makefile:
                 if target.type_ not in self._rules_doc:
                     #print_lines(logging.error, target.print_long)
                     #raise Exception(f"no rules to make {target!r}")
+                    logger.debug(f'{target.type_!r} not in _rules_doc')
                     return
 
                 for r in self._rules_doc[target.type_]:

@@ -1,3 +1,4 @@
+import logging
 import inspect
 import os
 import re
@@ -6,20 +7,25 @@ import types
 from mybuiltins import *
 import pymake
 
+logger = logging.getLogger(__name__)
+
 def _isinstance(v, cls):
-    if not inspect.isclass(v): return False
-    if not issubclass(v, cls): return False
-    if v is cls: return False
+    if not inspect.isclass(v): 
+        return False
+    if not issubclass(v, cls): 
+        return False
+    if v is cls: 
+        return False
     return True
 
 def _search(root_path, m, cls, _rules, searched):
+
+    logger.debug(f'{m!r}')
 
     if m in searched: return _rules
     searched.append(m)
 
     if not hasattr(m, '__file__'): return _rules
-
-    #root_path = 'coil_testing/rules'
 
     module_path = m.__file__
     if isinstance(module_path, list):
@@ -34,6 +40,7 @@ def _search(root_path, m, cls, _rules, searched):
             _search(root_path, v, cls, _rules, searched)
 
         elif _isinstance(v, cls):
+            logger.debug(f'{v!r} is not an instance of {cls!r}')
             _rules.append(v)
 
         #elif inspect.isclass(v):
