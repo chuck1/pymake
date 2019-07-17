@@ -72,7 +72,12 @@ class Registry(pymake.registry.Registry):
  
         d_1 = {"doc": d}
 
-        docs = await self.client.find(d_1).to_list(2)
+        try:
+            docs = await self.client.find(d_1).to_list(2)
+        except:
+            logger.error(f'failed to get id: {d_1!r}')
+            raise
+
 
         if len(docs) > 1:
 
