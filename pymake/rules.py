@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 logger_check = logging.getLogger(__name__+"-check")
 
 THREADED = False
-USE_TASKS = False
 
 class ReqFuture:
     # the result of calling func(req)
@@ -162,7 +161,7 @@ class _Rule(Rule_utilities):
             return task
         else:
             
-            if USE_TASKS:
+            if makecall.options.useTasks:
 
                 # use task
 
@@ -180,7 +179,9 @@ class _Rule(Rule_utilities):
                 return req
 
 
-    async def __requirements(self, mc, test, requirements_function, 
+    async def __requirements(self, 
+            mc, 
+            test, requirements_function, 
             threaded=False, 
             req_requirements=[],
             ):
@@ -205,7 +206,7 @@ class _Rule(Rule_utilities):
 
                 ret = await func(req)
 
-                if USE_TASKS:
+                if mc.options.useTasks:
                     if not isinstance(ret, asyncio.Task):
                         raise Exception()
 
@@ -213,13 +214,13 @@ class _Rule(Rule_utilities):
 
             async for req in requirements_function(mc, func):
                 
-                if USE_TASKS:
+                if mc.options.useTasks:
                     if not isinstance(req, asyncio.Task):
                         raise Exception()
 
                 yield req
 
-        if USE_TASKS:
+        if mc.options.useTasks:
             tasks = [_ async for _ in _chain()]
 
             if tasks:
@@ -252,7 +253,7 @@ class _Rule(Rule_utilities):
                     raise Exception(f'{self!r}')
 
                 if req is not None: 
-                    if USE_TASKS:
+                    if mc.options.useTasks:
                         pass
                     else:
                         if not isinstance(req, Req):

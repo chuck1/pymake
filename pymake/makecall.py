@@ -22,6 +22,10 @@ import pymake.rules
 
 logger = logging.getLogger(__name__)
 
+class Options:
+    def __init__(self, useTasks=False):
+        self.useTasks = useTasks
+
 class MakeCall:
     def __init__(
             self, 
@@ -30,10 +34,12 @@ class MakeCall:
             stack=[], 
             thread_depth=0, 
             classDecoder=None,
+            options=Options(),
             ):
         assert classDecoder is not None
 
         self.makefile = makefile
+        self.options = options
 
         self.classDecoder = classDecoder
 
@@ -44,6 +50,8 @@ class MakeCall:
         self.thread_depth = thread_depth
 
         self.registry = makefile.registry
+
+        
 
     @cached_property.cached_property
     def decoder(self):
