@@ -105,7 +105,7 @@ class Registry(pymake.registry.Registry):
 
         if doc is None:
             logger.debug(f'did not find {d_1}. inserting')
-            res = await pymake.client.client.insert_one(d_1)
+            res = await self.client.insert_one(d_1)
             return res.inserted_id
 
         return doc["_id"]
