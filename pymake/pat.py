@@ -28,6 +28,10 @@ class PatAny(Pat):
     def match(self, s):
         return True
 
+class PatCallable(Pat):
+    def match(self, s):
+        return callable(s)
+
 class PatString(Pat):
     def __init__(self, pattern_string=None):
         if pattern_string is not None:
