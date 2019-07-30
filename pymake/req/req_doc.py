@@ -133,8 +133,8 @@ class ReqDocBase(pymake.req.Req):
         assert not asyncio.iscoroutine(ret)
         return ret
 
-    async def read_string(self):
-        s = await self.read_contents()
+    async def read_string(self, mc):
+        s = await self.read_contents(mc)
         if isinstance(s, bytes):
             s = s.decode()
         assert isinstance(s, str)

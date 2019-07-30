@@ -202,8 +202,8 @@ class Req(jelly.Serializable):
     def print_long(self):
         print(repr(self))
 
-    def open(self, mode):
-        return OpenContext(self, mode)
+    def open(self, mc, mode):
+        return OpenContext(mc, self, mode)
 
     async def get_rule(self, mc):
         logger.debug(f"{self}")
@@ -443,7 +443,7 @@ class ReqFile(Req):
         with open(self.fn, 'w') as f:
             f.write(s)
 
-    async def write_binary(self, b):
+    async def write_binary(self, mc, b):
         assert isinstance(b, bytes)
         pymake.util.makedirs(os.path.dirname(self.fn))
         with open(self.fn, 'wb') as f:
@@ -452,11 +452,11 @@ class ReqFile(Req):
     def graph_string(self):
         return self.fn
 
-    async def read_string(self):
+    async def read_string(self, mc):
         with open(self.fn, 'r') as f:
             return f.read()
 
-    async def read_binary(self):
+    async def read_binary(self, mc):
         with open(self.fn, 'rb') as f:
             ret = f.read()
             return ret
@@ -511,7 +511,9 @@ class FileR:
 
 class OpenContext:
 
-    def __init__(self, req, mode):
+    def __init__(self, mc, req, mode):
+        assert isinstance(mc, pymake.makecall.MakeCall)
+        self.mc = mc
         self.req = req
         self.mode = mode
         
@@ -524,9 +526,9 @@ class OpenContext:
         elif self.mode == 'wb':
             self.f = FileW(io.BytesIO())
         elif self.mode == 'r':
-            self.f = FileR(io.StringIO(await self.req.read_string()))
+            self.f = FileR(io.StringIO(await self.req.read_string(self.mc)))
         elif self.mode == 'rb':
-            self.f = FileR(io.BytesIO(await self.req.read_binary()))
+            self.f = FileR(io.BytesIO(await self.req.read_binary(self.mc)))
         
         return self.f
 
@@ -536,10 +538,10 @@ class OpenContext:
 
         if self.mode == 'w':
             s = self.f.buf.getvalue()
-            await self.req.write_string(s)
+            await self.req.write_string(self.mc, s)
         elif self.mode == 'wb':
             s = self.f.buf.getvalue()
-            await self.req.write_binary(s)
+            await self.req.write_binary(self.mc, s)
 
 class ReqTemp(Req):
    
@@ -557,10 +559,10 @@ class ReqTemp(Req):
         assert not asyncio.iscoroutine(self.b)
         return self.b
 
-    async def read_binary(self):
+    async def read_binary(self, mc):
         return self.b
 
-    async def read_string(self):
+    async def read_string(self, mc):
         assert isinstance(self.b, str)
         return self.b
 
@@ -568,7 +570,7 @@ class ReqTemp(Req):
         assert not asyncio.iscoroutine(b)
         self.b = b
 
-    async def write_binary(self, b):
+    async def write_binary(self, mc, b):
         assert isinstance(b, bytes)
         self.b = b
 
