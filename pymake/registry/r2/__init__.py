@@ -53,9 +53,15 @@ class Registry(pymake.registry.Registry):
         except (AttributeError, ModuleNotFoundError) as e:
 
             # indicates problem with pickled object, need to delete it
-            logger.error(crayons.red(f'Unpickle error for {_id}. delete'))
+            logger.error(crayons.red(f'Unpickle error for {h2}. delete'))
             
-            del db[str(_id)]
+            #db1 = self._db[h1]
+            #del db1[h2]
+            del self._db[h1]
+
+            assert h1 not in self._db
+
+            logger.error(crayons.red(f'delete successful'))
 
             raise
         
