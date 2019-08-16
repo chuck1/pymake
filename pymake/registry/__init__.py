@@ -49,6 +49,9 @@ class Registry:
         logger.debug(f"read {req}")
 
         if not (await self.__exists(req)):
+            logger.error(f'{req}')
+            logger.error(f'{req.d}')
+            logger.error(f'{req.d.encoded()}')
             raise Exception(f"Object not found: {repr(req)[:1000]}")
 
         r = await self.get_subregistry(req)
