@@ -1,7 +1,7 @@
-pymake
-======
+req
+===
 
-.. automodule:: pymake
+.. automodule:: pymake.req
    :private-members:
    :members:
 

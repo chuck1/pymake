@@ -43,10 +43,16 @@ class Datatype(enum.Enum):
     OBJECT = 2
 
 class Req(jelly.Serializable):
+    """
+    base class for requirements
+    """
 
     build = True
 
     def __init__(self, *args, require_rule=False, **kwargs):
+        """
+        """
+
         self._type = None
     
         self.require_rule = require_rule
@@ -67,6 +73,20 @@ class Req(jelly.Serializable):
         # manually specify requirements in addition to those that a rule will specify
         self.requirements_0 = []
         self.requirements_1 = []
+
+    def add_requirement_0(self, r):
+        """
+        add a manual requirement to stage 0
+        """
+        assert isinstance(r, Req)
+        self.requirements_0.append(r)
+
+    def add_requirement_1(self, r):
+        """
+        add a manual requirement to stage 1
+        """
+        assert isinstance(r, Req)
+        self.requirements_1.append(r)
 
     def _print(self):
         print(repr(self))

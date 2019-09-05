@@ -11,6 +11,7 @@ Welcome to pymake's documentation!
    :caption: Contents:
 
    module/index.rst
+   module/req/index.rst
 
 Indices and tables
 ==================
