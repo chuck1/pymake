@@ -132,7 +132,7 @@ class _Rule(Rule_utilities):
             return True, 'forced'
 
         if not bool(f_in):
-            raise Exception()
+            raise Exception(repr(f_in))
         
         b = self.output_exists()
         if not b:
