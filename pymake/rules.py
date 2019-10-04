@@ -272,7 +272,7 @@ class _Rule(Rule_utilities):
 
     async def _build(self, makecall, *args):
 
-        logger.info(crayons.yellow(f'Build force={makecall.args.get("force", False)}', bold=True))
+        logger.debug(crayons.yellow(f'Build force={makecall.args.get("force", False)}', bold=True))
 
         #lines(
         #        lambda s: logger.info(crayons.yellow(s, bold=True)),
