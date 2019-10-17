@@ -22,6 +22,11 @@ class Registry(pymake.registry.Registry):
     def __init__(self, filename, filename_meta):
         super().__init__()
 
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError:
+            pass
+
         self._db = shelve.open(filename, writeback=True)
         self._db_meta = shelve.open(filename_meta, writeback=True)
 
@@ -86,6 +91,7 @@ class Registry(pymake.registry.Registry):
 
 
     def close(self):
+        print("closing database")
         self._db.close()
         self._db_meta.close()
 

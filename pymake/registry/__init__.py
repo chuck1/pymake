@@ -19,7 +19,6 @@ def _lock(f):
 
         assert isinstance(req, pymake.req.req_doc.ReqDocBase)
 
-
         l = await self.get_lock(req)
  
         logger.debug('aquire lock')

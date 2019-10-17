@@ -42,6 +42,9 @@ class SubRegistry:
                 try:
                     pickle.dumps(state["doc"])
                 except Exception as e:
+
+                    if "PicklingError" in repr(e): raise
+
                     logger.warning(crayons.yellow(f'error pickling {state["doc"]} {e!r}'))
                     #logger.warning(crayons.yellow(repr(e)))
                     del state["doc"]
