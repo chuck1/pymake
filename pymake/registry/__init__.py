@@ -134,6 +134,6 @@ class Registry:
 
         return True
 
-    def write_subregistry(self):
+    def write_subregistry(self, req, r):
         pass
 
