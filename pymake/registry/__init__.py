@@ -85,13 +85,13 @@ class Registry:
         r = await self.get_subregistry(req)
         r_meta = await self.get_subregistry_meta(req)
 
-
         d = clean(req.encoded)
 
         r.doc = pymake.doc_registry.Doc(doc, d=d)
         r_meta.doc = pymake.doc_registry.DocMeta(d=d)
 
         self.write_subregistry(req, r)
+        self.write_subregistry_meta(req, r_meta)
 
     @_lock
     async def delete(self, req):
@@ -135,5 +135,8 @@ class Registry:
         return True
 
     def write_subregistry(self, req, r):
+        pass
+
+    def write_subregistry_meta(self, req, r):
         pass
 

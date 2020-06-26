@@ -9,7 +9,7 @@ import traceback
 
 import crayons
 import pygraphviz as gv
-
+from mybuiltins import *
 logger = logging.getLogger(__name__)
 
 """
@@ -80,7 +80,10 @@ class MakeContext:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+
+
         if exc_type is not None:
+
             logger.warning(crayons.green('stack:'))
             for i in self.l:
                 logger.warning(crayons.green(f'\t{i!r}'))

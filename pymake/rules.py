@@ -427,11 +427,12 @@ class _Rule(Rule_utilities):
 
         if should_build:
 
-            try:
-                ret = await self._build(makecall, req, None, reqs)
-            except Exception as e:
-                logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
-                raise
+            #try:
+            ret = await self._build(makecall, req, None, reqs)
+            #except Exception as e:
+            #    logger.error(crayons.red('error building {}: {}'.format(repr(self), repr(e))))
+            #    breakpoint()
+            #    raise
 
             self.req.set_up_to_date_0(True)
             self.req.set_up_to_date_1(True)
@@ -501,7 +502,8 @@ class Rule(_Rule):
     def __init__(self, req):
         super(Rule, self).__init__()
         self.req = req
-    
+        self.exceptions = []
+
     def __repr__(self):
         return "<{}.{}>".format(
                 self.__class__.__module__,

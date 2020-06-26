@@ -74,6 +74,8 @@ class Req(jelly.Serializable):
         self.requirements_0 = []
         self.requirements_1 = []
 
+        self.exceptions = []
+
     def add_requirement_0(self, r):
         """
         add a manual requirement to stage 0
